@@ -1,0 +1,169 @@
+import Foundation
+import AlarmCore
+#if canImport(AlarmKit)
+import AlarmKit
+import AppIntents
+#endif
+
+/// Abstraction over AlarmKit so the scheduler is testable and so the app still
+/// builds if compiled without the framework. The live implementation is
+/// `AlarmKitManager`. Main-actor isolated because it touches `AlarmItem`
+/// (a SwiftData @Model, which is main-actor bound).
+@MainActor
+protocol AlarmKitManaging {
+    func requestAuthorization() async -> Bool
+    func authorizationState() async -> AlarmAuthState
+    /// Arm one concrete AlarmKit alarm per supplied fire date for this item.
+    func scheduleOccurrences(_ dates: [Date], for item: AlarmItem) async
+    /// Cancel the AlarmKit alarms previously armed for these exact fire dates.
+    /// Ids are derived deterministically from (item.id, date), so this works
+    /// across processes (widget/Siri) and across app launches.
+    func cancelOccurrences(_ dates: [Date], for item: AlarmItem) async
+}
+
+enum AlarmAuthState: Sendable { case notDetermined, authorized, denied }
+
+/// Metadata we attach to every AlarmKit alarm so the Live Activity / Lock Screen
+/// presentation can show the label and our app can correlate fired alarms back
+/// to the owning `AlarmItem`.
+#if canImport(AlarmKit)
+struct PunctualMetadata: AlarmMetadata {
+    let alarmItemID: UUID
+    let label: String
+    let occurrence: Date
+}
+#endif
+
+/// Live AlarmKit integration.
+///
+/// IMPORTANT: AlarmKit's exact symbol surface evolves across the iOS 26 betas.
+/// The structure below follows the documented WWDC25 shape (AlarmManager,
+/// Alarm.Schedule.fixed, AlarmConfiguration, AlarmPresentation, secondary
+/// "countdown" button for custom snooze). If a symbol name differs in your SDK,
+/// adjust *only* inside this file — nothing else in the app depends on AlarmKit.
+@MainActor
+final class AlarmKitManager: AlarmKitManaging {
+
+    /// Deterministic UUID for a given (item, occurrence). MUST be a pure function
+    /// of its inputs — no `Hasher` (its seed is randomised per process, so it is
+    /// neither cross-process nor cross-launch stable). We take the item's 16
+    /// UUID bytes and fold the occurrence's epoch seconds (big-endian) into the
+    /// low 8 bytes, giving a stable, collision-resistant id per occurrence.
+    nonisolated static func occurrenceID(item id: UUID, date: Date) -> UUID {
+        var bytes = withUnsafeBytes(of: id.uuid) { Array($0) }          // 16 bytes
+        let epoch = Int64(date.timeIntervalSince1970.rounded()).bigEndian
+        let epochBytes = withUnsafeBytes(of: epoch) { Array($0) }       // 8 bytes
+        for i in 0..<8 { bytes[8 + i] ^= epochBytes[i] }
+        let t = (bytes[0],bytes[1],bytes[2],bytes[3],bytes[4],bytes[5],bytes[6],bytes[7],
+                 bytes[8],bytes[9],bytes[10],bytes[11],bytes[12],bytes[13],bytes[14],bytes[15])
+        return UUID(uuid: t)
+    }
+
+    private func occurrenceID(item: AlarmItem, date: Date) -> UUID {
+        Self.occurrenceID(item: item.id, date: date)
+    }
+
+    func requestAuthorization() async -> Bool {
+        #if canImport(AlarmKit)
+        do {
+            let state = try await AlarmManager.shared.requestAuthorization()
+            return state == .authorized
+        } catch {
+            print("AlarmKit authorization error: \(error)")
+            return false
+        }
+        #else
+        return false
+        #endif
+    }
+
+    func authorizationState() async -> AlarmAuthState {
+        #if canImport(AlarmKit)
+        switch AlarmManager.shared.authorizationState {
+        case .authorized: return .authorized
+        case .denied: return .denied
+        default: return .notDetermined
+        }
+        #else
+        return .notDetermined
+        #endif
+    }
+
+    func scheduleOccurrences(_ dates: [Date], for item: AlarmItem) async {
+        #if canImport(AlarmKit)
+        for date in dates {
+            let id = occurrenceID(item: item, date: date)
+            do {
+                let config = makeConfiguration(for: item, occurrence: date)
+                try await AlarmManager.shared.schedule(id: id, configuration: config)
+            } catch {
+                print("AlarmKit schedule failed for \(item.id) @ \(date): \(error)")
+            }
+        }
+        #else
+        print("[AlarmKit unavailable] would schedule \(dates.count) alarm(s) for \(item.id)")
+        #endif
+    }
+
+    func cancelOccurrences(_ dates: [Date], for item: AlarmItem) async {
+        #if canImport(AlarmKit)
+        // Cancel exactly the occurrences that were armed (the caller passes the
+        // persisted `armedOccurrences`). Deterministic ids mean this works even
+        // when a different process/launch did the arming.
+        for date in dates {
+            try? AlarmManager.shared.cancel(id: occurrenceID(item: item, date: date))
+        }
+        #else
+        print("[AlarmKit unavailable] would cancel \(dates.count) alarm(s) for \(item.id)")
+        #endif
+    }
+
+    #if canImport(AlarmKit)
+    private func makeConfiguration(for item: AlarmItem, occurrence: Date) -> AlarmManager.AlarmConfiguration<PunctualMetadata> {
+        let title = item.label.isEmpty ? "Alarm" : item.label
+
+        // Fixed (one-shot) schedule for this concrete occurrence — we manage
+        // recurrence/skip/pause ourselves via the engine.
+        let schedule = Alarm.Schedule.fixed(occurrence)
+
+        // Stop button is always present. Snooze maps to a secondary countdown
+        // button when enabled, giving us a custom snooze duration.
+        let stop = AlarmButton(text: "Stop", textColor: .white, systemImageName: "stop.fill")
+        let secondary: AlarmButton? = item.snooze.isEnabled
+            ? AlarmButton(text: "Snooze", textColor: .white, systemImageName: "zzz")
+            : nil
+
+        let alert = AlarmPresentation.Alert(
+            title: LocalizedStringResource(stringLiteral: title),
+            stopButton: stop,
+            secondaryButton: secondary,
+            secondaryButtonBehavior: item.snooze.isEnabled ? .countdown : nil
+        )
+
+        let presentation = AlarmPresentation(alert: alert)
+
+        let attributes = AlarmAttributes(
+            presentation: presentation,
+            metadata: PunctualMetadata(alarmItemID: item.id, label: title, occurrence: occurrence),
+            tintColor: .accentColor
+        )
+
+        // Snooze countdown duration (post-alert) drives custom snooze length.
+        let countdown = item.snooze.isEnabled
+            ? Alarm.CountdownDuration(preAlert: nil, postAlert: TimeInterval(item.snooze.durationMinutes * 60))
+            : nil
+
+        // Sound: the pre-alert already plays the user's custom sound. For the
+        // AlarmKit alarm itself we keep `.default` until it's verified ON A REAL
+        // iOS 26 DEVICE whether AlarmKit accepts a runtime-imported sound from
+        // Library/Sounds (vs. bundle-only). When confirmed, swap to the custom
+        // sound here using `item.soundName`. See SoundManager / README.
+        return AlarmManager.AlarmConfiguration(
+            countdownDuration: countdown,
+            schedule: schedule,
+            attributes: attributes,
+            sound: .default
+        )
+    }
+    #endif
+}

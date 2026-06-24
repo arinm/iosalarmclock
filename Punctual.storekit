@@ -1,0 +1,80 @@
+{
+  "identifier" : "B1A7E0C2-0001-4C0A-9F00-PUNCTUALCFG1",
+  "nonRenewingSubscriptions" : [],
+  "products" : [
+    {
+      "displayPrice" : "19.99",
+      "familyShareable" : false,
+      "internalID" : "B1A7E0C2-0002-4C0A-9F00-PUNCTUALLIFE",
+      "localizations" : [
+        {
+          "description" : "Unlock all Pro features forever. One payment.",
+          "displayName" : "Punctual Pro — Lifetime",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.punctual.app.pro.lifetime",
+      "referenceName" : "Pro Lifetime",
+      "type" : "NonConsumable"
+    }
+  ],
+  "settings" : {
+    "_failTransactionsEnabled" : false,
+    "_storeKitErrors" : []
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "B1A7E0C2-0003-4C0A-9F00-PUNCTUALSUBS",
+      "localizations" : [],
+      "name" : "Punctual Pro",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [],
+          "codeOffers" : [],
+          "displayPrice" : "1.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "B1A7E0C2-0004-4C0A-9F00-PUNCTUALMONT",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "All Pro features + iCloud sync, seasonal packs, and early access.",
+              "displayName" : "Punctual Pro — Monthly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.punctual.app.pro.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Pro Monthly",
+          "subscriptionGroupID" : "B1A7E0C2-0003-4C0A-9F00-PUNCTUALSUBS",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [],
+          "codeOffers" : [],
+          "displayPrice" : "9.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "B1A7E0C2-0005-4C0A-9F00-PUNCTUALYEAR",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "All Pro features + iCloud sync, seasonal packs, and early access. Best value.",
+              "locale" : "en_US",
+              "displayName" : "Punctual Pro — Yearly"
+            }
+          ],
+          "productID" : "com.punctual.app.pro.yearly",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Pro Yearly",
+          "subscriptionGroupID" : "B1A7E0C2-0003-4C0A-9F00-PUNCTUALSUBS",
+          "type" : "RecurringSubscription"
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 3,
+    "minor" : 0
+  }
+}

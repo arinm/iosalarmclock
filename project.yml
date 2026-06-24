@@ -1,0 +1,110 @@
+# XcodeGen spec. Generate the .xcodeproj with:  xcodegen generate
+# (brew install xcodegen)  — then open Punctual.xcodeproj in Xcode 26.
+name: Punctual
+options:
+  bundleIdPrefix: com.punctual
+  deploymentTarget:
+    iOS: "26.0"
+  createIntermediateGroups: true
+
+packages:
+  AlarmCore:
+    path: AlarmCore
+
+# Explicit scheme so the local StoreKit config drives the paywall in the
+# simulator (products load + sandbox purchases work without App Store Connect).
+schemes:
+  Punctual:
+    build:
+      targets:
+        Punctual: all
+    run:
+      config: Debug
+      storeKitConfiguration: Punctual.storekit
+    test:
+      config: Debug
+    archive:
+      config: Release
+
+targets:
+  Punctual:
+    type: application
+    platform: iOS
+    deploymentTarget: "26.0"
+    sources:
+      - path: App
+    dependencies:
+      - package: AlarmCore
+        product: AlarmCore
+      - target: PunctualWidget   # embedded widget extension
+    settings:
+      base:
+        INFOPLIST_FILE: App/Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.punctual.app
+        CODE_SIGN_ENTITLEMENTS: App/Punctual.entitlements
+        # App target uses Swift 5 language mode + targeted concurrency: AlarmKit
+        # (new in iOS 26) doesn't yet expose Sendability guarantees that satisfy
+        # full Swift 6 region isolation. The AlarmCore package stays Swift 6 strict.
+        SWIFT_VERSION: "5.0"
+        SWIFT_STRICT_CONCURRENCY: targeted
+        ENABLE_PREVIEWS: YES
+        GENERATE_INFOPLIST_FILE: NO
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        # Alternate app icons (Pro). Lets setAlternateIconName(_:) use these.
+        ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS: YES
+        ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES: AppIcon-Ocean AppIcon-Forest AppIcon-Grape AppIcon-Sunset AppIcon-Graphite
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: Punctual
+        UILaunchScreen: {}
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: true
+        # AlarmKit authorization prompt copy. NOTE: confirm the exact key name in
+        # your installed iOS 26 SDK (NSAlarmKitUsageDescription in betas).
+        NSAlarmKitUsageDescription: "Punctual uses alarms that ring through silent mode and Focus so you never oversleep."
+        NSCalendarsFullAccessUsageDescription: "Punctual reads your calendar to auto-skip alarms on days with all-day events (holidays, vacation)."
+        NSSupportsLiveActivities: true
+        UIBackgroundModes:
+          - fetch   # BGAppRefreshTask only (no BGProcessingTask → no 'processing')
+        BGTaskSchedulerPermittedIdentifiers:
+          - com.punctual.app.refresh
+
+  PunctualWidget:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "26.0"
+    sources:
+      # Widget UI + bundle + Live Activity
+      - PunctualWidget/NextAlarmWidget.swift
+      - PunctualWidget/AlarmLiveActivity.swift
+      - PunctualWidget/PunctualWidgetBundle.swift
+      # Shared code compiled into both targets (separate modules, no clash)
+      - App/Persistence/AlarmItem.swift
+      - App/Persistence/AlarmStore.swift
+      - App/Scheduling/AlarmScheduler.swift
+      - App/Scheduling/CalendarAutoSkip.swift
+      - App/AlarmKitIntegration/AlarmKitManager.swift
+      - App/Notifications/PreAlertNotificationManager.swift
+      - App/Shared/SharedModelContainer.swift
+      - App/Shared/SkipTodayIntent.swift
+      - App/Shared/PunctualActivityAttributes.swift
+      - App/Shared/BrandColor.swift
+      - App/Shared/WidgetConfigIntent.swift
+    dependencies:
+      - package: AlarmCore
+        product: AlarmCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.punctual.app.widget
+        CODE_SIGN_ENTITLEMENTS: PunctualWidget/PunctualWidget.entitlements
+        SWIFT_VERSION: "5.0"
+        SWIFT_STRICT_CONCURRENCY: targeted
+        GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: PunctualWidget/Info.plist
+    info:
+      path: PunctualWidget/Info.plist
+      properties:
+        CFBundleDisplayName: Punctual
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
