@@ -24,9 +24,12 @@ struct PunctualApp: App {
     @Environment(\.scenePhase) private var scenePhase
 
     init() {
-        // SwiftData (App Group container shared with the widget extension)
+        // SwiftData (App Group container shared with the widget extension).
+        // Use the container's MAIN context — the same one @Query uses — so store
+        // mutations/fetches and the list stay in sync in real time (a separate
+        // ModelContext would lag the hero/“next alarm” until the next refresh).
         let container = SharedModelContainer.make()
-        let context = ModelContext(container)
+        let context = container.mainContext
 
         // Services
         let alarmKit = AlarmKitManager()

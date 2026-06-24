@@ -1,44 +1,58 @@
 import SwiftUI
 import AlarmCore
 
-/// The big hero header: "Next alarm · Tomorrow 08:00 · Rings in 12h 18m".
+/// The hero "Next alarm" card: big ring time, live "Rings in…" countdown, and a
+/// progress ring showing how far through the wait we are.
 struct NextAlarmSummaryView: View {
     @Environment(AlarmStore.self) private var store
     @Environment(ThemeManager.self) private var theme
     let now: Date
+    @State private var pulse = false
 
     var body: some View {
         let upcoming = store.nextUpAlarm(now: now)
-        VStack(alignment: .leading, spacing: 4) {
-            Text("Next alarm")
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.secondary)
+        HStack(alignment: .center, spacing: 16) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("NEXT ALARM")
+                    .font(.caption.weight(.bold)).tracking(1).foregroundStyle(.secondary)
 
-            if let upcoming {
-                // The live countdown IS the hero — the reason this beats Clock.
-                Text(CountdownFormatter.string(until: upcoming.fireDate, from: now))
-                    .font(.system(size: 52, weight: .bold, design: .rounded))
-                    .monospacedDigit()
-                    .foregroundStyle(theme.accentColor)
-                    .contentTransition(.numericText())
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.6)
-                Text(StatusPresenter.shortNext(upcoming.fireDate))
-                    .font(.headline.weight(.medium))
-            } else {
-                Text("Nothing scheduled")
-                    .font(.system(size: 32, weight: .bold, design: .rounded))
-                Text("Add an alarm to see exactly when it'll ring")
-                    .font(.subheadline).foregroundStyle(.secondary)
+                if let upcoming {
+                    timeView(upcoming.fireDate)
+                    HStack(spacing: 4) {
+                        Image(systemName: "timer").font(.caption)
+                        Text("Rings in").foregroundStyle(.secondary)
+                        Text(CountdownFormatter.string(until: upcoming.fireDate, from: now))
+                            .foregroundStyle(theme.accentColor).fontWeight(.semibold)
+                    }
+                    .font(.subheadline)
+                } else {
+                    Text("Nothing scheduled").font(.title.weight(.bold))
+                    Text("Tap + to add an alarm").font(.subheadline).foregroundStyle(.secondary)
+                }
+            }
+            Spacer(minLength: 0)
+            if upcoming != nil {
+                // Decorative brand medallion with a subtle, slow "breathing" pulse.
+                ZStack {
+                    Circle().strokeBorder(theme.accentColor.opacity(0.35), lineWidth: 5)
+                    BrandMark(size: 34, color: theme.accentColor)
+                }
+                .frame(width: 70, height: 70)
+                .scaleEffect(pulse ? 1.06 : 0.94)
+                .opacity(pulse ? 1.0 : 0.6)
+                .onAppear {
+                    guard !pulse else { return } // idempotent: don't stack animations on re-appear
+                    withAnimation(.easeInOut(duration: 1.6).repeatForever(autoreverses: true)) {
+                        pulse = true
+                    }
+                }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(20)
         .background(
-            LinearGradient(
-                colors: [theme.accentColor.opacity(0.22), theme.accentColor.opacity(0.06)],
-                startPoint: .topLeading, endPoint: .bottomTrailing
-            ),
+            LinearGradient(colors: [theme.accentColor.opacity(0.22), theme.accentColor.opacity(0.06)],
+                           startPoint: .topLeading, endPoint: .bottomTrailing),
             in: RoundedRectangle(cornerRadius: Theme.cardRadius + 4, style: .continuous)
         )
         .overlay(
@@ -47,4 +61,21 @@ struct NextAlarmSummaryView: View {
         )
         .shadow(color: theme.accentColor.opacity(0.18), radius: 18, y: 8)
     }
+
+    /// Big "6:30" with a smaller AM/PM suffix (24h locales show just the time).
+    private func timeView(_ date: Date) -> some View {
+        let f = DateFormatter(); f.setLocalizedDateFormatFromTemplate("jmm")
+        let s = f.string(from: date)
+        // Split trailing AM/PM if present.
+        let parts = s.components(separatedBy: " ")
+        return HStack(alignment: .firstTextBaseline, spacing: 4) {
+            Text(parts.first ?? s)
+                .font(.system(size: 52, weight: .bold, design: .rounded)).monospacedDigit()
+            if parts.count > 1 {
+                Text(parts[1]).font(.title3.weight(.bold)).foregroundStyle(.secondary)
+            }
+        }
+        .lineLimit(1).minimumScaleFactor(0.7)
+    }
+
 }

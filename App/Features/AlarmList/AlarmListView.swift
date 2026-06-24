@@ -8,6 +8,7 @@ struct AlarmListView: View {
     @Environment(AlarmStore.self) private var store
     @Environment(BannerCenter.self) private var banners
     @Environment(ProFeatureManager.self) private var pro
+    @Environment(ThemeManager.self) private var theme
     @Query(sort: [SortDescriptor(\AlarmItem.hour), SortDescriptor(\AlarmItem.minute)])
     private var alarms: [AlarmItem]
 
@@ -27,6 +28,7 @@ struct AlarmListView: View {
         banners.show(.skip,
                      title: "Skipped \(NotificationActionHandler.dayPhrase(day, calendar: .current)) — still active",
                      subtitle: "Next alarm: \(next)",
+                     alarmID: alarm.id,
                      undo: { [store] in await store.unskip(alarm, day: day) })
         UINotificationFeedbackGenerator().notificationOccurred(.success)
     }
@@ -43,13 +45,14 @@ struct AlarmListView: View {
             .punctualBackground()
             .navigationTitle("Alarms")
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button { showSettings = true } label: { Image(systemName: "gearshape") }
-                }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button { creatingNew = true } label: { Image(systemName: "plus") }
-                        .accessibilityLabel("Add alarm")
+                    Button { showSettings = true } label: { Image(systemName: "gearshape") }
+                        .accessibilityLabel("Settings")
                 }
+            }
+            // Reachable bottom + (the redesign's signature).
+            .overlay(alignment: .bottom) {
+                if !alarms.isEmpty { addButton }
             }
             .sheet(isPresented: $creatingNew) {
                 AlarmEditorView(mode: .create)
@@ -74,64 +77,44 @@ struct AlarmListView: View {
     private var content: some View {
         // TimelineView keeps every "Rings in …" label live without manual timers.
         TimelineView(.periodic(from: .now, by: 30)) { ctx in
+            let now = ctx.date
             ScrollView {
                 LazyVStack(spacing: Theme.stackSpacing) {
-                    if let banner = banners.current {
-                        ActionBannerView(banner: banner)
-                            .transition(.move(edge: .top).combined(with: .opacity))
-                    }
-
-                    NextAlarmSummaryView(now: ctx.date)
+                    NextAlarmSummaryView(now: now)
                         .padding(.bottom, 4)
 
-                    // Ungrouped alarms first, then each group with a bulk-action header.
-                    ForEach(ungrouped) { alarm in
-                        card(alarm, now: ctx.date)
-                    }
-                    ForEach(groupedNames, id: \.self) { name in
-                        groupHeader(name)
-                        ForEach(alarms.filter { $0.groupName == name }) { alarm in
-                            card(alarm, now: ctx.date)
+                    // All alarms as identical full cards (default order). A
+                    // skip/disable confirmation renders INLINE under its card.
+                    ForEach(alarms) { alarm in
+                        VStack(spacing: Theme.stackSpacing) {
+                            AlarmCardView(alarm: alarm, now: now)
+                                .onTapGesture { editing = alarm }
+                                .contextMenu { cardMenu(alarm) }
+                            if let banner = banners.current, banner.alarmID == alarm.id {
+                                ActionBannerView(banner: banner)
+                                    .transition(.move(edge: .top).combined(with: .opacity))
+                            }
                         }
                     }
                 }
                 .padding(.horizontal)
-                .padding(.bottom, 40)
+                .padding(.bottom, 120) // clear the floating + and its shadow
                 .animation(.snappy, value: banners.current?.id)
             }
         }
     }
 
-    private var ungrouped: [AlarmItem] { alarms.filter { $0.groupName.isEmpty } }
-    private var groupedNames: [String] {
-        Array(Set(alarms.map(\.groupName).filter { !$0.isEmpty })).sorted()
-    }
-
-    private func card(_ alarm: AlarmItem, now: Date) -> some View {
-        AlarmCardView(alarm: alarm, now: now)
-            .onTapGesture { editing = alarm }
-            .contextMenu { cardMenu(alarm) }
-    }
-
-    /// Group section header with bulk actions for every alarm in the group.
-    @ViewBuilder
-    private func groupHeader(_ name: String) -> some View {
-        HStack {
-            Text(name.uppercased())
-                .font(.caption.weight(.bold))
-                .tracking(0.6)
-                .foregroundStyle(.secondary)
-            Spacer()
-            Menu {
-                Button { Task { await store.skipNextInGroup(name) } } label: { Label("Skip next (all)", systemImage: "forward.end") }
-                Button { pausingGroup = GroupRef(name: name) } label: { Label("Pause all…", systemImage: "pause.circle") }
-                Button { Task { await store.setEnabledGroup(name, false) } } label: { Label("Turn all off", systemImage: "bell.slash") }
-                Button { Task { await store.setEnabledGroup(name, true) } } label: { Label("Turn all on", systemImage: "bell") }
-            } label: {
-                Image(systemName: "ellipsis.circle").font(.subheadline).foregroundStyle(.secondary)
-            }
+    private var addButton: some View {
+        Button { creatingNew = true } label: {
+            Image(systemName: "plus")
+                .font(.system(size: 26, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(width: 62, height: 62)
+                .background(theme.accentColor, in: Circle())
+                .shadow(color: theme.accentColor.opacity(0.5), radius: 18, y: 4)
         }
-        .padding(.top, 16).padding(.horizontal, 6).padding(.bottom, 2)
+        .accessibilityLabel("Add alarm")
+        .padding(.bottom, 28)
     }
 
     @ViewBuilder
@@ -143,6 +126,14 @@ struct AlarmListView: View {
         } label: { Label(pro.isAvailable(.vacationPause) ? "Pause…" : "Pause… (Pro)", systemImage: "pause.circle") }
         Button { Task { await skip(alarm) } } label: { Label("Skip next", systemImage: "forward.end") }
         Button { Task { await store.duplicate(alarm) } } label: { Label("Duplicate", systemImage: "plus.square.on.square") }
+        if !alarm.groupName.isEmpty {
+            Menu("Group: \(alarm.groupName)") {
+                Button { Task { await store.skipNextInGroup(alarm.groupName) } } label: { Label("Skip next (all)", systemImage: "forward.end") }
+                Button { pausingGroup = GroupRef(name: alarm.groupName) } label: { Label("Pause all…", systemImage: "pause.circle") }
+                Button { Task { await store.setEnabledGroup(alarm.groupName, false) } } label: { Label("Turn all off", systemImage: "bell.slash") }
+                Button { Task { await store.setEnabledGroup(alarm.groupName, true) } } label: { Label("Turn all on", systemImage: "bell") }
+            }
+        }
         Divider()
         Button(role: .destructive) { Task { await store.delete(alarm) } } label: { Label("Delete", systemImage: "trash") }
     }
@@ -179,17 +170,12 @@ struct ActionBannerView: View {
                 .strokeBorder(tint.opacity(0.35), lineWidth: 1)
         )
         .shadow(color: .black.opacity(0.10), radius: 14, y: 5)
-        .task(id: banner.id) {
-            try? await Task.sleep(for: .seconds(6))
-            banners.dismiss(id: banner.id)
-        }
     }
 
     private var icon: String {
         switch banner.kind {
         case .skip: "checkmark.circle.fill"
         case .disabled: "bell.slash.fill"
-        case .enabled: "bell.fill"
         case .paused: "pause.circle.fill"
         case .neutral: "info.circle.fill"
         }
@@ -197,7 +183,7 @@ struct ActionBannerView: View {
 
     private var tint: Color {
         switch banner.kind {
-        case .skip, .enabled: Theme.skipFg
+        case .skip: Theme.skipFg
         case .disabled, .neutral: .secondary
         case .paused: Theme.pauseFg
         }

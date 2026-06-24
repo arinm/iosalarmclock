@@ -31,13 +31,12 @@ struct AlarmCardView: View {
                     set: { newValue in
                         Task {
                             await store.setEnabled(alarm, newValue)
-                            // Confirm the less-reversible action just as loudly as skip.
-                            if newValue {
-                                banners.show(.enabled, title: "Alarm on")
-                            } else {
+                            // Confirm only the less-reversible "off" (turning on is obvious).
+                            if !newValue {
                                 banners.show(.disabled,
                                              title: "Alarm off — won't ring",
                                              subtitle: "Until you turn it back on",
+                                             alarmID: alarm.id,
                                              undo: { [store] in await store.setEnabled(alarm, true) })
                             }
                         }
@@ -53,8 +52,17 @@ struct AlarmCardView: View {
 
             if shouldShowSkip {
                 Button {
-                    Task { await store.skipNextOccurrence(alarm) }
-                    UINotificationFeedbackGenerator().notificationOccurred(.success)
+                    Task {
+                        if let day = await store.skipNextOccurrence(alarm) {
+                            let next = NotificationActionHandler.describe(alarm.nextOccurrence, calendar: .current)
+                            banners.show(.skip,
+                                         title: "Skipped \(NotificationActionHandler.dayPhrase(day, calendar: .current)) — still active",
+                                         subtitle: "Next alarm: \(next)",
+                                         alarmID: alarm.id,
+                                         undo: { [store] in await store.unskip(alarm, day: day) })
+                        }
+                        UINotificationFeedbackGenerator().notificationOccurred(.success)
+                    }
                 } label: {
                     Label("Skip today", systemImage: "forward.end.fill")
                         .font(.subheadline.weight(.semibold))

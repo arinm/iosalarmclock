@@ -72,6 +72,7 @@ final class NotificationActionHandler: NSObject, @preconcurrency UNUserNotificat
         banners.show(.skip,
                      title: "Skipped \(Self.dayPhrase(day, calendar: calendar)) — still active",
                      subtitle: "Next alarm: \(next)",
+                     alarmID: alarm.id,
                      undo: { [store] in await store.unskip(alarm, day: day) })
     }
 
