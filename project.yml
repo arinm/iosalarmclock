@@ -23,6 +23,9 @@ schemes:
       storeKitConfiguration: Punctual.storekit
     test:
       config: Debug
+      storeKitConfiguration: Punctual.storekit
+      targets:
+        - PunctualUITests
     archive:
       config: Release
 
@@ -44,8 +47,7 @@ targets:
         CODE_SIGN_ENTITLEMENTS: App/Punctual.entitlements
         MARKETING_VERSION: "1.0"
         CURRENT_PROJECT_VERSION: "1"
-        # Signing: set your Apple Developer Team ID here (or set it in Xcode).
-        # DEVELOPMENT_TEAM: ABCDE12345
+        DEVELOPMENT_TEAM: KLRCQTV8AC
         CODE_SIGN_STYLE: Automatic
         # App target uses Swift 5 language mode + targeted concurrency: AlarmKit
         # (new in iOS 26) doesn't yet expose Sendability guarantees that satisfy
@@ -107,6 +109,8 @@ targets:
         CODE_SIGN_ENTITLEMENTS: PunctualWidget/PunctualWidget.entitlements
         MARKETING_VERSION: "1.0"      # must match the app
         CURRENT_PROJECT_VERSION: "1"
+        DEVELOPMENT_TEAM: KLRCQTV8AC
+        CODE_SIGN_STYLE: Automatic
         SWIFT_VERSION: "5.0"
         SWIFT_STRICT_CONCURRENCY: targeted
         GENERATE_INFOPLIST_FILE: NO
@@ -117,3 +121,19 @@ targets:
         CFBundleDisplayName: Punctual
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
+
+  PunctualUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    deploymentTarget: "26.0"
+    sources:
+      - PunctualUITests
+    dependencies:
+      - target: Punctual
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.punctual.app.uitests
+        DEVELOPMENT_TEAM: KLRCQTV8AC
+        SWIFT_VERSION: "5.0"
+        TEST_TARGET_NAME: Punctual
+        GENERATE_INFOPLIST_FILE: "YES"

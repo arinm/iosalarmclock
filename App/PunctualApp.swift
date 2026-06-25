@@ -37,6 +37,10 @@ struct PunctualApp: App {
         let scheduler = AlarmScheduler(alarmKit: alarmKit, preAlerts: preAlerts)
         let store = AlarmStore(context: context, scheduler: scheduler)
 
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("--seed-demo") { store.seedDemoData() }
+        #endif
+
         let banners = BannerCenter()
         let handler = NotificationActionHandler(store: store, banners: banners)
         UNUserNotificationCenter.current().delegate = handler
@@ -68,12 +72,17 @@ struct PunctualApp: App {
                     await store_kit.start()
                 }
                 .onChange(of: store_kit.isPro) { _, newValue in
+                    // Screenshot mode: stay Free so the paywall shows purchase tiers.
+                    if ProcessInfo.processInfo.arguments.contains("--demo-free") { return }
                     pro.isPro = newValue
                     // Only reset Pro themes on a CONFIRMED lapse (entitlements known),
                     // never during the transient false before/while loading.
                     if store_kit.resolved && !newValue { theme.resetToDefault() }
                 }
-                .onChange(of: store_kit.isSubscriber) { _, newValue in pro.isSubscriber = newValue }
+                .onChange(of: store_kit.isSubscriber) { _, newValue in
+                    if ProcessInfo.processInfo.arguments.contains("--demo-free") { return }
+                    pro.isSubscriber = newValue
+                }
                 .onChange(of: store_kit.resolved) { _, newValue in pro.entitlementsResolved = newValue }
                 .tint(theme.accentColor)
                 // Apply appearance directly on the window so it also covers sheets
@@ -132,7 +141,9 @@ struct RootView: View {
     @Environment(PermissionManager.self) private var permissions
 
     var body: some View {
-        if !permissions.hasResolved {
+        if skipOnboarding {
+            AlarmListView()
+        } else if !permissions.hasResolved {
             // Brief neutral splash until the real permission state is known, so we
             // never flash the onboarding screen to users who already granted access.
             LaunchSplashView()
@@ -141,6 +152,14 @@ struct RootView: View {
         } else {
             AlarmListView()
         }
+    }
+
+    private var skipOnboarding: Bool {
+        #if DEBUG
+        ProcessInfo.processInfo.arguments.contains("--skip-onboarding")
+        #else
+        false
+        #endif
     }
 }
 

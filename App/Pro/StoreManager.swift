@@ -63,6 +63,12 @@ final class StoreManager {
     }
 
     func refreshEntitlements() async {
+        #if DEBUG
+        // Screenshot mode: present as Free so the paywall shows purchase tiers.
+        if ProcessInfo.processInfo.arguments.contains("--demo-free") {
+            isPro = false; isSubscriber = false; resolved = true; return
+        }
+        #endif
         var pro = false
         var sub = false
         for await result in Transaction.currentEntitlements {

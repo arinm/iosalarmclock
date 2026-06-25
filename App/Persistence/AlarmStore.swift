@@ -175,4 +175,21 @@ final class AlarmStore {
         do { try context.save() }
         catch { print("AlarmStore save failed: \(error)") }
     }
+
+    #if DEBUG
+    /// Replace all alarms with a curated set for App Store screenshots
+    /// (triggered by the `--seed-demo` launch argument; never ships in release).
+    func seedDemoData() {
+        for a in allAlarms() { context.delete(a) }
+        func make(_ h: Int, _ m: Int, _ label: String, _ days: Set<Weekday>) -> AlarmItem {
+            AlarmItem(hour: h, minute: m, label: label, isEnabled: true, mode: .recurring,
+                      repeatWeekdays: days, preAlert: PreAlertSettings(isEnabled: true, minutesBefore: 15))
+        }
+        context.insert(make(6, 30, "Wake up", Weekday.weekdays))
+        context.insert(make(7, 15, "Gym", [.monday, .wednesday, .friday]))
+        context.insert(make(8, 0, "Meds", Set(Weekday.allCases)))
+        context.insert(make(22, 30, "Wind down", Weekday.weekdays))
+        save()
+    }
+    #endif
 }
