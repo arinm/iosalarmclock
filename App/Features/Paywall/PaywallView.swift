@@ -125,8 +125,8 @@ struct PaywallView: View {
             Button("Restore Purchases") { Task { await storeKit.restore() } }
                 .font(.subheadline)
             HStack(spacing: 16) {
-                Link("Terms", destination: URL(string: "https://punctual.app/terms")!)
-                Link("Privacy", destination: URL(string: "https://punctual.app/privacy")!)
+                Link("Terms", destination: URL(string: "https://arinm.github.io/iosalarmclock/terms.html")!)
+                Link("Privacy", destination: URL(string: "https://arinm.github.io/iosalarmclock/privacy.html")!)
             }
             .font(.caption2).foregroundStyle(.secondary)
         }
