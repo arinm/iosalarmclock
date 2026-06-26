@@ -72,15 +72,19 @@ struct PunctualApp: App {
                     await store_kit.start()
                 }
                 .onChange(of: store_kit.isPro) { _, newValue in
+                    #if DEBUG
                     // Screenshot mode: stay Free so the paywall shows purchase tiers.
                     if ProcessInfo.processInfo.arguments.contains("--demo-free") { return }
+                    #endif
                     pro.isPro = newValue
                     // Only reset Pro themes on a CONFIRMED lapse (entitlements known),
                     // never during the transient false before/while loading.
                     if store_kit.resolved && !newValue { theme.resetToDefault() }
                 }
                 .onChange(of: store_kit.isSubscriber) { _, newValue in
+                    #if DEBUG
                     if ProcessInfo.processInfo.arguments.contains("--demo-free") { return }
+                    #endif
                     pro.isSubscriber = newValue
                 }
                 .onChange(of: store_kit.resolved) { _, newValue in pro.entitlementsResolved = newValue }

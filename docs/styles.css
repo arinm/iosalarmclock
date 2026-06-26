@@ -50,6 +50,10 @@ section{padding:56px 0;border-top:1px solid var(--line)}
 .feature .ico{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;
   background:rgba(255,154,115,.14);color:var(--accent);font-size:20px;margin-bottom:14px}
 .feature h3{font-size:1.12rem;margin-bottom:.3em}
+.ftag{font-size:.6rem;font-weight:800;letter-spacing:.04em;color:var(--accent);
+  border:1px solid var(--accent);border-radius:999px;padding:1px 7px;margin-left:8px;vertical-align:middle}
+.btn.disabled{opacity:.75;cursor:default}
+.btn.disabled:hover{background:var(--accent)}
 .feature p{margin:0;font-size:.96rem}
 
 .split{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center}
