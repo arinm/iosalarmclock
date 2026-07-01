@@ -1,9 +1,15 @@
 import Foundation
+import OSLog
 import AlarmCore
 #if canImport(AlarmKit)
 import AlarmKit
 import AppIntents
 #endif
+
+/// Diagnostics — view in Console.app or Xcode's console (subsystem
+/// "com.punctual.app", category "AlarmKit"). Helps confirm alarms are actually
+/// scheduled, especially when validating firing on a real device.
+private let alarmLog = Logger(subsystem: "com.punctual.app", category: "AlarmKit")
 
 /// Abstraction over AlarmKit so the scheduler is testable and so the app still
 /// builds if compiled without the framework. The live implementation is
@@ -67,12 +73,14 @@ final class AlarmKitManager: AlarmKitManaging {
         #if canImport(AlarmKit)
         do {
             let state = try await AlarmManager.shared.requestAuthorization()
+            alarmLog.notice("Authorization requested → \(String(describing: state), privacy: .public)")
             return state == .authorized
         } catch {
-            print("AlarmKit authorization error: \(error)")
+            alarmLog.error("Authorization error: \(error.localizedDescription, privacy: .public)")
             return false
         }
         #else
+        alarmLog.notice("AlarmKit unavailable in this SDK")
         return false
         #endif
     }
@@ -90,18 +98,24 @@ final class AlarmKitManager: AlarmKitManaging {
     }
 
     func scheduleOccurrences(_ dates: [Date], for item: AlarmItem) async {
+        let name = item.label.isEmpty ? "Alarm" : item.label
         #if canImport(AlarmKit)
+        let auth = AlarmManager.shared.authorizationState
+        if auth != .authorized {
+            alarmLog.error("Not scheduling '\(name, privacy: .public)' — authorization is \(String(describing: auth), privacy: .public)")
+        }
         for date in dates {
             let id = occurrenceID(item: item, date: date)
             do {
                 let config = makeConfiguration(for: item, occurrence: date)
                 try await AlarmManager.shared.schedule(id: id, configuration: config)
+                alarmLog.notice("Scheduled '\(name, privacy: .public)' id \(id, privacy: .public) @ \(date, privacy: .public)")
             } catch {
-                print("AlarmKit schedule failed for \(item.id) @ \(date): \(error)")
+                alarmLog.error("Schedule FAILED '\(name, privacy: .public)' @ \(date, privacy: .public): \(error.localizedDescription, privacy: .public)")
             }
         }
         #else
-        print("[AlarmKit unavailable] would schedule \(dates.count) alarm(s) for \(item.id)")
+        alarmLog.notice("[AlarmKit unavailable] would schedule \(dates.count) alarm(s)")
         #endif
     }
 
@@ -113,8 +127,9 @@ final class AlarmKitManager: AlarmKitManaging {
         for date in dates {
             try? AlarmManager.shared.cancel(id: occurrenceID(item: item, date: date))
         }
+        if !dates.isEmpty { alarmLog.notice("Cancelled \(dates.count) armed occurrence(s)") }
         #else
-        print("[AlarmKit unavailable] would cancel \(dates.count) alarm(s) for \(item.id)")
+        alarmLog.notice("[AlarmKit unavailable] would cancel \(dates.count) alarm(s)")
         #endif
     }
 
@@ -144,8 +159,9 @@ final class AlarmKitManager: AlarmKitManaging {
 
         let attributes = AlarmAttributes(
             presentation: presentation,
+            // Brand-tinted (matches the user's chosen accent) — not the system blue.
             metadata: PunctualMetadata(alarmItemID: item.id, label: title, occurrence: occurrence),
-            tintColor: .accentColor
+            tintColor: BrandColor.currentAccent()
         )
 
         // Snooze countdown duration (post-alert) drives custom snooze length.
