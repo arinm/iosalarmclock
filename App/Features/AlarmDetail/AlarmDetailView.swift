@@ -7,6 +7,7 @@ struct AlarmDetailView: View {
     @Bindable var alarm: AlarmItem
     @Environment(AlarmStore.self) private var store
     @Environment(ProFeatureManager.self) private var pro
+    @Environment(BannerCenter.self) private var banners
     @Environment(\.dismiss) private var dismiss
 
     @State private var editing = false
@@ -30,7 +31,9 @@ struct AlarmDetailView: View {
                 ToolbarItem(placement: .topBarLeading) { Button("Done") { dismiss() } }
             }
             .sheet(isPresented: $editing) { AlarmEditorView(mode: .edit(alarm)) }
-            .sheet(isPresented: $pausing) { PauseRangeSheet(alarm: alarm) }
+            // No global banner from here — the pause appears instantly as a row
+            // in `pauseSection` below (with "Clear all pauses" as the undo).
+            .sheet(isPresented: $pausing) { PauseRangeSheet(alarm: alarm, showsBanner: false) }
             .sheet(isPresented: $showPaywall) { PaywallView() }
         }
     }
@@ -42,8 +45,17 @@ struct AlarmDetailView: View {
                 Text(presented.text).font(.headline).foregroundStyle(presented.fg)
                 if case .scheduled(let next) = alarm.status(), Calendar.current.isDateInToday(next) {
                     Button {
-                        Task { await store.skipNextOccurrence(alarm) }
-                        UINotificationFeedbackGenerator().notificationOccurred(.success)
+                        Task {
+                            guard let day = await store.skipNextOccurrence(alarm) else { return }
+                            let next = NotificationActionHandler.describe(alarm.nextOccurrence, calendar: .current)
+                            banners.show(.skip,
+                                         title: "Skipped \(NotificationActionHandler.dayPhrase(day, calendar: .current)) — still active",
+                                         subtitle: "Next alarm: \(next)",
+                                         alarmID: alarm.id,
+                                         undo: { [store] in await store.unskip(alarm, day: day) })
+                            UINotificationFeedbackGenerator().notificationOccurred(.success)
+                            dismiss()
+                        }
                     } label: {
                         Label("Skip today", systemImage: "forward.end.fill").frame(maxWidth: .infinity)
                     }
@@ -105,7 +117,6 @@ struct AlarmDetailView: View {
         Section("Snooze") {
             if alarm.snooze.isEnabled {
                 LabeledContent("Duration", value: "\(alarm.snooze.durationMinutes) min")
-                LabeledContent("Repeats", value: "\(alarm.snooze.maxCount)×")
             } else {
                 Text("Off").foregroundStyle(.secondary)
             }

@@ -204,9 +204,11 @@ private struct WeekdayPillRow: View {
     private let ordered: [Weekday] = [.monday, .tuesday, .wednesday, .thursday, .friday, .saturday, .sunday]
 
     var body: some View {
+        // Empty set == every day (mirrors the in-app card): light all pills.
+        let effective = selected.isEmpty ? ordered : selected
         HStack(spacing: pill < 18 ? 3 : 4) {
             ForEach(ordered, id: \.self) { day in
-                let on = selected.contains(day)
+                let on = effective.contains(day)
                 Text(day.minimalLabel)
                     .font(.system(size: pill * 0.55, weight: .bold))
                     .frame(width: pill, height: pill)

@@ -46,11 +46,21 @@ struct RepeatDayPicker: View {
 /// Pause-for-a-range sheet used from the editor (and surfaced as a Pro feature).
 struct PauseRangeSheet: View {
     @Bindable var alarm: AlarmItem
+    /// The global confirmation banner renders inline under the alarm's card in
+    /// the LIST — from the editor/detail entry points a parent sheet still
+    /// covers the list, so the banner (and its Undo) would expire unseen. Those
+    /// surfaces pass `false` and show the new pause in their own pause rows.
+    var showsBanner = true
     @Environment(AlarmStore.self) private var store
+    @Environment(BannerCenter.self) private var banners
     @Environment(\.dismiss) private var dismiss
 
     @State private var start: Date = .now
     @State private var end: Date = Calendar.current.date(byAdding: .day, value: 7, to: .now) ?? .now
+
+    static let dateFmt: DateFormatter = {
+        let f = DateFormatter(); f.dateStyle = .medium; f.timeStyle = .none; return f
+    }()
 
     var body: some View {
         NavigationStack {
@@ -72,7 +82,18 @@ struct PauseRangeSheet: View {
                             start: DateOnly(date: start, calendar: .current),
                             end: DateOnly(date: end, calendar: .current)
                         )
-                        Task { await store.pause(alarm, range: range) }
+                        let s = start, e = end
+                        let showsBanner = showsBanner
+                        Task {
+                            await store.pause(alarm, range: range)
+                            if showsBanner {
+                                banners.show(.paused,
+                                             title: "Paused until \(Self.dateFmt.string(from: e))",
+                                             subtitle: "From \(Self.dateFmt.string(from: s)) — then resumes automatically",
+                                             alarmID: alarm.id,
+                                             undo: { [store] in await store.unpause(alarm, range: range) })
+                            }
+                        }
                         dismiss()
                     }.fontWeight(.semibold)
                 }

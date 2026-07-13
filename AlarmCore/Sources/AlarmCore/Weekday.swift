@@ -33,10 +33,13 @@ public enum Weekday: Int, CaseIterable, Codable, Sendable, Comparable {
 }
 
 public extension Set where Element == Weekday {
-    /// Human summary for a set of repeat days: "Every day", "Weekdays",
-    /// "Weekends", "Mon Wed Fri", or "Once".
+    /// Human summary for a set of repeat days: "Every day" (all seven **or**
+    /// empty — the engine treats an empty set as daily), "Weekdays",
+    /// "Weekends", or "Mon Wed Fri".
     var humanSummary: String {
-        if isEmpty { return "Once" }
+        // No weekdays selected == the engine fires every day (see
+        // NextOccurrenceCalculator.nextRecurring), so say so honestly.
+        if isEmpty { return "Every day" }
         if count == 7 { return "Every day" }
         if self == Weekday.weekdays { return "Weekdays" }
         if self == Weekday.weekend { return "Weekends" }

@@ -2,6 +2,7 @@ import SwiftUI
 import SwiftData
 import UserNotifications
 import UIKit
+import AlarmCore
 
 /// App entry. Wires the dependency graph (SwiftData ➜ store ➜ scheduler ➜
 /// AlarmKit + notifications), drives onboarding, and re-arms schedules whenever
@@ -11,6 +12,7 @@ import UIKit
 struct PunctualApp: App {
     @State private var container: ModelContainer
     @State private var store: AlarmStore
+    @State private var alarmKit: AlarmKitManager
     @State private var permissions: PermissionManager
     @State private var pro = ProFeatureManager()
     @State private var store_kit = StoreManager()
@@ -51,6 +53,7 @@ struct PunctualApp: App {
 
         _container = State(initialValue: container)
         _store = State(initialValue: store)
+        _alarmKit = State(initialValue: alarmKit)
         _permissions = State(initialValue: PermissionManager(alarmKit: alarmKit))
         _banners = State(initialValue: banners)
         _actionHandler = State(initialValue: handler)
@@ -70,6 +73,14 @@ struct PunctualApp: App {
                 .task {
                     await permissions.refresh()
                     await store_kit.start()
+                    // Re-arm the look-ahead window when AlarmKit reports a
+                    // fire/stop/cancel while the app is alive (complements the
+                    // foreground re-arm). The live id set lets the scheduler heal
+                    // occurrences cancelled outside the app.
+                    alarmKit.observeAlarmUpdates { [store] liveIDs in
+                        await store.refreshAllSchedules(liveAlarmIDs: liveIDs)
+                        refreshLiveActivity()
+                    }
                 }
                 .onChange(of: store_kit.isPro) { _, newValue in
                     #if DEBUG
@@ -133,7 +144,9 @@ extension PunctualApp {
     func refreshLiveActivity() {
         if let up = store.nextUpAlarm() {
             let skipped: Bool = { if case .skippedToday = up.alarm.status() { return true }; return false }()
-            liveActivity.refresh(soonest: (up.alarm.id, up.fireDate, up.alarm.label, skipped))
+            let day = DateOnly(date: up.fireDate, calendar: .current)
+            let phrase = NotificationActionHandler.dayPhrase(day, calendar: .current)
+            liveActivity.refresh(soonest: (up.alarm.id, up.fireDate, up.alarm.label, skipped, phrase))
         } else {
             liveActivity.refresh(soonest: nil)
         }

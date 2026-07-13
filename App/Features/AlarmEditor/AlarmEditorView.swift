@@ -9,6 +9,7 @@ struct AlarmEditorView: View {
 
     @Environment(AlarmStore.self) private var store
     @Environment(ProFeatureManager.self) private var pro
+    @Environment(PermissionManager.self) private var permissions
     @Environment(\.dismiss) private var dismiss
 
     let mode: Mode
@@ -90,20 +91,23 @@ struct AlarmEditorView: View {
                 }
                 preAlertSection
                 snoozeSection
-                Section("Sound") {
+                Section {
                     if pro.isAvailable(.customSounds) {
                         Button { showSoundPicker = true } label: {
                             HStack {
-                                Label("Alarm sound", systemImage: "speaker.wave.2")
+                                Label("Sound", systemImage: "speaker.wave.2")
                                 Spacer()
                                 Text(soundDisplay).foregroundStyle(.secondary)
                             }
                         }
                         .tint(.primary)
                     } else {
-                        ProLockRow(title: "Alarm sound", value: "Default") { showPaywall = true }
+                        ProLockRow(title: "Sound", value: "Default") { showPaywall = true }
                     }
-                    Toggle("Vibration & haptics", isOn: $vibration)
+                } header: {
+                    Text("Pre-alert sound")
+                } footer: {
+                    Text("Plays with the heads-up notification. The alarm itself uses the system alarm sound.")
                 }
 
                 Section {
@@ -138,6 +142,13 @@ struct AlarmEditorView: View {
                                 }
                             }
                         }
+                        // Live feedback: a pause added via the sheet above shows
+                        // up here immediately (the item is the live model).
+                        ForEach(Array(item.pausedDateRanges.enumerated()), id: \.offset) { _, range in
+                            Label("Paused \(StatusPresenter.dayLabel(range.start)) → \(StatusPresenter.dayLabel(range.end))",
+                                  systemImage: "pause.circle")
+                                .foregroundStyle(.secondary)
+                        }
                         if !item.pausedDateRanges.isEmpty {
                             Button(role: .destructive) { Task { await store.clearPauses(item) } } label: {
                                 Label("Clear pauses", systemImage: "xmark.circle")
@@ -164,7 +175,9 @@ struct AlarmEditorView: View {
                 }
             }
             .sheet(isPresented: $showPause) {
-                if case .edit(let item) = mode { PauseRangeSheet(alarm: item) }
+                // No global banner — the pause appears instantly as a row in the
+                // section below (with "Clear pauses" as the undo).
+                if case .edit(let item) = mode { PauseRangeSheet(alarm: item, showsBanner: false) }
             }
             .sheet(isPresented: $showPaywall) { PaywallView() }
             .sheet(isPresented: $showSoundPicker) { SoundPickerView(soundName: $soundName) }
@@ -200,8 +213,8 @@ struct AlarmEditorView: View {
             if alarmMode == .recurring {
                 RepeatDayPicker(selection: $weekdays)
                 if weekdays.isEmpty {
-                    Label("No days selected — rings once at the next \(timeOnlyString).",
-                          systemImage: "1.circle")
+                    Label("No days selected — rings every day at \(timeOnlyString).",
+                          systemImage: "repeat")
                         .font(.caption).foregroundStyle(.secondary)
                 } else {
                     Text(weekdays.humanSummary).font(.caption).foregroundStyle(.secondary)
@@ -216,6 +229,11 @@ struct AlarmEditorView: View {
         Section {
             Toggle("Pre-alert", isOn: $preAlert.isEnabled)
             if preAlert.isEnabled {
+                if permissions.hasResolved && permissions.notificationState == .denied {
+                    Label("Notifications are off — the heads-up won't show. The alarm still rings.",
+                          systemImage: "bell.badge.slash")
+                        .font(.caption).foregroundStyle(.orange)
+                }
                 if pro.isPro {
                     Stepper("\(preAlert.minutesBefore) min before",
                             value: $preAlert.minutesBefore, in: 1...120, step: 5)
@@ -261,11 +279,9 @@ struct AlarmEditorView: View {
                 if pro.isAvailable(.advancedSnooze) {
                     Stepper("Duration: \(snooze.durationMinutes) min",
                             value: $snooze.durationMinutes, in: 1...60)
-                    Stepper("Repeat up to \(snooze.maxCount)×",
-                            value: $snooze.maxCount, in: 0...10)
                 } else {
-                    // Free: basic snooze at the default; advanced rules are Pro.
-                    ProLockRow(title: "Duration & repeats", value: "9 min · 3×") { showPaywall = true }
+                    // Free: basic snooze at the default; a custom duration is Pro.
+                    ProLockRow(title: "Snooze duration", value: "9 min") { showPaywall = true }
                 }
             }
         }

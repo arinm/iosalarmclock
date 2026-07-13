@@ -20,11 +20,19 @@ protocol AlarmKitManaging {
     func requestAuthorization() async -> Bool
     func authorizationState() async -> AlarmAuthState
     /// Arm one concrete AlarmKit alarm per supplied fire date for this item.
-    func scheduleOccurrences(_ dates: [Date], for item: AlarmItem) async
+    /// Returns the dates that were ACTUALLY armed (a `schedule()` throw — e.g.
+    /// authorization denied — drops its date), so callers never persist an
+    /// occurrence the system doesn't hold.
+    @discardableResult
+    func scheduleOccurrences(_ dates: [Date], for item: AlarmItem) async -> [Date]
     /// Cancel the AlarmKit alarms previously armed for these exact fire dates.
     /// Ids are derived deterministically from (item.id, date), so this works
     /// across processes (widget/Siri) and across app launches.
     func cancelOccurrences(_ dates: [Date], for item: AlarmItem) async
+    /// The ids of every alarm the system holds for this app right now, or `nil`
+    /// when the truth can't be read. Lets the scheduler verify persisted state
+    /// against reality instead of trusting it.
+    func liveAlarmIDs() -> Set<UUID>?
 }
 
 enum AlarmAuthState: Sendable { case notDetermined, authorized, denied }
@@ -69,6 +77,39 @@ final class AlarmKitManager: AlarmKitManaging {
         Self.occurrenceID(item: item.id, date: date)
     }
 
+    /// Observe AlarmKit state changes (an alarm fired, was stopped, snoozed, or
+    /// cancelled) and re-arm our look-ahead window in response, so a fired
+    /// one-shot is promptly replaced while the app is alive. This complements the
+    /// foreground re-arm and the pre-armed window; it is best-effort (only runs
+    /// while the process lives). Never throws — a missing/renamed symbol is caught
+    /// at compile time inside this file only.
+    /// Tracks the single live subscription so repeated `.task` runs (scene
+    /// reconnects, multi-scene) can't stack duplicate infinite observers.
+    private var observerTask: Task<Void, Never>?
+
+    /// `onChange` receives the authoritative set of alarm ids the system currently
+    /// holds, so the scheduler can detect externally-cancelled occurrences (present
+    /// in our persisted state but missing here) and re-arm them.
+    ///
+    /// The emitted stream element is used only as a WAKE signal — the id set is
+    /// re-read at processing time (`liveAlarmIDs()`), because our own multi-step
+    /// writes emit mid-write snapshots that would spuriously look like drift. A
+    /// short debounce also gives a sibling process (widget skip intent) time to
+    /// finish its own cancel→save→re-arm sequence before we reconcile.
+    func observeAlarmUpdates(_ onChange: @escaping @MainActor (Set<UUID>) async -> Void) {
+        guard observerTask == nil else { return }
+        #if canImport(AlarmKit)
+        observerTask = Task { @MainActor in
+            for await _ in AlarmManager.shared.alarmUpdates {
+                try? await Task.sleep(for: .seconds(1)) // settle: skip mid-write snapshots
+                guard let liveIDs = liveAlarmIDs() else { continue }
+                alarmLog.notice("AlarmKit update — \(liveIDs.count, privacy: .public) alarm(s) live; reconciling window")
+                await onChange(liveIDs)
+            }
+        }
+        #endif
+    }
+
     func requestAuthorization() async -> Bool {
         #if canImport(AlarmKit)
         do {
@@ -97,25 +138,41 @@ final class AlarmKitManager: AlarmKitManaging {
         #endif
     }
 
-    func scheduleOccurrences(_ dates: [Date], for item: AlarmItem) async {
+    @discardableResult
+    func scheduleOccurrences(_ dates: [Date], for item: AlarmItem) async -> [Date] {
         let name = item.label.isEmpty ? "Alarm" : item.label
         #if canImport(AlarmKit)
         let auth = AlarmManager.shared.authorizationState
         if auth != .authorized {
             alarmLog.error("Not scheduling '\(name, privacy: .public)' — authorization is \(String(describing: auth), privacy: .public)")
         }
+        var armed: [Date] = []
         for date in dates {
             let id = occurrenceID(item: item, date: date)
             do {
                 let config = makeConfiguration(for: item, occurrence: date)
                 try await AlarmManager.shared.schedule(id: id, configuration: config)
+                armed.append(date)
                 alarmLog.notice("Scheduled '\(name, privacy: .public)' id \(id, privacy: .public) @ \(date, privacy: .public)")
             } catch {
                 alarmLog.error("Schedule FAILED '\(name, privacy: .public)' @ \(date, privacy: .public): \(error.localizedDescription, privacy: .public)")
             }
         }
+        return armed
         #else
         alarmLog.notice("[AlarmKit unavailable] would schedule \(dates.count) alarm(s)")
+        return []
+        #endif
+    }
+
+    /// Authoritative read of what the system holds right now. `nil` when the
+    /// list can't be read (no AlarmKit, or the query throws).
+    func liveAlarmIDs() -> Set<UUID>? {
+        #if canImport(AlarmKit)
+        guard let alarms = try? AlarmManager.shared.alarms else { return nil }
+        return Set(alarms.map(\.id))
+        #else
+        return nil
         #endif
     }
 

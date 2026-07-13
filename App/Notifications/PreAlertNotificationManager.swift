@@ -40,14 +40,24 @@ final class PreAlertNotificationManager {
         center.setNotificationCategories([category])
     }
 
-    func schedulePreAlert(for item: AlarmItem, fireDate: Date, calendar: Calendar) async {
+    /// Arm pre-alerts for the whole look-ahead window, so occurrences reached
+    /// without reopening the app still get their heads-up.
+    ///
+    /// Budget: iOS keeps at most 64 pending local notifications app-wide, so we
+    /// spend carefully — every offset (main + Pro extras) for the FIRST
+    /// occurrence, main offset only for the rest. A 7-deep window costs ~7-10
+    /// requests per alarm instead of up to 28.
+    func schedulePreAlerts(for item: AlarmItem, fireDates: [Date], calendar: Calendar) async {
         await cancelPreAlert(for: item) // fully await cancel so it can't remove the new requests
-        guard item.preAlert.isEnabled else { return }
+        guard item.preAlert.isEnabled, let first = fireDates.first else { return }
 
         // Main offset + any Pro "additional" offsets, de-duplicated & sorted.
         let offsets = Set([item.preAlert.minutesBefore] + item.additionalPreAlertMinutes).sorted(by: >)
         for minutes in offsets {
-            scheduleOne(for: item, fireDate: fireDate, minutesBefore: minutes, calendar: calendar)
+            scheduleOne(for: item, fireDate: first, minutesBefore: minutes, calendar: calendar)
+        }
+        for fireDate in fireDates.dropFirst() {
+            scheduleOne(for: item, fireDate: fireDate, minutesBefore: item.preAlert.minutesBefore, calendar: calendar)
         }
     }
 
@@ -78,7 +88,10 @@ final class PreAlertNotificationManager {
 
         let comps = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: preAlertDate)
         let trigger = UNCalendarNotificationTrigger(dateMatching: comps, repeats: false)
-        let request = UNNotificationRequest(identifier: requestID(for: item, minutes: minutesBefore), content: content, trigger: trigger)
+        let request = UNNotificationRequest(
+            identifier: requestID(for: item, minutes: minutesBefore, occurrence: fireDate),
+            content: content, trigger: trigger
+        )
         center.add(request)
     }
 
@@ -91,8 +104,11 @@ final class PreAlertNotificationManager {
         if !ids.isEmpty { center.removePendingNotificationRequests(withIdentifiers: ids) }
     }
 
-    private func requestID(for item: AlarmItem, minutes: Int) -> String {
-        "prealert-\(item.id.uuidString)-\(minutes)"
+    /// Unique per (alarm, offset, occurrence) — the window arms several dates at
+    /// the same offset, and identical ids would silently replace one another.
+    /// Keeps the `prealert-<uuid>` prefix that `cancelPreAlert` matches on.
+    private func requestID(for item: AlarmItem, minutes: Int, occurrence: Date) -> String {
+        "prealert-\(item.id.uuidString)-\(minutes)-\(Int(occurrence.timeIntervalSince1970))"
     }
 
     private static let timeFormatter: DateFormatter = {

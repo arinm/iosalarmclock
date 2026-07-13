@@ -15,7 +15,7 @@ final class LiveActivityManager {
 
     /// Reconcile live activities with the soonest alarm. Pass `nil` if there is
     /// no upcoming alarm.
-    func refresh(soonest: (id: UUID, fireDate: Date, label: String, skippedToday: Bool)?) {
+    func refresh(soonest: (id: UUID, fireDate: Date, label: String, skippedToday: Bool, dayPhrase: String)?) {
         guard ActivityAuthorizationInfo().areActivitiesEnabled, !isReconciling else { return }
         isReconciling = true
 
@@ -34,7 +34,8 @@ final class LiveActivityManager {
             guard inWindow, let soonest else { return }
 
             let state = PunctualActivityAttributes.ContentState(
-                fireDate: soonest.fireDate, label: soonest.label, skippedToday: soonest.skippedToday
+                fireDate: soonest.fireDate, label: soonest.label,
+                skippedToday: soonest.skippedToday, dayPhrase: soonest.dayPhrase
             )
             let content = ActivityContent(state: state, staleDate: soonest.fireDate)
 

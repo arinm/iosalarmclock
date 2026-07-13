@@ -26,8 +26,14 @@ struct NextAlarmSummaryView: View {
                     }
                     .font(.subheadline)
                 } else {
-                    Text("Nothing scheduled").font(.title.weight(.bold))
-                    Text("Tap + to add an alarm").font(.subheadline).foregroundStyle(.secondary)
+                    // This view only renders when alarms EXIST, so "nothing
+                    // upcoming" means they're all off — or enabled but with no
+                    // future fire (completed one-time, paused, skipped).
+                    let hasEnabled = store.allAlarms().contains { $0.isEnabled }
+                    Text(hasEnabled ? "No upcoming alarms" : "All alarms are off")
+                        .font(.title.weight(.bold))
+                    Text(hasEnabled ? "They've already rung, or are paused." : "Turn one on to see it here.")
+                        .font(.subheadline).foregroundStyle(.secondary)
                 }
             }
             Spacer(minLength: 0)

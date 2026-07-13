@@ -9,6 +9,7 @@ struct AlarmListView: View {
     @Environment(BannerCenter.self) private var banners
     @Environment(ProFeatureManager.self) private var pro
     @Environment(ThemeManager.self) private var theme
+    @Environment(PermissionManager.self) private var permissions
     @Query(sort: [SortDescriptor(\AlarmItem.hour), SortDescriptor(\AlarmItem.minute)])
     private var alarms: [AlarmItem]
 
@@ -37,7 +38,11 @@ struct AlarmListView: View {
         NavigationStack {
             Group {
                 if alarms.isEmpty {
-                    EmptyAlarmsView { creatingNew = true }
+                    VStack(spacing: Theme.stackSpacing) {
+                        permissionBanner
+                        EmptyAlarmsView { creatingNew = true }
+                    }
+                    .padding(.horizontal)
                 } else {
                     content
                 }
@@ -80,6 +85,7 @@ struct AlarmListView: View {
             let now = ctx.date
             ScrollView {
                 LazyVStack(spacing: Theme.stackSpacing) {
+                    permissionBanner
                     NextAlarmSummaryView(now: now)
                         .padding(.bottom, 4)
 
@@ -101,6 +107,44 @@ struct AlarmListView: View {
                 .padding(.bottom, 120) // clear the floating + and its shadow
                 .animation(.snappy, value: banners.current?.id)
             }
+        }
+    }
+
+    /// Persistent warning when AlarmKit permission is denied — otherwise alarms
+    /// silently never ring, the worst possible failure for an alarm app. Only
+    /// shown once permissions are resolved and actually denied (notDetermined is
+    /// handled by onboarding).
+    @ViewBuilder
+    private var permissionBanner: some View {
+        if permissions.hasResolved && permissions.alarmKitState == .denied {
+            Button {
+                if let url = URL(string: UIApplication.openSettingsURLString) {
+                    UIApplication.shared.open(url)
+                }
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange)
+                        .font(.title3)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Alarms can't ring").font(.subheadline.weight(.semibold))
+                        Text("Alarm access is off. Tap to turn it on in Settings.")
+                            .font(.caption).foregroundStyle(.secondary)
+                            .multilineTextAlignment(.leading)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right").font(.footnote).foregroundStyle(.tertiary)
+                }
+                .padding(16)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: Theme.cardRadius, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: Theme.cardRadius, style: .continuous)
+                        .strokeBorder(.orange.opacity(0.4), lineWidth: 1)
+                )
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint("Opens Settings to enable alarm permission")
         }
     }
 
@@ -197,6 +241,7 @@ struct GroupRef: Identifiable { let id = UUID(); let name: String }
 struct GroupPauseSheet: View {
     let groupName: String
     @Environment(AlarmStore.self) private var store
+    @Environment(BannerCenter.self) private var banners
     @Environment(\.dismiss) private var dismiss
     @State private var start: Date = .now
     @State private var end: Date = Calendar.current.date(byAdding: .day, value: 7, to: .now) ?? .now
@@ -221,7 +266,16 @@ struct GroupPauseSheet: View {
                             start: DateOnly(date: start, calendar: .current),
                             end: DateOnly(date: end, calendar: .current)
                         )
-                        Task { await store.pauseGroup(groupName, range: range) }
+                        let e = end
+                        let anchor = store.alarms(inGroup: groupName).first?.id
+                        Task {
+                            await store.pauseGroup(groupName, range: range)
+                            banners.show(.paused,
+                                         title: "Paused “\(groupName)” until \(PauseRangeSheet.dateFmt.string(from: e))",
+                                         subtitle: "Every alarm in the group — then resumes automatically",
+                                         alarmID: anchor,
+                                         undo: { [store] in await store.unpauseGroup(groupName, range: range) })
+                        }
                         dismiss()
                     }.fontWeight(.semibold)
                 }

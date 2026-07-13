@@ -46,7 +46,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.punctual.app
         CODE_SIGN_ENTITLEMENTS: App/Punctual.entitlements
         MARKETING_VERSION: "1.0"
-        CURRENT_PROJECT_VERSION: "1"
+        CURRENT_PROJECT_VERSION: "2"
         DEVELOPMENT_TEAM: KLRCQTV8AC
         CODE_SIGN_STYLE: Automatic
         # App target uses Swift 5 language mode + targeted concurrency: AlarmKit
@@ -84,6 +84,8 @@ targets:
     platform: iOS
     deploymentTarget: "26.0"
     sources:
+      # Privacy manifest (required-reason APIs, no tracking)
+      - PunctualWidget/PrivacyInfo.xcprivacy
       # Widget UI + bundle + Live Activity
       - PunctualWidget/NextAlarmWidget.swift
       - PunctualWidget/AlarmLiveActivity.swift
@@ -108,7 +110,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.punctual.app.widget
         CODE_SIGN_ENTITLEMENTS: PunctualWidget/PunctualWidget.entitlements
         MARKETING_VERSION: "1.0"      # must match the app
-        CURRENT_PROJECT_VERSION: "1"
+        CURRENT_PROJECT_VERSION: "2"  # must match the app
         DEVELOPMENT_TEAM: KLRCQTV8AC
         CODE_SIGN_STYLE: Automatic
         SWIFT_VERSION: "5.0"

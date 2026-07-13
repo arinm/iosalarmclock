@@ -40,7 +40,7 @@ final class ProFeatureManager {
             case .themes: "Themes & accents"
             case .widgetCustomization: "Widget customization"
             case .appIcons: "Alternate app icons"
-            case .customSounds: "Custom alarm sounds"
+            case .customSounds: "Custom pre-alert sound"
             }
         }
 
@@ -51,13 +51,13 @@ final class ProFeatureManager {
             case .customPreAlertTiming: "Any lead time, not just 15 min"
             case .multiplePreAlerts: "Stack 60 + 15 + 5 min heads-ups"
             case .preAlertMessages: "Your own reminder text"
-            case .advancedSnooze: "Custom duration & repeat count"
+            case .advancedSnooze: "Custom snooze duration"
             case .alarmGroups: "Bulk skip / pause a whole set"
             case .calendarAwareSkip: "Skip on calendar days off"
             case .themes: "Accents & light/dark"
-            case .widgetCustomization: "Pin any alarm to a widget"
+            case .widgetCustomization: "Dedicated Pro widget styles (coming soon)"
             case .appIcons: "Match your Home Screen"
-            case .customSounds: "Import your own audio"
+            case .customSounds: "Your own audio for the heads-up"
             }
         }
 
@@ -66,12 +66,16 @@ final class ProFeatureManager {
         static let live: [Feature] = [
             .vacationPause, .customPreAlertTiming, .multiplePreAlerts, .preAlertMessages,
             .advancedSnooze, .alarmGroups, .calendarAwareSkip, .themes, .appIcons,
-            .widgetCustomization, .customSounds
+            .customSounds
         ]
 
         /// Built later, shipped free to Pro owners. Shown only as a clearly-labeled
         /// roadmap, never claimed as currently included.
-        static let planned: [Feature] = []
+        ///
+        /// `widgetCustomization`: the configurable widget technically works for
+        /// everyone today (no real Pro gate), so we do NOT sell it as an included
+        /// Pro feature — dedicated Pro widget styles are the roadmap item.
+        static let planned: [Feature] = [.widgetCustomization]
     }
 
     /// Subscriber-only ongoing perks (active monthly/yearly only — not lifetime).

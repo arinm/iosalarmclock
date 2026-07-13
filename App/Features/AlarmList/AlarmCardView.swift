@@ -44,6 +44,8 @@ struct AlarmCardView: View {
                     }
                 ))
                 .labelsHidden()
+                .accessibilityLabel(alarm.label.isEmpty ? "Alarm" : alarm.label)
+                .accessibilityValue(alarm.isEnabled ? "On" : "Off")
             }
 
             RepeatPillsRow(weekdays: alarm.repeatWeekdays, mode: alarm.mode, oneTimeDate: alarm.oneTimeDate)
@@ -135,13 +137,16 @@ struct RepeatPillsRow: View {
             Label(oneTimeLabel, systemImage: "calendar")
                 .font(.caption.weight(.medium)).foregroundStyle(.secondary)
         } else {
+            // Empty set == the engine fires EVERY day, so light all pills up —
+            // seven dim pills would read as the opposite of what happens.
+            let effective = weekdays.isEmpty ? Set(Weekday.allCases) : weekdays
             HStack(spacing: 6) {
                 ForEach(Weekday.allCases, id: \.self) { day in
                     Text(day.minimalLabel)
                         .font(.caption2.weight(.bold))
                         .frame(width: 24, height: 24)
-                        .background(weekdays.contains(day) ? theme.accentColor.opacity(0.22) : Color.clear, in: Circle())
-                        .foregroundStyle(weekdays.contains(day) ? theme.accentColor : .secondary)
+                        .background(effective.contains(day) ? theme.accentColor.opacity(0.22) : Color.clear, in: Circle())
+                        .foregroundStyle(effective.contains(day) ? theme.accentColor : .secondary)
                 }
             }
         }

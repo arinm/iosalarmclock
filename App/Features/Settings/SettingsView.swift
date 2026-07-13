@@ -9,7 +9,6 @@ struct SettingsView: View {
 
     @AppStorage("defaultPreAlertMinutes") private var defaultPreAlert = 15
     @AppStorage("defaultSnoozeMinutes") private var defaultSnooze = 9
-    @AppStorage("defaultSnoozeCount") private var defaultSnoozeCount = 3
 
     @State private var showPaywall = false
     @State private var appIcon = "default"
@@ -25,9 +24,8 @@ struct SettingsView: View {
                     }
                     if pro.isAvailable(.advancedSnooze) {
                         Stepper("Snooze: \(defaultSnooze) min", value: $defaultSnooze, in: 1...60)
-                        Stepper("Snooze repeats: \(defaultSnoozeCount)×", value: $defaultSnoozeCount, in: 0...10)
                     } else {
-                        ProLockRow(title: "Snooze", value: "9 min · 3×") { showPaywall = true }
+                        ProLockRow(title: "Snooze", value: "9 min") { showPaywall = true }
                     }
                 }
 

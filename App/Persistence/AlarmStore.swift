@@ -48,14 +48,22 @@ final class AlarmStore {
 
     func create(_ item: AlarmItem) async {
         context.insert(item)
-        await scheduler.reschedule(item)
+        save()
+        await scheduler.reschedule(item, force: true)
         save()
     }
 
     func update(_ item: AlarmItem, _ mutate: (AlarmItem) -> Void) async {
         mutate(item)
         item.touch()
-        await scheduler.reschedule(item)
+        // Commit the semantic change (skip mark, new label…) BEFORE touching
+        // AlarmKit: the cancel/schedule below emits `alarmUpdates` in every
+        // process, and a sibling process reconciling against an *uncommitted*
+        // change would re-arm the very occurrence we're removing.
+        save()
+        // Force the slow path: armed alarms bake in configuration (label,
+        // snooze, tint) that the scheduler's date-window comparison can't see.
+        await scheduler.reschedule(item, force: true)
         save()
     }
 
@@ -123,6 +131,11 @@ final class AlarmStore {
         await update(item) { $0.pausedDateRanges.removeAll() }
     }
 
+    /// Remove one specific pause range (used by the pause-confirmation Undo).
+    func unpause(_ item: AlarmItem, range: DateRange) async {
+        await update(item) { $0.pausedDateRanges.removeAll { $0 == range } }
+    }
+
     // MARK: - Groups (Pro bulk actions)
 
     /// Distinct non-empty group names currently in use.
@@ -146,11 +159,46 @@ final class AlarmStore {
         for item in alarms(inGroup: name) { await pause(item, range: range) }
     }
 
+    func unpauseGroup(_ name: String, range: DateRange) async {
+        for item in alarms(inGroup: name) { await unpause(item, range: range) }
+    }
+
     // MARK: - Lifecycle
+
+    /// Guards against overlapping runs. `refreshAllSchedules` is triggered from
+    /// several places (launch, foreground, background refresh, and the AlarmKit
+    /// fire observer) that can fire nearly simultaneously; two concurrent passes
+    /// would race on the same SwiftData + AlarmKit state. A request arriving
+    /// mid-pass is COALESCED (queued and run once the pass ends), never dropped —
+    /// an observer-driven reconcile carries drift information the in-flight pass
+    /// didn't have.
+    private var isRefreshing = false
+    private var queuedRefresh = false
 
     /// Recompute & re-arm everything. Called on launch and on `scenePhase` active
     /// to compensate for AlarmKit having no native skip/recurrence-with-exceptions.
-    func refreshAllSchedules() async {
+    ///
+    /// `liveAlarmIDs` is the authoritative current alarm set (forwarded by the
+    /// AlarmKit fire observer). When `nil` (launch/foreground/BG paths) it is
+    /// read directly from the system, so persisted-vs-reality drift — including
+    /// arms that silently failed or were cancelled externally — heals on every
+    /// pass, not just observer-driven ones.
+    func refreshAllSchedules(liveAlarmIDs: Set<UUID>? = nil) async {
+        guard !isRefreshing else { queuedRefresh = true; return }
+        isRefreshing = true
+        defer { isRefreshing = false }
+
+        // Caller's snapshot is valid only for the first pass; any coalesced
+        // re-run re-reads the live truth (the queued caller's state is newer).
+        var ids = liveAlarmIDs
+        repeat {
+            queuedRefresh = false
+            await refreshPass(liveAlarmIDs: ids ?? scheduler.currentLiveAlarmIDs())
+            ids = nil
+        } while queuedRefresh
+    }
+
+    private func refreshPass(liveAlarmIDs: Set<UUID>?) async {
         let items = allAlarms()
 
         // Calendar auto-skip (Pro): REPLACE each opted-in alarm's derived
@@ -167,7 +215,7 @@ final class AlarmStore {
             if Set(item.autoSkippedDates) != Set(desired) { item.autoSkippedDates = desired }
         }
 
-        for item in items { await scheduler.reschedule(item) }
+        for item in items { await scheduler.reschedule(item, liveAlarmIDs: liveAlarmIDs) }
         save()
     }
 

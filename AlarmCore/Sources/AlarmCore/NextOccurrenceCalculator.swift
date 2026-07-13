@@ -104,7 +104,7 @@ public struct NextOccurrenceCalculator {
             guard let dayDate = calendar.date(byAdding: .day, value: offset, to: startMidnight) else { continue }
             let day = DateOnly(date: dayDate, calendar: calendar)
 
-            // Repeat-day filter. Empty set == fire once at the next valid slot.
+            // Repeat-day filter. Empty set == every day (fires at the next valid slot each day).
             if !s.repeatWeekdays.isEmpty {
                 let weekday = Weekday(date: dayDate, calendar: calendar)
                 guard s.repeatWeekdays.contains(weekday) else { continue }
