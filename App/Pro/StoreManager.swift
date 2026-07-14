@@ -19,6 +19,11 @@ final class StoreManager {
     static let subscriptionIDs: Set<String> = [monthlyID, yearlyID]
 
     private(set) var products: [String: Product] = [:]
+    /// True once a product load has completed (success OR empty). Lets the
+    /// paywall tell "still loading" apart from "loaded but App Store returned
+    /// nothing" (agreement not active / IAPs not ready) instead of showing
+    /// silent "—" prices.
+    private(set) var productsLoaded = false
     private(set) var isPro = false
     private(set) var isSubscriber = false
     /// False until entitlements have been read at least once. Until then we must
@@ -44,6 +49,7 @@ final class StoreManager {
         } catch {
             purchaseError = error.localizedDescription
         }
+        productsLoaded = true
     }
 
     var monthly: Product? { products[Self.monthlyID] }

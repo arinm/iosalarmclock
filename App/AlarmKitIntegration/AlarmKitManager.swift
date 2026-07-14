@@ -212,7 +212,25 @@ final class AlarmKitManager: AlarmKitManaging {
             secondaryButtonBehavior: item.snooze.isEnabled ? .countdown : nil
         )
 
-        let presentation = AlarmPresentation(alert: alert)
+        // When snooze is on, the secondary button transitions the alarm into a
+        // COUNTDOWN (snooze) state. Without a countdown presentation that state
+        // has NO Lock Screen / Dynamic Island surface — so the user sees no live
+        // "rings in N min" timer, which reads as "snooze did nothing". Supplying
+        // the countdown presentation restores the timer (Mode.Countdown carries
+        // fireDate). `AlarmPresentation.Countdown` has no Stop slot; Stop in the
+        // ALERT state is system-managed (Alert.stopButton deprecated on 26.1).
+        // Whether the system also renders Stop on the SNOOZE surface is a device
+        // behavior to validate; the in-app disable/delete path (see
+        // AlarmScheduler) is the guaranteed way to cancel a running snooze.
+        let presentation: AlarmPresentation
+        if item.snooze.isEnabled {
+            let countdownPresentation = AlarmPresentation.Countdown(
+                title: LocalizedStringResource(stringLiteral: title)
+            )
+            presentation = AlarmPresentation(alert: alert, countdown: countdownPresentation)
+        } else {
+            presentation = AlarmPresentation(alert: alert)
+        }
 
         let attributes = AlarmAttributes(
             presentation: presentation,

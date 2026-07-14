@@ -23,6 +23,13 @@ final class AlarmScheduler {
     /// well clear of any per-app alarm ceiling for a handful of alarms.
     private let lookahead = 7
 
+    /// How long a just-fired occurrence may still be alive as a running snooze in
+    /// AlarmKit (native snooze can be repeated). We remember fired occurrences for
+    /// this window so disable/delete can cancel a pending snooze even after the
+    /// occurrence has dropped out of `armedOccurrences`. Cancelling a stale/stopped
+    /// id is a harmless no-op, so we err generous.
+    private let snoozeTrackingWindow: TimeInterval = 12 * 3600
+
     init(alarmKit: AlarmKitManaging, preAlerts: PreAlertNotificationManager, calendar: Calendar = .current) {
         self.alarmKit = alarmKit
         self.preAlerts = preAlerts
@@ -75,15 +82,37 @@ final class AlarmScheduler {
             return
         }
 
-        // 1. Cancel what is armed — but ONLY still-future occurrences. Never cancel
-        //    an occurrence at/​before `now`: it has already fired or is alerting
-        //    right now, and cancelling a firing AlarmKit alarm would silence it.
-        let toCancel = item.armedOccurrences.filter { $0 > now }
+        // Remember occurrences that just fired (dropped out of the window into the
+        // recent past). AlarmKit re-alerts a snoozed occurrence under its own id,
+        // which is no longer in `armedOccurrences` after this refresh — so without
+        // this record, disabling/deleting the alarm couldn't cancel the pending
+        // snooze and it would ring anyway. Only meaningful while snooze is on.
+        if item.snooze.isEnabled {
+            let horizon = now.addingTimeInterval(-snoozeTrackingWindow)
+            let justFired = item.armedOccurrences.filter { $0 <= now && $0 > horizon }
+            item.recentlyFiredOccurrences = Array(Set(item.recentlyFiredOccurrences + justFired))
+                .filter { $0 > horizon }
+        } else {
+            item.recentlyFiredOccurrences = []
+        }
+
+        // 1. Cancel what is armed. While the alarm STAYS enabled, only cancel
+        //    still-future occurrences — a passive resync (foreground/observer)
+        //    must never silence an occurrence that's alerting or snoozing right
+        //    now just because its fire date has passed. But when the user is
+        //    explicitly DISABLING the alarm, that protection must not apply: an
+        //    alarm currently snoozing (fire date already in the past) also needs
+        //    to be cancelled — including the fired occurrence we tracked above —
+        //    or turning it off in the app does nothing and it rings again.
+        let toCancel = item.isEnabled
+            ? item.armedOccurrences.filter { $0 > now }
+            : item.armedOccurrences + item.recentlyFiredOccurrences
         await alarmKit.cancelOccurrences(toCancel, for: item)
         await preAlerts.cancelPreAlert(for: item)
 
         guard item.isEnabled, let first = desired.first else {
             item.armedOccurrences = []
+            item.recentlyFiredOccurrences = []
             item.nextOccurrence = nil
             return
         }
@@ -122,10 +151,13 @@ final class AlarmScheduler {
         }
     }
 
-    /// Tear down all arming for an alarm (used on delete).
+    /// Tear down all arming for an alarm (used on delete). Includes any recently
+    /// fired occurrence that may still be snoozing, so deleting a snoozing alarm
+    /// actually silences it.
     func cancel(_ item: AlarmItem) async {
-        await alarmKit.cancelOccurrences(item.armedOccurrences, for: item)
+        await alarmKit.cancelOccurrences(item.armedOccurrences + item.recentlyFiredOccurrences, for: item)
         item.armedOccurrences = []
+        item.recentlyFiredOccurrences = []
         await preAlerts.cancelPreAlert(for: item)
     }
 }

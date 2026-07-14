@@ -71,6 +71,22 @@ struct PaywallView: View {
                        caption: "Lowest entry · cancel anytime", highlighted: false, badge: nil)
             tierButton(id: StoreManager.lifetimeID, title: "Lifetime",
                        caption: "Pay once · features forever", highlighted: false, badge: nil)
+
+            // App Store returned no products (agreement not active, IAPs not
+            // ready, or offline) — say so and let the user retry instead of
+            // leaving three dead "—" rows.
+            if storeKit.productsLoaded && storeKit.products.isEmpty {
+                VStack(spacing: 6) {
+                    Text("Prices couldn't load right now.")
+                        .font(.footnote.weight(.medium))
+                    Text("Check your connection and try again.")
+                        .font(.caption2).foregroundStyle(.secondary)
+                    Button("Retry") { Task { await storeKit.loadProducts() } }
+                        .font(.subheadline.weight(.semibold)).padding(.top, 2)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.top, 4)
+            }
         }
     }
 

@@ -54,6 +54,13 @@ final class AlarmItem {
     /// so any process/launch can cancel precisely what was armed (deterministic
     /// ids derive cancel targets from these). The source of truth for cancel.
     var armedOccurrences: [Date]
+    /// Occurrences that have already fired but may still be alive in AlarmKit as
+    /// a running SNOOZE (AlarmKit re-alerts the same occurrence id after the
+    /// snooze interval). They drop out of `armedOccurrences` on the first refresh
+    /// after firing, so we remember them separately — otherwise disabling or
+    /// deleting the alarm can't cancel the pending snooze and it rings anyway.
+    /// Pruned to a short recent window; only meaningful while snooze is enabled.
+    var recentlyFiredOccurrences: [Date] = []
     var createdAt: Date
     var updatedAt: Date
 
