@@ -67,6 +67,11 @@ targets:
       path: App/Info.plist
       properties:
         CFBundleDisplayName: Punctual
+        # Drive version/build from the build settings above so a bump to
+        # CURRENT_PROJECT_VERSION actually reaches the binary (XcodeGen otherwise
+        # hardcodes "1" in the generated plist). Xcode expands these at build time.
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         UILaunchScreen: {}
         # Required by App Store validation. Portrait-only — an alarm app's
         # hero/list layout is designed vertical.
@@ -129,6 +134,8 @@ targets:
       path: PunctualWidget/Info.plist
       properties:
         CFBundleDisplayName: Punctual
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
 
