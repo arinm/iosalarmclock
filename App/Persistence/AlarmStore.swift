@@ -198,6 +198,33 @@ final class AlarmStore {
         } while queuedRefresh
     }
 
+    /// Occurrence ids we've already posted a "Snoozed" note for (in-memory; the
+    /// notification id also dedupes visually across relaunches).
+    private var announcedSnoozes: Set<UUID> = []
+
+    /// Post a "Snoozed" confirmation for any of our alarms that just entered the
+    /// snooze (countdown) state. `snoozingIDs` comes from the live AlarmKit read;
+    /// we match it against each item's tracked occurrences via the deterministic
+    /// occurrence id. Called from the alarmUpdates observer AFTER the refresh
+    /// pass, so a just-fired occurrence is already captured in
+    /// `recentlyFiredOccurrences`.
+    func announceSnoozes(snoozingIDs: Set<UUID>) {
+        // Forget past announcements that are no longer snoozing, so the next
+        // snooze of a future occurrence gets its own note.
+        announcedSnoozes.formIntersection(snoozingIDs)
+        guard !snoozingIDs.isEmpty else { return }
+
+        for item in allAlarms() where item.snooze.isEnabled {
+            for date in item.recentlyFiredOccurrences + item.armedOccurrences {
+                let oid = AlarmKitManager.occurrenceID(item: item.id, date: date)
+                if snoozingIDs.contains(oid), !announcedSnoozes.contains(oid) {
+                    announcedSnoozes.insert(oid)
+                    scheduler.announceSnooze(for: item)
+                }
+            }
+        }
+    }
+
     private func refreshPass(liveAlarmIDs: Set<UUID>?) async {
         let items = allAlarms()
 

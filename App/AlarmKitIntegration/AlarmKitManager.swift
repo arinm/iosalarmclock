@@ -176,6 +176,19 @@ final class AlarmKitManager: AlarmKitManaging {
         #endif
     }
 
+    /// IDs of alarms currently in the countdown state. Our alarms configure no
+    /// pre-alert countdown (`preAlert: nil`), so for us `.countdown` can only
+    /// mean ONE thing: the user tapped Snooze and the alarm is waiting to
+    /// re-ring. Used to post the "Snoozed" confirmation notification.
+    func snoozingAlarmIDs() -> Set<UUID> {
+        #if canImport(AlarmKit)
+        guard let alarms = try? AlarmManager.shared.alarms else { return [] }
+        return Set(alarms.filter { $0.state == .countdown }.map(\.id))
+        #else
+        return []
+        #endif
+    }
+
     func cancelOccurrences(_ dates: [Date], for item: AlarmItem) async {
         #if canImport(AlarmKit)
         // Cancel exactly the occurrences that were armed (the caller passes the

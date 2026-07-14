@@ -141,6 +141,10 @@ final class AlarmScheduler {
     /// Authoritative read of the system's current alarm ids (nil = unreadable).
     func currentLiveAlarmIDs() -> Set<UUID>? { alarmKit.liveAlarmIDs() }
 
+    /// Post the "Snoozed" confirmation notification for an item (see
+    /// PreAlertNotificationManager.announceSnooze).
+    func announceSnooze(for item: AlarmItem) { preAlerts.announceSnooze(for: item) }
+
     /// Whether the system still holds every one of `occurrences` for `item`.
     /// `nil` liveAlarmIDs means we couldn't observe the real state, so we trust
     /// the persisted record and allow the no-op.

@@ -77,8 +77,11 @@ struct PunctualApp: App {
                     // fire/stop/cancel while the app is alive (complements the
                     // foreground re-arm). The live id set lets the scheduler heal
                     // occurrences cancelled outside the app.
-                    alarmKit.observeAlarmUpdates { [store] liveIDs in
+                    alarmKit.observeAlarmUpdates { [store, alarmKit] liveIDs in
                         await store.refreshAllSchedules(liveAlarmIDs: liveIDs)
+                        // After the refresh (which captures just-fired occurrences),
+                        // confirm any newly-snoozing alarm with a local notification.
+                        store.announceSnoozes(snoozingIDs: alarmKit.snoozingAlarmIDs())
                         refreshLiveActivity()
                     }
                 }

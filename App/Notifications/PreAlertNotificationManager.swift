@@ -95,6 +95,23 @@ final class PreAlertNotificationManager {
         center.add(request)
     }
 
+    /// Immediate "Snoozed" confirmation so the user knows the snooze registered
+    /// (AlarmKit shows no persistent surface while snoozing — matching the system
+    /// Clock — so this notification is the visible acknowledgement). Silent: the
+    /// user literally just silenced an alarm. Body states the snooze SETTING
+    /// (always true) rather than a live countdown (we can't know the exact
+    /// re-ring time from outside AlarmKit).
+    func announceSnooze(for item: AlarmItem) {
+        let label = item.label.isEmpty ? "Alarm" : item.label
+        let content = UNMutableNotificationContent()
+        content.title = "Snoozed"
+        content.body = "\(label) — snoozed for \(item.snooze.durationMinutes) min. It'll ring again."
+        content.sound = nil
+        // Same id per alarm → a repeat snooze replaces the old note, no pile-up.
+        center.add(UNNotificationRequest(identifier: "snoozed-\(item.id.uuidString)",
+                                         content: content, trigger: nil))
+    }
+
     func cancelPreAlert(for item: AlarmItem) async {
         // Remove every pending pre-alert for this alarm regardless of offset.
         // Awaited so it fully completes before any re-schedule adds new requests.
