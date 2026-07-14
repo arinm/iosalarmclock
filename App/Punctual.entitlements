@@ -4,7 +4,7 @@
 <dict>
     <key>com.apple.security.application-groups</key>
     <array>
-        <string>group.com.punctual.app</string>
+        <string>group.com.arinitsolutions.punctual</string>
     </array>
 </dict>
 </plist>

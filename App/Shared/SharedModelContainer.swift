@@ -4,7 +4,7 @@ import SwiftData
 /// Builds the SwiftData container in a shared App Group so the app **and** the
 /// widget extension read/write the same alarms. Compiled into both targets.
 enum SharedModelContainer {
-    static let appGroupID = "group.com.punctual.app"
+    static let appGroupID = "group.com.arinitsolutions.punctual"
 
     static func make() -> ModelContainer {
         do {
@@ -15,7 +15,7 @@ enum SharedModelContainer {
             // unavailable the two processes would silently diverge, so fail loudly
             // in development; in release fall back to a local store (degraded:
             // widget/Siri skip won't reflect in-app) rather than crash on launch.
-            assertionFailure("Shared App Group container unavailable — check the 'group.com.punctual.app' entitlement on BOTH targets. Error: \(error)")
+            assertionFailure("Shared App Group container unavailable — check the 'group.com.arinitsolutions.punctual' entitlement on BOTH targets. Error: \(error)")
             print("⚠️ Shared container unavailable (\(error)); using NON-SHARED local store. Widget/Siri will not stay in sync.")
             return try! ModelContainer(for: AlarmItem.self)
         }
