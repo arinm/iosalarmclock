@@ -2,6 +2,7 @@ import SwiftUI
 import SwiftData
 import UserNotifications
 import UIKit
+import WidgetKit
 import AlarmCore
 
 /// App entry. Wires the dependency graph (SwiftData ➜ store ➜ scheduler ➜
@@ -71,6 +72,14 @@ struct PunctualApp: App {
                 .environment(theme)
                 .environment(soundManager)
                 .task {
+                    // Every persisted change pushes the outside surfaces: the
+                    // widget re-renders from the shared store and the Live
+                    // Activity reconciles (new/changed alarm shows immediately;
+                    // a stale activity ends instead of lingering).
+                    store.onDidSave = {
+                        WidgetCenter.shared.reloadAllTimelines()
+                        refreshLiveActivity()
+                    }
                     await permissions.refresh()
                     await store_kit.start()
                     // Re-arm the look-ahead window when AlarmKit reports a

@@ -266,9 +266,18 @@ final class AlarmStore {
         save()
     }
 
+    /// Fired after every successful save. The app wires this to push the OUTSIDE
+    /// surfaces (widget timeline, Live Activity) so they update the moment data
+    /// changes — without it they only refresh on foreground/observer events and
+    /// a widget can sit on a stale "No alarms" for hours. Nil in the widget /
+    /// intent processes (intents reload timelines themselves).
+    var onDidSave: (() -> Void)?
+
     private func save() {
-        do { try context.save() }
-        catch { print("AlarmStore save failed: \(error)") }
+        do {
+            try context.save()
+            onDidSave?()
+        } catch { print("AlarmStore save failed: \(error)") }
     }
 
     #if DEBUG
