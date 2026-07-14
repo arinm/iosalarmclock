@@ -1,5 +1,10 @@
 import Foundation
 import StoreKit
+import OSLog
+
+/// Purchase-flow diagnostics — view in Console.app (subsystem "com.punctual.app",
+/// category "Store"). TestFlight/sandbox purchase issues are invisible without this.
+private let storeLog = Logger(subsystem: "com.punctual.app", category: "Store")
 
 /// StoreKit 2 entitlement authority for the Punctual Pro ladder:
 ///   • monthly  (auto-renewable)  com.punctual.app.pro.monthly
@@ -86,30 +91,87 @@ final class StoreManager {
                 sub = true
             }
         }
+        // Merge in a fresh direct grant (see `directGrantAt`) — the stream can
+        // lag a just-finished purchase; never let a stale read downgrade it.
+        if let at = directGrantAt, Date.now.timeIntervalSince(at) < directGrantGrace {
+            pro = pro || grantedPro
+            sub = sub || grantedSub
+        }
         isPro = pro
         isSubscriber = sub
         resolved = true
     }
 
+    /// Grant entitlement from a single verified, in-hand transaction. Used on the
+    /// purchase path and the updates stream: right after a purchase,
+    /// `Transaction.currentEntitlements` can LAG (notoriously in TestFlight /
+    /// sandbox), so re-deriving from it made a successful purchase look like a
+    /// silent failure — spinner, then nothing, still Free. The transaction we
+    /// were just handed IS the entitlement; apply it directly.
+    /// A direct grant's timestamp. `refreshEntitlements` derives from
+    /// `Transaction.currentEntitlements`, which can LAG a just-finished
+    /// transaction — a refresh running inside this window (e.g. the user taps
+    /// "Restore Purchases" right after buying, or a queued transaction applies
+    /// at launch before start()) must not OVERWRITE the fresh grant, or a paying
+    /// user gets downgraded + theme-reset mid-session. Grants are merged
+    /// monotonically within the window; refunds/expiry still win at any later
+    /// refresh and at every launch.
+    private var directGrantAt: Date?
+    private var grantedPro = false
+    private var grantedSub = false
+    private let directGrantGrace: TimeInterval = 300
+
+    private func apply(_ t: Transaction) {
+        #if DEBUG
+        // Screenshot mode stays Free (mirrors refreshEntitlements' guard).
+        if ProcessInfo.processInfo.arguments.contains("--demo-free") { return }
+        #endif
+        guard t.revocationDate == nil else { return }
+        if let exp = t.expirationDate, exp <= .now { return } // stale/expired renewal
+        if t.productID == Self.lifetimeID { isPro = true }
+        if Self.subscriptionIDs.contains(t.productID) { isPro = true; isSubscriber = true }
+        grantedPro = isPro
+        grantedSub = isSubscriber
+        directGrantAt = .now
+        purchaseError = nil // a grant supersedes any earlier failure/pending note
+        resolved = true
+        storeLog.notice("Entitlement applied from transaction: \(t.productID, privacy: .public)")
+    }
+
     @discardableResult
     func purchase(_ id: String) async -> Bool {
-        guard let product = products[id] else { return false }
+        guard let product = products[id] else {
+            storeLog.error("purchase(\(id, privacy: .public)): product not loaded")
+            return false
+        }
+        purchaseError = nil // fresh attempt: clear any stale failure/pending note
         do {
+            storeLog.notice("purchase(\(id, privacy: .public)): starting")
             switch try await product.purchase() {
             case .success(let verification):
                 if case .verified(let transaction) = verification {
                     await transaction.finish()
-                    await refreshEntitlements() // authoritative
+                    apply(transaction) // direct grant — don't wait on currentEntitlements
                     return isPro
                 }
+                storeLog.error("purchase(\(id, privacy: .public)): UNVERIFIED result")
                 purchaseError = "Purchase couldn't be verified. Please try Restore Purchases."
                 return false
-            case .userCancelled, .pending:
+            case .userCancelled:
+                storeLog.notice("purchase(\(id, privacy: .public)): user cancelled")
+                return false
+            case .pending:
+                // Ask to Buy / deferred — not a failure, but not Pro yet either.
+                // Say so instead of leaving the user in silent limbo.
+                storeLog.notice("purchase(\(id, privacy: .public)): pending (Ask to Buy)")
+                purchaseError = "Purchase is pending approval. Pro unlocks automatically once it's approved."
                 return false
             @unknown default:
+                storeLog.error("purchase(\(id, privacy: .public)): unknown result case")
                 return false
             }
         } catch {
+            storeLog.error("purchase(\(id, privacy: .public)) threw: \(error.localizedDescription, privacy: .public)")
             purchaseError = error.localizedDescription
             return false
         }
@@ -125,7 +187,13 @@ final class StoreManager {
             for await result in Transaction.updates {
                 if case .verified(let transaction) = result {
                     await transaction.finish()
-                    await self?.refreshEntitlements()
+                    if transaction.revocationDate == nil {
+                        // Grant directly (same lag rationale as in purchase()).
+                        self?.apply(transaction)
+                    } else {
+                        // Refund/revocation — re-derive the full truth.
+                        await self?.refreshEntitlements()
+                    }
                 }
             }
         }

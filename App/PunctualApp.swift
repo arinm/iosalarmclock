@@ -80,8 +80,9 @@ struct PunctualApp: App {
                     alarmKit.observeAlarmUpdates { [store, alarmKit] liveIDs in
                         await store.refreshAllSchedules(liveAlarmIDs: liveIDs)
                         // After the refresh (which captures just-fired occurrences),
-                        // confirm any newly-snoozing alarm with a local notification.
-                        store.announceSnoozes(snoozingIDs: alarmKit.snoozingAlarmIDs())
+                        // confirm any newly-snoozing alarm with a local notification
+                        // and surface the in-app "Snoozing" state.
+                        store.reconcileSnoozes(snoozingIDs: alarmKit.snoozingAlarmIDs(), announce: true)
                         refreshLiveActivity()
                     }
                 }
@@ -101,7 +102,14 @@ struct PunctualApp: App {
                     #endif
                     pro.isSubscriber = newValue
                 }
-                .onChange(of: store_kit.resolved) { _, newValue in pro.entitlementsResolved = newValue }
+                .onChange(of: store_kit.resolved) { _, newValue in
+                    pro.entitlementsResolved = newValue
+                    // Lapse across a relaunch: isPro goes false→false (no change,
+                    // so the isPro onChange never fires) — reset the Pro theme
+                    // here once entitlements are confirmed. No-op for free users
+                    // already on the default theme.
+                    if newValue && !store_kit.isPro { theme.resetToDefault() }
+                }
                 .tint(theme.accentColor)
                 // Apply appearance directly on the window so it also covers sheets
                 // (preferredColorScheme on the root doesn't reach presented sheets).
@@ -116,6 +124,9 @@ struct PunctualApp: App {
                 Task {
                     await permissions.refresh()
                     await store.refreshAllSchedules() // re-arm look-ahead window
+                    // Surface a snooze that happened while we weren't running
+                    // (no notification — the moment has passed; UI state only).
+                    store.reconcileSnoozes(snoozingIDs: alarmKit.snoozingAlarmIDs(), announce: false)
                     refreshLiveActivity()
                 }
             case .background:

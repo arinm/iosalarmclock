@@ -10,6 +10,7 @@ struct AlarmEditorView: View {
     @Environment(AlarmStore.self) private var store
     @Environment(ProFeatureManager.self) private var pro
     @Environment(PermissionManager.self) private var permissions
+    @Environment(BannerCenter.self) private var banners
     @Environment(\.dismiss) private var dismiss
 
     let mode: Mode
@@ -337,6 +338,17 @@ struct AlarmEditorView: View {
         let finalAutoSkip = !strip(.calendarAwareSkip) && autoSkipCalendar
         let finalSound = strip(.customSounds) ? nil : soundName
 
+        // Confirmation banner ("Alarm set — rings in 7h 59m") shown inline under
+        // the card once the editor sheet dismisses. Reads the engine-computed
+        // nextOccurrence AFTER the store reschedules, so the countdown is truth.
+        func confirm(_ item: AlarmItem, verb: String) {
+            guard item.isEnabled, let next = item.nextOccurrence else { return }
+            banners.show(.neutral,
+                         title: "\(verb) — rings in \(CountdownFormatter.string(until: next, from: .now))",
+                         subtitle: NotificationActionHandler.describe(next, calendar: .current),
+                         alarmID: item.id)
+        }
+
         switch mode {
         case .create:
             let item = AlarmItem(
@@ -349,7 +361,10 @@ struct AlarmEditorView: View {
             item.groupName = finalGroup
             item.autoSkipOnCalendarEvents = finalAutoSkip
             item.soundName = finalSound
-            Task { await store.create(item) }
+            Task {
+                await store.create(item)
+                confirm(item, verb: "Alarm set")
+            }
         case .edit(let item):
             Task {
                 await store.update(item) {
@@ -361,6 +376,7 @@ struct AlarmEditorView: View {
                     $0.autoSkipOnCalendarEvents = finalAutoSkip
                     $0.soundName = finalSound
                 }
+                confirm(item, verb: "Saved")
             }
         }
         UINotificationFeedbackGenerator().notificationOccurred(.success)

@@ -92,7 +92,11 @@ final class AlarmScheduler {
             let justFired = item.armedOccurrences.filter { $0 <= now && $0 > horizon }
             item.recentlyFiredOccurrences = Array(Set(item.recentlyFiredOccurrences + justFired))
                 .filter { $0 > horizon }
-        } else {
+        } else if !item.recentlyFiredOccurrences.isEmpty {
+            // Snooze was just turned OFF while an occurrence may still be
+            // snoozing — cancel it before dropping the record, or the pending
+            // re-ring survives as an orphan we can no longer target.
+            await alarmKit.cancelOccurrences(item.recentlyFiredOccurrences, for: item)
             item.recentlyFiredOccurrences = []
         }
 
@@ -144,6 +148,22 @@ final class AlarmScheduler {
     /// Post the "Snoozed" confirmation notification for an item (see
     /// PreAlertNotificationManager.announceSnooze).
     func announceSnooze(for item: AlarmItem) { preAlerts.announceSnooze(for: item) }
+
+    /// Cancel ONLY the running snooze (the recently fired occurrence AlarmKit is
+    /// counting down to re-ring) without touching the future window — the alarm
+    /// stays armed for its next occurrence. "Stop today, keep tomorrow."
+    ///
+    /// Cancels the SAME set the snooze detection matches on (recentlyFired +
+    /// already-past armed): right after a fire, the post-fire refresh may not
+    /// have captured the occurrence into `recentlyFiredOccurrences` yet — it's
+    /// still sitting in `armedOccurrences` with a past date. Cancelling only
+    /// `recentlyFired` in that window would silently no-op while the UI says
+    /// "Snooze stopped". Future occurrences stay untouched.
+    func cancelRunningSnooze(_ item: AlarmItem, now: Date = .now) async {
+        let pastArmed = item.armedOccurrences.filter { $0 <= now }
+        await alarmKit.cancelOccurrences(item.recentlyFiredOccurrences + pastArmed, for: item)
+        item.recentlyFiredOccurrences = []
+    }
 
     /// Whether the system still holds every one of `occurrences` for `item`.
     /// `nil` liveAlarmIDs means we couldn't observe the real state, so we trust

@@ -202,27 +202,47 @@ final class AlarmStore {
     /// notification id also dedupes visually across relaunches).
     private var announcedSnoozes: Set<UUID> = []
 
-    /// Post a "Snoozed" confirmation for any of our alarms that just entered the
-    /// snooze (countdown) state. `snoozingIDs` comes from the live AlarmKit read;
-    /// we match it against each item's tracked occurrences via the deterministic
-    /// occurrence id. Called from the alarmUpdates observer AFTER the refresh
-    /// pass, so a just-fired occurrence is already captured in
-    /// `recentlyFiredOccurrences`.
-    func announceSnoozes(snoozingIDs: Set<UUID>) {
+    /// Alarm items that currently have a running snooze — drives the inline
+    /// "Snoozing · Stop snooze" affordance on the card. Observable state,
+    /// refreshed by `reconcileSnoozes` on every observer event and foreground.
+    private(set) var snoozingItemIDs: Set<UUID> = []
+
+    /// Reconcile which of our alarms are snoozing (AlarmKit `.countdown` state),
+    /// matched via the deterministic occurrence id against each item's tracked
+    /// occurrences. Called AFTER a refresh pass, so a just-fired occurrence is
+    /// already captured in `recentlyFiredOccurrences`.
+    ///
+    /// `announce` — post the "Snoozed" confirmation notification for NEW snoozes.
+    /// True only on the observer path (timing is fresh); the foreground path
+    /// passes false so reopening the app minutes later doesn't fire a stale note.
+    func reconcileSnoozes(snoozingIDs: Set<UUID>, announce: Bool) {
         // Forget past announcements that are no longer snoozing, so the next
         // snooze of a future occurrence gets its own note.
         announcedSnoozes.formIntersection(snoozingIDs)
-        guard !snoozingIDs.isEmpty else { return }
 
-        for item in allAlarms() where item.snooze.isEnabled {
-            for date in item.recentlyFiredOccurrences + item.armedOccurrences {
-                let oid = AlarmKitManager.occurrenceID(item: item.id, date: date)
-                if snoozingIDs.contains(oid), !announcedSnoozes.contains(oid) {
-                    announcedSnoozes.insert(oid)
-                    scheduler.announceSnooze(for: item)
+        var snoozingItems: Set<UUID> = []
+        if !snoozingIDs.isEmpty {
+            for item in allAlarms() where item.snooze.isEnabled {
+                for date in item.recentlyFiredOccurrences + item.armedOccurrences {
+                    let oid = AlarmKitManager.occurrenceID(item: item.id, date: date)
+                    guard snoozingIDs.contains(oid) else { continue }
+                    snoozingItems.insert(item.id)
+                    if announce, !announcedSnoozes.contains(oid) {
+                        announcedSnoozes.insert(oid)
+                        scheduler.announceSnooze(for: item)
+                    }
                 }
             }
         }
+        if snoozingItemIDs != snoozingItems { snoozingItemIDs = snoozingItems }
+    }
+
+    /// Stop ONLY the running snooze — the alarm stays enabled and armed for its
+    /// next occurrence. This is "silence it for today" without the off/on dance.
+    func stopSnooze(_ item: AlarmItem) async {
+        await scheduler.cancelRunningSnooze(item)
+        snoozingItemIDs.remove(item.id)
+        save()
     }
 
     private func refreshPass(liveAlarmIDs: Set<UUID>?) async {

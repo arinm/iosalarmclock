@@ -32,11 +32,16 @@ struct AlarmLiveActivity: Widget {
                             Label("Today skipped — still active", systemImage: "checkmark.circle.fill")
                                 .font(.caption2).foregroundStyle(BrandColor.skip)
                         }
-                        // Always offer to skip the shown (next) occurrence.
-                        Button(intent: SkipTodayIntent(alarmIDString: context.attributes.alarmID)) {
-                            Label("Skip \(context.state.dayPhrase)", systemImage: "forward.end.fill").font(.caption.weight(.semibold))
+                        if isPast(context) {
+                            Label("Alarm time has passed", systemImage: "checkmark.circle")
+                                .font(.caption2).foregroundStyle(.secondary)
+                        } else {
+                            // Offer to skip the shown (next) occurrence.
+                            Button(intent: SkipTodayIntent(alarmIDString: context.attributes.alarmID)) {
+                                Label("Skip \(context.state.dayPhrase)", systemImage: "forward.end.fill").font(.caption.weight(.semibold))
+                            }
+                            .tint(BrandColor.skip)
                         }
-                        .tint(BrandColor.skip)
                     }
                 }
             } compactLeading: {
@@ -52,8 +57,9 @@ struct AlarmLiveActivity: Widget {
 
     private func countdown(_ context: ActivityViewContext<PunctualActivityAttributes>) -> Text {
         // Always count down to the next real ring (fireDate is already the next
-        // NON-skipped occurrence), even when today was skipped.
-        countdownText(to: context.state.fireDate)
+        // NON-skipped occurrence), even when today was skipped. After the fire
+        // time passes, don't show a dead 00:00.
+        isPast(context) ? Text("—") : countdownText(to: context.state.fireDate)
     }
 }
 
@@ -65,6 +71,15 @@ private func countdownText(to fireDate: Date) -> Text {
     return Text(timerInterval: Date.now...fireDate, countsDown: true)
 }
 
+/// Once the shown fire time has passed (`staleDate = fireDate`, so
+/// `context.isStale` flips), the live timer would just sit at a dead
+/// "Rings in 00:00" until the app next runs and ends the activity — the alarm
+/// has already rung and been handled on the AlarmKit side. Render a terminal
+/// state instead.
+private func isPast(_ context: ActivityViewContext<PunctualActivityAttributes>) -> Bool {
+    context.isStale || context.state.fireDate <= .now
+}
+
 private struct LockScreenLiveActivityView: View {
     let context: ActivityViewContext<PunctualActivityAttributes>
 
@@ -74,13 +89,20 @@ private struct LockScreenLiveActivityView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(context.state.label.isEmpty ? "Next alarm" : context.state.label)
                     .font(.headline).lineLimit(1)
-                // Always show the live countdown to the next real ring.
-                HStack(spacing: 4) {
-                    Text("Rings in")
-                    countdownText(to: context.state.fireDate)
-                        .monospacedDigit().fontWeight(.semibold)
+                if isPast(context) {
+                    // Fire time passed while the app wasn't running to end this
+                    // activity — show a terminal state, not a dead 00:00 timer.
+                    Text("Alarm time has passed")
+                        .font(.subheadline).foregroundStyle(.secondary)
+                } else {
+                    // Live countdown to the next real ring.
+                    HStack(spacing: 4) {
+                        Text("Rings in")
+                        countdownText(to: context.state.fireDate)
+                            .monospacedDigit().fontWeight(.semibold)
+                    }
+                    .font(.subheadline).foregroundStyle(.secondary)
                 }
-                .font(.subheadline).foregroundStyle(.secondary)
                 // Today's occurrence was skipped — reassure it's still armed for
                 // the next day (the countdown above is to that next ring).
                 if context.state.skippedToday {
@@ -89,13 +111,15 @@ private struct LockScreenLiveActivityView: View {
                 }
             }
             Spacer()
-            Button(intent: SkipTodayIntent(alarmIDString: context.attributes.alarmID)) {
-                Image(systemName: "forward.end.fill")
-                    .font(.title3).padding(10)
-                    .background(BrandColor.skip.opacity(0.2), in: Circle())
+            if !isPast(context) {
+                Button(intent: SkipTodayIntent(alarmIDString: context.attributes.alarmID)) {
+                    Image(systemName: "forward.end.fill")
+                        .font(.title3).padding(10)
+                        .background(BrandColor.skip.opacity(0.2), in: Circle())
+                }
+                .tint(BrandColor.skip)
+                .accessibilityLabel("Skip \(context.state.dayPhrase)")
             }
-            .tint(BrandColor.skip)
-            .accessibilityLabel("Skip \(context.state.dayPhrase)")
         }
         .padding()
     }

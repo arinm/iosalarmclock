@@ -20,12 +20,15 @@ struct PaywallView: View {
                         tiers
                     }
 
+                    // Right under the buy buttons — after a failed/pending purchase
+                    // this must be visible without scrolling.
+                    if let error = storeKit.purchaseError {
+                        Text(error).font(.footnote).foregroundStyle(.red).multilineTextAlignment(.center)
+                    }
+
                     featureList
                     comingSoon
 
-                    if let error = storeKit.purchaseError {
-                        Text(error).font(.caption2).foregroundStyle(.red).multilineTextAlignment(.center)
-                    }
                     Text("The core alarm — countdown, pre-alert and Skip today — is free forever. No ads.")
                         .font(.caption2).foregroundStyle(.secondary).multilineTextAlignment(.center)
 

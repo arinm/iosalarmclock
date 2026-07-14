@@ -52,6 +52,31 @@ struct AlarmCardView: View {
 
             statusLine
 
+            // Running snooze: first-class "stop just today" — kills only the
+            // pending re-ring; the alarm stays armed for its next occurrence.
+            // (Without this, silencing a snooze meant toggling the whole alarm
+            // off and back on.)
+            if alarm.isEnabled, store.snoozingItemIDs.contains(alarm.id) {
+                Button {
+                    Task {
+                        await store.stopSnooze(alarm)
+                        let next = NotificationActionHandler.describe(alarm.nextOccurrence, calendar: .current)
+                        banners.show(.neutral,
+                                     title: "Snooze stopped",
+                                     subtitle: "Still active — next alarm: \(next)",
+                                     alarmID: alarm.id)
+                        UINotificationFeedbackGenerator().notificationOccurred(.success)
+                    }
+                } label: {
+                    Label("Snoozing — stop for today", systemImage: "zzz")
+                        .font(.subheadline.weight(.semibold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(Theme.pauseFg)
+            }
+
             if shouldShowSkip {
                 Button {
                     Task {
