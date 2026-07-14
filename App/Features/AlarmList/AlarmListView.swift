@@ -83,29 +83,46 @@ struct AlarmListView: View {
         // TimelineView keeps every "Rings in …" label live without manual timers.
         TimelineView(.periodic(from: .now, by: 30)) { ctx in
             let now = ctx.date
-            ScrollView {
-                LazyVStack(spacing: Theme.stackSpacing) {
-                    permissionBanner
-                    NextAlarmSummaryView(now: now)
-                        .padding(.bottom, 4)
+            ScrollViewReader { proxy in
+                ScrollView {
+                    LazyVStack(spacing: Theme.stackSpacing) {
+                        permissionBanner
+                        NextAlarmSummaryView(now: now)
+                            .padding(.bottom, 4)
 
-                    // All alarms as identical full cards (default order). A
-                    // skip/disable confirmation renders INLINE under its card.
-                    ForEach(alarms) { alarm in
-                        VStack(spacing: Theme.stackSpacing) {
-                            AlarmCardView(alarm: alarm, now: now)
-                                .onTapGesture { editing = alarm }
-                                .contextMenu { cardMenu(alarm) }
-                            if let banner = banners.current, banner.alarmID == alarm.id {
-                                ActionBannerView(banner: banner)
-                                    .transition(.move(edge: .top).combined(with: .opacity))
+                        // All alarms as identical full cards (default order). A
+                        // confirmation renders inline ABOVE its card (reads as a
+                        // toast about the card below it).
+                        ForEach(alarms) { alarm in
+                            VStack(spacing: Theme.stackSpacing) {
+                                if let banner = banners.current, banner.alarmID == alarm.id {
+                                    ActionBannerView(banner: banner)
+                                        // Subtle pop-in: scale from 92% + slide, fade out on dismiss.
+                                        .transition(.asymmetric(
+                                            insertion: .scale(scale: 0.92, anchor: .top)
+                                                .combined(with: .move(edge: .top))
+                                                .combined(with: .opacity),
+                                            removal: .opacity
+                                        ))
+                                }
+                                AlarmCardView(alarm: alarm, now: now)
+                                    .onTapGesture { editing = alarm }
+                                    .contextMenu { cardMenu(alarm) }
                             }
+                            .id(alarm.id)
                         }
                     }
+                    .padding(.horizontal)
+                    .padding(.bottom, 120) // clear the floating + and its shadow
+                    .animation(.snappy, value: banners.current?.id)
                 }
-                .padding(.horizontal)
-                .padding(.bottom, 120) // clear the floating + and its shadow
-                .animation(.snappy, value: banners.current?.id)
+                // A new alarm sorts by time and can land OFF-SCREEN — scroll its
+                // card (and the banner above it) into view so the confirmation
+                // is never announced to nobody.
+                .onChange(of: banners.current?.id) { _, _ in
+                    guard let target = banners.current?.alarmID else { return }
+                    withAnimation(.snappy) { proxy.scrollTo(target, anchor: .center) }
+                }
             }
         }
     }
@@ -189,10 +206,11 @@ struct AlarmListView: View {
 struct ActionBannerView: View {
     let banner: BannerCenter.Banner
     @Environment(BannerCenter.self) private var banners
+    @Environment(ThemeManager.self) private var theme
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: icon).foregroundStyle(tint)
+            Image(systemName: icon).font(.title3).foregroundStyle(tint)
             VStack(alignment: .leading, spacing: 2) {
                 Text(banner.title).font(.subheadline.weight(.semibold))
                 if let subtitle = banner.subtitle {
@@ -208,10 +226,19 @@ struct ActionBannerView: View {
             }
         }
         .padding(16)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: Theme.cardRadius, style: .continuous))
+        .background(
+            // Material base + a wash of the banner's tint so confirmations pop
+            // against a wall of cards instead of reading as one more grey row.
+            RoundedRectangle(cornerRadius: Theme.cardRadius, style: .continuous)
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: Theme.cardRadius, style: .continuous)
+                        .fill(tint.opacity(0.12))
+                )
+        )
         .overlay(
             RoundedRectangle(cornerRadius: Theme.cardRadius, style: .continuous)
-                .strokeBorder(tint.opacity(0.35), lineWidth: 1)
+                .strokeBorder(tint.opacity(0.5), lineWidth: 1)
         )
         .shadow(color: .black.opacity(0.10), radius: 14, y: 5)
     }
@@ -221,14 +248,16 @@ struct ActionBannerView: View {
         case .skip: "checkmark.circle.fill"
         case .disabled: "bell.slash.fill"
         case .paused: "pause.circle.fill"
-        case .neutral: "info.circle.fill"
+        case .neutral: "checkmark.circle.fill"
         }
     }
 
     private var tint: Color {
         switch banner.kind {
         case .skip: Theme.skipFg
-        case .disabled, .neutral: .secondary
+        case .disabled: .secondary
+        // Confirmations ("Alarm set", "Snooze stopped") wear the user's accent.
+        case .neutral: theme.accentColor
         case .paused: Theme.pauseFg
         }
     }
