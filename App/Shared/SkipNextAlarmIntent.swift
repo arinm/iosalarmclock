@@ -13,23 +13,18 @@ struct SkipNextAlarmIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        let calc = NextOccurrenceCalculator()
-        let context = ModelContext(SharedModelContainer.make())
-        let alarms = (try? context.fetch(FetchDescriptor<AlarmItem>())) ?? []
+        // Reuse the running app's store when in-process — a sibling container's
+        // writes can lag the mainContext and let the AlarmKit observer re-arm
+        // the just-skipped occurrence (same rationale as SkipTodayIntent).
+        let store = SkipTodayIntent.resolveStore()
 
-        let soonest = alarms
-            .compactMap { item -> (AlarmItem, Date)? in
-                guard let next = calc.nextOccurrence(for: item.schedule, after: .now, calendar: .current) else { return nil }
-                return (item, next)
-            }
-            .min { $0.1 < $1.1 }
-
-        guard let (alarm, _) = soonest else {
+        guard let (alarm, _) = store.nextUpAlarm() else {
             return .result(dialog: "You have no upcoming alarms.")
         }
 
-        let scheduler = AlarmScheduler(alarmKit: AlarmKitManager(), preAlerts: PreAlertNotificationManager())
-        let store = AlarmStore(context: context, scheduler: scheduler)
+        // Conclude the Live Activity BEFORE the skip (see SkipTodayIntent) so
+        // a Siri skip doesn't leave a card counting to a cancelled occurrence.
+        await SkipTodayIntent.concludeActivity(alarmID: alarm.id.uuidString, for: alarm)
         let skippedDay = await store.skipNextOccurrence(alarm)
         WidgetCenter.shared.reloadAllTimelines()
 

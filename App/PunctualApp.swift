@@ -55,6 +55,10 @@ struct PunctualApp: App {
         _container = State(initialValue: container)
         _store = State(initialValue: store)
         _alarmKit = State(initialValue: alarmKit)
+        // Intents running in-process (LiveActivityIntent, Siri) must reuse THIS
+        // store — a sibling container's writes can lag the mainContext and let
+        // the observer re-arm a just-skipped occurrence.
+        LiveAppContext.store = store
         _permissions = State(initialValue: PermissionManager(alarmKit: alarmKit))
         _banners = State(initialValue: banners)
         _actionHandler = State(initialValue: handler)

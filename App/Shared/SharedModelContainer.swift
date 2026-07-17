@@ -1,6 +1,18 @@
 import Foundation
 import SwiftData
 
+/// The RUNNING app's live services, when this code executes in the app process.
+/// LiveActivityIntents (and app-bundle intents like Siri's skip) run IN the app
+/// process — building a second container there would write through a sibling
+/// context the app's mainContext may not merge in time: the AlarmKit observer
+/// could then recompute from stale data and RE-ARM the occurrence just skipped.
+/// Set once at app launch; stays nil in the widget process (fresh container is
+/// the correct fallback there and when the app was dead-launched in background).
+@MainActor
+enum LiveAppContext {
+    static weak var store: AlarmStore?
+}
+
 /// Builds the SwiftData container in a shared App Group so the app **and** the
 /// widget extension read/write the same alarms. Compiled into both targets.
 enum SharedModelContainer {

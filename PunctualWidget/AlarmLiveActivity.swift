@@ -35,8 +35,9 @@ struct AlarmLiveActivity: Widget {
                         if isPast(context) {
                             Label("Alarm time has passed", systemImage: "checkmark.circle")
                                 .font(.caption2).foregroundStyle(.secondary)
-                        } else {
-                            // Offer to skip the shown (next) occurrence.
+                        } else if !context.state.skippedToday {
+                            // Offer to skip the shown (next) occurrence. Hidden
+                            // once skipped — see the Lock Screen button note.
                             Button(intent: SkipTodayIntent(alarmIDString: context.attributes.alarmID)) {
                                 Label("Skip \(context.state.dayPhrase)", systemImage: "forward.end.fill").font(.caption.weight(.semibold))
                             }
@@ -111,11 +112,16 @@ private struct LockScreenLiveActivityView: View {
                 }
             }
             Spacer()
-            if !isPast(context) {
+            // Text pill, not a bare icon: the old forward.end.fill circle read
+            // as a play/stop control. Hidden once skipped — the tap already got
+            // its feedback (state flipped by the LiveActivityIntent) and an
+            // ended activity's buttons would be inert anyway.
+            if !isPast(context), !context.state.skippedToday {
                 Button(intent: SkipTodayIntent(alarmIDString: context.attributes.alarmID)) {
-                    Image(systemName: "forward.end.fill")
-                        .font(.title3).padding(10)
-                        .background(BrandColor.skip.opacity(0.2), in: Circle())
+                    Label("Skip", systemImage: "forward.end.fill")
+                        .font(.subheadline.weight(.semibold))
+                        .padding(.horizontal, 14).padding(.vertical, 9)
+                        .background(BrandColor.skip.opacity(0.2), in: Capsule())
                 }
                 .tint(BrandColor.skip)
                 .accessibilityLabel("Skip \(context.state.dayPhrase)")
