@@ -9,6 +9,10 @@ struct AlarmCardView: View {
     let now: Date
     @Environment(AlarmStore.self) private var store
     @Environment(BannerCenter.self) private var banners
+    /// Scales the big time with the user's Dynamic Type setting (fixed 44pt
+    /// would stay frozen while every label around it grows), capped so
+    /// accessibility sizes don't blow up the card layout.
+    @ScaledMetric(relativeTo: .largeTitle) private var timeSize: CGFloat = 44
 
     private var status: AlarmStatus { alarm.status(now: now) }
     private var presented: (text: String, tint: Color, fg: Color) { StatusPresenter.line(status, now: now) }
@@ -18,8 +22,9 @@ struct AlarmCardView: View {
             HStack(alignment: .firstTextBaseline) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(timeString)
-                        .font(.system(size: 44, weight: .semibold, design: .rounded))
+                        .font(.system(size: min(timeSize, 64), weight: .semibold, design: .rounded))
                         .monospacedDigit()
+                        .lineLimit(1).minimumScaleFactor(0.6)
                         .foregroundStyle(alarm.isEnabled ? .primary : .secondary)
                     if !alarm.label.isEmpty {
                         Text(alarm.label).font(.subheadline).foregroundStyle(.secondary)
@@ -31,8 +36,16 @@ struct AlarmCardView: View {
                     set: { newValue in
                         Task {
                             await store.setEnabled(alarm, newValue)
-                            // Confirm only the less-reversible "off" (turning on is obvious).
-                            if !newValue {
+                            if newValue {
+                                // Confirm ON with the engine-computed next ring,
+                                // symmetric with the "Alarm set" banner.
+                                if let next = alarm.nextOccurrence {
+                                    banners.show(.neutral,
+                                                 title: "Alarm on — rings in \(CountdownFormatter.string(until: next, from: .now))",
+                                                 subtitle: NotificationActionHandler.describe(next, calendar: .current),
+                                                 alarmID: alarm.id)
+                                }
+                            } else {
                                 banners.show(.disabled,
                                              title: "Alarm off — won't ring",
                                              subtitle: "Until you turn it back on",
@@ -91,7 +104,7 @@ struct AlarmCardView: View {
                         UINotificationFeedbackGenerator().notificationOccurred(.success)
                     }
                 } label: {
-                    Label("Skip today", systemImage: "forward.end.fill")
+                    Label(skipButtonTitle, systemImage: "forward.end.fill")
                         .font(.subheadline.weight(.semibold))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
@@ -133,12 +146,23 @@ struct AlarmCardView: View {
         }
     }
 
-    /// Only offer skip when there's a natural occurrence today to skip.
+    /// Offer the first-class skip whenever the next ring is within 24h — the
+    /// real decision moment is THE EVENING BEFORE ("no work tomorrow"), which
+    /// today-only gating missed entirely. Uses the TimelineView-driven `now` so
+    /// the button appears/disappears live. One-time alarms are excluded:
+    /// "skipping" one never-rings it, so "Skipped — still active" would lie —
+    /// the toggle (and the context menu) are the honest affordances there.
     private var shouldShowSkip: Bool {
-        if case .scheduled(let next) = status {
-            return Calendar.current.isDateInToday(next)
-        }
-        return false
+        guard alarm.mode != .oneTimeDate, case .scheduled(let next) = status else { return false }
+        return next.timeIntervalSince(now) <= 24 * 3600
+    }
+
+    /// "Skip today" / "Skip tomorrow" — routed through dayPhrase so a weekday
+    /// name is correct by construction if the window ever widens.
+    private var skipButtonTitle: String {
+        guard case .scheduled(let next) = status else { return "Skip today" }
+        let day = DateOnly(date: next, calendar: .current)
+        return "Skip \(NotificationActionHandler.dayPhrase(day, calendar: .current))"
     }
 
     private var timeString: String {
@@ -157,7 +181,19 @@ struct RepeatPillsRow: View {
     let mode: AlarmMode
     let oneTimeDate: DateOnly?
 
+    /// VoiceOver: seven single letters ("M, T, W…") are noise — one label.
+    private var pillsAccessibilityLabel: String {
+        mode == .oneTimeDate ? oneTimeLabel : "Repeats \(weekdays.humanSummary)"
+    }
+
     var body: some View {
+        pills
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(pillsAccessibilityLabel)
+    }
+
+    @ViewBuilder
+    private var pills: some View {
         if mode == .oneTimeDate {
             Label(oneTimeLabel, systemImage: "calendar")
                 .font(.caption.weight(.medium)).foregroundStyle(.secondary)

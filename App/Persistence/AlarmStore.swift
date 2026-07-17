@@ -222,8 +222,15 @@ final class AlarmStore {
 
         var snoozingItems: Set<UUID> = []
         if !snoozingIDs.isEmpty {
+            let now = Date.now
             for item in allAlarms() where item.snooze.isEnabled {
-                for date in item.recentlyFiredOccurrences + item.armedOccurrences {
+                // Only occurrences that already FIRED (past-dated) count as a
+                // snooze. A future-dated occurrence in `.countdown` is the
+                // PRE-ALERT countdown (CountdownDuration.preAlert), not a snooze
+                // — without this filter it would falsely announce "Snoozed" and
+                // show the stop-snooze button 15 min before every alarm.
+                let fired = item.recentlyFiredOccurrences + item.armedOccurrences.filter { $0 <= now }
+                for date in fired {
                     let oid = AlarmKitManager.occurrenceID(item: item.id, date: date)
                     guard snoozingIDs.contains(oid) else { continue }
                     snoozingItems.insert(item.id)

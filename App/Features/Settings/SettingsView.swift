@@ -18,9 +18,9 @@ struct SettingsView: View {
             Form {
                 Section("Defaults for new alarms") {
                     if pro.isAvailable(.customPreAlertTiming) {
-                        Stepper("Pre-alert: \(defaultPreAlert) min", value: $defaultPreAlert, in: 1...120, step: 5)
+                        Stepper("Heads-up: \(defaultPreAlert) min", value: $defaultPreAlert, in: 1...120, step: 5)
                     } else {
-                        ProLockRow(title: "Pre-alert", value: "15 min") { showPaywall = true }
+                        ProLockRow(title: "Heads-up", value: "15 min") { showPaywall = true }
                     }
                     if pro.isAvailable(.advancedSnooze) {
                         Stepper("Snooze: \(defaultSnooze) min", value: $defaultSnooze, in: 1...60)
@@ -31,7 +31,7 @@ struct SettingsView: View {
 
                 Section("Permissions") {
                     permissionRow("Alarms (AlarmKit)", state: permissions.alarmKitState)
-                    permissionRow("Pre-alert notifications", state: permissions.notificationState)
+                    permissionRow("Heads-up notifications", state: permissions.notificationState)
                     if permissions.alarmKitState == .denied || permissions.notificationState == .denied,
                        let url = URL(string: UIApplication.openSettingsURLString) {
                         Link("Open iOS Settings", destination: url)

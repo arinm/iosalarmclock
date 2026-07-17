@@ -7,6 +7,8 @@ struct PaywallView: View {
     @Environment(StoreManager.self) private var storeKit
     @Environment(\.dismiss) private var dismiss
     @State private var working: String?   // product id being purchased
+    @State private var restoring = false
+    @State private var restoreMessage: String?
 
     var body: some View {
         NavigationStack {
@@ -29,7 +31,7 @@ struct PaywallView: View {
                     featureList
                     comingSoon
 
-                    Text("The core alarm — countdown, pre-alert and Skip today — is free forever. No ads.")
+                    Text("The core alarm — countdown, heads-up and Skip today — is free forever. No ads.")
                         .font(.caption2).foregroundStyle(.secondary).multilineTextAlignment(.center)
 
                     legalFooter
@@ -75,6 +77,13 @@ struct PaywallView: View {
             tierButton(id: StoreManager.lifetimeID, title: "Lifetime",
                        caption: "Pay once · features forever", highlighted: false, badge: nil)
 
+            // Required auto-renewal disclosure (App Review 3.1.2) — must live
+            // near the purchase buttons, not buried in the legal footer.
+            Text("Subscriptions renew automatically until cancelled in your App Store settings at least 24 hours before the current period ends. Lifetime is a one-time purchase.")
+                .font(.caption2).foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.top, 2)
+
             // App Store returned no products (agreement not active, IAPs not
             // ready, or offline) — say so and let the user retry instead of
             // leaving three dead "—" rows.
@@ -97,7 +106,15 @@ struct PaywallView: View {
         Button {
             Task {
                 working = id
-                if await storeKit.purchase(id) { dismiss() }
+                if await storeKit.purchase(id) {
+                    // A "you're Pro now" beat before closing: the view flips to
+                    // the owned badge (isPro is already true), the user sees the
+                    // confirmation, then the sheet dismisses itself.
+                    working = nil
+                    UINotificationFeedbackGenerator().notificationOccurred(.success)
+                    try? await Task.sleep(for: .seconds(1.6))
+                    dismiss()
+                }
                 working = nil
             }
         } label: {
@@ -141,8 +158,27 @@ struct PaywallView: View {
     /// Restore + required legal links (App Review expects these on a paywall).
     private var legalFooter: some View {
         VStack(spacing: 8) {
-            Button("Restore Purchases") { Task { await storeKit.restore() } }
-                .font(.subheadline)
+            Button {
+                Task {
+                    restoring = true
+                    restoreMessage = nil
+                    let synced = await storeKit.restore()
+                    restoreMessage = storeKit.isPro
+                        ? "Purchases restored — you're Pro!"
+                        : (synced ? "No previous purchases found."
+                                  : "Couldn't reach the App Store — check your sign-in and try again.")
+                    restoring = false
+                }
+            } label: {
+                if restoring { ProgressView() } else { Text("Restore Purchases") }
+            }
+            .font(.subheadline)
+            .disabled(restoring)
+            if let restoreMessage {
+                Text(restoreMessage)
+                    .font(.footnote.weight(.medium))
+                    .foregroundStyle(storeKit.isPro ? Theme.accent : .secondary)
+            }
             HStack(spacing: 16) {
                 Link("Terms", destination: URL(string: "https://arinm.github.io/iosalarmclock/terms.html")!)
                 Link("Privacy", destination: URL(string: "https://arinm.github.io/iosalarmclock/privacy.html")!)

@@ -106,7 +106,7 @@ struct AlarmEditorView: View {
                         ProLockRow(title: "Sound", value: "Default") { showPaywall = true }
                     }
                 } header: {
-                    Text("Pre-alert sound")
+                    Text("Heads-up sound")
                 } footer: {
                     Text("Plays with the heads-up notification. The alarm itself uses the system alarm sound.")
                 }
@@ -228,7 +228,7 @@ struct AlarmEditorView: View {
 
     private var preAlertSection: some View {
         Section {
-            Toggle("Pre-alert", isOn: $preAlert.isEnabled)
+            Toggle("Heads-up", isOn: $preAlert.isEnabled)
             if preAlert.isEnabled {
                 if permissions.hasResolved && permissions.notificationState == .denied {
                     Label("Notifications are off — the heads-up won't show. The alarm still rings.",
@@ -269,7 +269,7 @@ struct AlarmEditorView: View {
         } footer: {
             Text(pro.isPro
                  ? "A friendly notification before the alarm rings, with a Skip today button. The alarm still rings on its own."
-                 : "Free alarms get a 15-minute heads-up with a Skip today button. Custom & multiple pre-alerts are part of Pro.")
+                 : "Free alarms get a 15-minute heads-up with a Skip today button. Custom & multiple heads-ups are part of Pro.")
         }
     }
 
@@ -338,6 +338,17 @@ struct AlarmEditorView: View {
         let finalAutoSkip = !strip(.calendarAwareSkip) && autoSkipCalendar
         let finalSound = strip(.customSounds) ? nil : soundName
 
+        // Safety net for the notifications permission: onboarding step 2 is the
+        // primary ask, but if the app died between steps the state stays
+        // .notDetermined FOREVER (nothing else ever asks) and the heads-up
+        // silently never fires. Saving an alarm with the heads-up ON is the
+        // natural, explained moment to recover.
+        func ensureHeadsUpPermission(_ enabled: Bool) async {
+            if enabled, permissions.notificationState == .notDetermined {
+                await permissions.requestNotifications()
+            }
+        }
+
         // Confirmation banner ("Alarm set — rings in 7h 59m") shown inline under
         // the card once the editor sheet dismisses. Reads the engine-computed
         // nextOccurrence AFTER the store reschedules, so the countdown is truth.
@@ -363,6 +374,7 @@ struct AlarmEditorView: View {
             item.soundName = finalSound
             Task {
                 await store.create(item)
+                await ensureHeadsUpPermission(finalPreAlert.isEnabled)
                 confirm(item, verb: "Alarm set")
             }
         case .edit(let item):
@@ -376,6 +388,7 @@ struct AlarmEditorView: View {
                     $0.autoSkipOnCalendarEvents = finalAutoSkip
                     $0.soundName = finalSound
                 }
+                await ensureHeadsUpPermission(finalPreAlert.isEnabled)
                 confirm(item, verb: "Saved")
             }
         }

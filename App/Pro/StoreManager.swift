@@ -177,9 +177,20 @@ final class StoreManager {
         }
     }
 
-    func restore() async {
-        try? await AppStore.sync()
-        await refreshEntitlements()
+    /// Returns whether the App Store sync actually ran — a cancelled sign-in or
+    /// network failure must NOT be reported as "no purchases found" (the
+    /// definitive wrong answer for a paying user on a new device).
+    @discardableResult
+    func restore() async -> Bool {
+        do {
+            try await AppStore.sync()
+            await refreshEntitlements()
+            return true
+        } catch {
+            storeLog.error("restore: AppStore.sync failed: \(error.localizedDescription, privacy: .public)")
+            await refreshEntitlements() // still read whatever is locally known
+            return false
+        }
     }
 
     private func listenForTransactions() -> Task<Void, Never> {

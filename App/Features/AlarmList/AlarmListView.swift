@@ -84,38 +84,74 @@ struct AlarmListView: View {
         TimelineView(.periodic(from: .now, by: 30)) { ctx in
             let now = ctx.date
             ScrollViewReader { proxy in
-                ScrollView {
-                    LazyVStack(spacing: Theme.stackSpacing) {
+                // List (plain, chrome hidden) instead of ScrollView: native
+                // swipe actions on the cards — the muscle memory from Clock.
+                List {
+                    Group {
                         permissionBanner
                         NextAlarmSummaryView(now: now)
                             .padding(.bottom, 4)
+                    }
+                    .listRowStyleClear()
 
-                        // All alarms as identical full cards (default order). A
-                        // confirmation renders inline ABOVE its card (reads as a
-                        // toast about the card below it).
-                        ForEach(alarms) { alarm in
-                            VStack(spacing: Theme.stackSpacing) {
-                                if let banner = banners.current, banner.alarmID == alarm.id {
-                                    ActionBannerView(banner: banner)
-                                        // Subtle pop-in: scale from 92% + slide, fade out on dismiss.
-                                        .transition(.asymmetric(
-                                            insertion: .scale(scale: 0.92, anchor: .top)
-                                                .combined(with: .move(edge: .top))
-                                                .combined(with: .opacity),
-                                            removal: .opacity
-                                        ))
-                                }
-                                AlarmCardView(alarm: alarm, now: now)
-                                    .onTapGesture { editing = alarm }
-                                    .contextMenu { cardMenu(alarm) }
+                    // All alarms as identical full cards (default order). A
+                    // confirmation renders inline ABOVE its card (reads as a
+                    // toast about the card below it).
+                    ForEach(alarms) { alarm in
+                        VStack(spacing: Theme.stackSpacing) {
+                            if let banner = banners.current, banner.alarmID == alarm.id {
+                                ActionBannerView(banner: banner)
+                                    // Subtle pop-in: scale from 92% + slide, fade out on dismiss.
+                                    .transition(.asymmetric(
+                                        insertion: .scale(scale: 0.92, anchor: .top)
+                                            .combined(with: .move(edge: .top))
+                                            .combined(with: .opacity),
+                                        removal: .opacity
+                                    ))
                             }
-                            .id(alarm.id)
+                            AlarmCardView(alarm: alarm, now: now)
+                                .onTapGesture { editing = alarm }
+                                .contextMenu { cardMenu(alarm) }
+                                // VoiceOver: one element per card, actionable —
+                                // not a stream of letters with no way to edit.
+                                .accessibilityElement(children: .combine)
+                                .accessibilityAddTraits(.isButton)
+                                .accessibilityHint("Edits this alarm")
+                                // Deterministic default activation (double-tap):
+                                // combine+isButton alone taps the element CENTER,
+                                // which can land on an inner control.
+                                .accessibilityAction { editing = alarm }
+                                .accessibilityAction(named: alarm.isEnabled ? "Turn off" : "Turn on") {
+                                    Task {
+                                        await store.setEnabled(alarm, !alarm.isEnabled)
+                                        UIAccessibility.post(notification: .announcement,
+                                                             argument: alarm.isEnabled ? "Alarm on" : "Alarm off")
+                                    }
+                                }
+                                .accessibilityAction(named: "Details") { detail = alarm }
+                                // Card-level (NOT row-level — container actions
+                                // would leak onto the banner's Undo button):
+                                .modifier(SkipNextA11y(alarm: alarm, skip: { a in Task { await skip(a) } }))
+                                .modifier(StopSnoozeA11y(alarm: alarm))
+                        }
+                        .id(alarm.id)
+                        .listRowStyleClear()
+                        // Leading skip swipe — recurring + enabled only (see
+                        // SkipAffordances for the reasoning per state).
+                        .modifier(SkipAffordances(alarm: alarm, skip: { a in Task { await skip(a) } }))
+                        // Trailing swipe: delete — two-step (no full swipe), since
+                        // delete has no undo.
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                            Button(role: .destructive) {
+                                Task { await store.delete(alarm) }
+                            } label: { Label("Delete", systemImage: "trash") }
                         }
                     }
-                    .padding(.horizontal)
-                    .padding(.bottom, 120) // clear the floating + and its shadow
-                    .animation(.snappy, value: banners.current?.id)
                 }
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)
+                .contentMargins(.bottom, 120, for: .scrollContent) // clear the floating +
+                .animation(.snappy, value: banners.current?.id)
                 // A new alarm sorts by time and can land OFF-SCREEN — scroll its
                 // card (and the banner above it) into view so the confirmation
                 // is never announced to nobody.
@@ -260,6 +296,84 @@ struct ActionBannerView: View {
         case .neutral: theme.accentColor
         case .paused: Theme.pauseFg
         }
+    }
+}
+
+/// Leading skip swipe — recurring AND enabled alarms only. One-time: skipping
+/// disarms it forever while the banner claims "still active". Disabled:
+/// skipNextOccurrence returns nil (schedule disabled) and the swipe would be a
+/// silent no-op — no effect, no feedback. Paused alarms keep the swipe: skip
+/// then targets the first occurrence AFTER the pause, a legitimate action.
+private struct SkipAffordances: ViewModifier {
+    let alarm: AlarmItem
+    let skip: (AlarmItem) -> Void
+
+    func body(content: Content) -> some View {
+        if alarm.mode != .oneTimeDate, alarm.isEnabled {
+            content
+                .swipeActions(edge: .leading, allowsFullSwipe: true) {
+                    Button { skip(alarm) } label: {
+                        Label("Skip", systemImage: "forward.end.fill")
+                    }
+                    .tint(Theme.skipFg)
+                }
+        } else {
+            content
+        }
+    }
+}
+
+/// VoiceOver "Skip next" — applied to the CARD element (not the row VStack):
+/// container-level custom actions propagate onto every contained element, so a
+/// row-level action would also pollute the inline banner's Undo button.
+/// Same gating as the swipe above.
+private struct SkipNextA11y: ViewModifier {
+    let alarm: AlarmItem
+    let skip: (AlarmItem) -> Void
+
+    func body(content: Content) -> some View {
+        if alarm.mode != .oneTimeDate, alarm.isEnabled {
+            content.accessibilityAction(named: "Skip next") { skip(alarm) }
+        } else {
+            content
+        }
+    }
+}
+
+/// Exposes "Stop snooze" to VoiceOver while a snooze runs — the combined card
+/// element swallows the inline button. Card-level for the same propagation
+/// reason as SkipNextA11y.
+private struct StopSnoozeA11y: ViewModifier {
+    let alarm: AlarmItem
+    @Environment(AlarmStore.self) private var store
+
+    func body(content: Content) -> some View {
+        if store.snoozingItemIDs.contains(alarm.id), alarm.isEnabled {
+            content.accessibilityAction(named: "Stop snooze") {
+                Task {
+                    await store.stopSnooze(alarm)
+                    // Honest either way: recurring → "tomorrow at 6:30";
+                    // one-time → "No further alarms" (never claim "still active").
+                    let next = NotificationActionHandler.describe(alarm.nextOccurrence, calendar: .current)
+                    UIAccessibility.post(notification: .announcement,
+                                         argument: "Snooze stopped. Next alarm: \(next)")
+                }
+            }
+        } else {
+            content
+        }
+    }
+}
+
+private extension View {
+    /// Strip List's row chrome so rows render as our free-floating cards:
+    /// no separators, no default background, card-friendly insets.
+    func listRowStyleClear() -> some View {
+        self
+            .listRowSeparator(.hidden)
+            .listRowBackground(Color.clear)
+            .listRowInsets(EdgeInsets(top: Theme.stackSpacing / 2, leading: 16,
+                                      bottom: Theme.stackSpacing / 2, trailing: 16))
     }
 }
 

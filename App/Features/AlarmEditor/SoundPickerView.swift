@@ -45,7 +45,7 @@ struct SoundPickerView: View {
                     Text("Import your own audio — the first 30 seconds are used (trimmed & converted automatically). Apple Music tracks are protected and can't be imported.")
                 }
             }
-            .navigationTitle("Pre-alert Sound")
+            .navigationTitle("Heads-up Sound")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) { Button("Done") { sounds.stopPreview(); dismiss() } }

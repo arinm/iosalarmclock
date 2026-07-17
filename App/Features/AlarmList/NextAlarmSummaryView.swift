@@ -6,6 +6,8 @@ import AlarmCore
 struct NextAlarmSummaryView: View {
     @Environment(AlarmStore.self) private var store
     @Environment(ThemeManager.self) private var theme
+    /// Hero time scales with Dynamic Type (capped for layout sanity).
+    @ScaledMetric(relativeTo: .largeTitle) private var heroTimeSize: CGFloat = 52
     let now: Date
     @State private var pulse = false
 
@@ -76,7 +78,8 @@ struct NextAlarmSummaryView: View {
         let parts = s.components(separatedBy: " ")
         return HStack(alignment: .firstTextBaseline, spacing: 4) {
             Text(parts.first ?? s)
-                .font(.system(size: 52, weight: .bold, design: .rounded)).monospacedDigit()
+                .font(.system(size: min(heroTimeSize, 76), weight: .bold, design: .rounded)).monospacedDigit()
+                .lineLimit(1).minimumScaleFactor(0.6)
             if parts.count > 1 {
                 Text(parts[1]).font(.title3.weight(.bold)).foregroundStyle(.secondary)
             }

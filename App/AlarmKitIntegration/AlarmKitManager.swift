@@ -176,10 +176,11 @@ final class AlarmKitManager: AlarmKitManaging {
         #endif
     }
 
-    /// IDs of alarms currently in the countdown state. Our alarms configure no
-    /// pre-alert countdown (`preAlert: nil`), so for us `.countdown` can only
-    /// mean ONE thing: the user tapped Snooze and the alarm is waiting to
-    /// re-ring. Used to post the "Snoozed" confirmation notification.
+    /// IDs of alarms currently in the countdown state. NOTE: with
+    /// `CountdownDuration.preAlert` set, `.countdown` covers BOTH the pre-alert
+    /// countdown (occurrence still in the future) and a running snooze
+    /// (occurrence already fired) — callers disambiguate by occurrence date
+    /// (see AlarmStore.reconcileSnoozes).
     func snoozingAlarmIDs() -> Set<UUID> {
         #if canImport(AlarmKit)
         guard let alarms = try? AlarmManager.shared.alarms else { return [] }
@@ -235,8 +236,12 @@ final class AlarmKitManager: AlarmKitManaging {
         // Whether the system also renders Stop on the SNOOZE surface is a device
         // behavior to validate; the in-app disable/delete path (see
         // AlarmScheduler) is the guaranteed way to cancel a running snooze.
+        // The countdown presentation also backs the PRE-ALERT countdown below
+        // (system-rendered "rings in N min" surface in the final minutes before
+        // the alarm — no app process needed), so provide it whenever either the
+        // pre-alert or snooze uses a countdown state.
         let presentation: AlarmPresentation
-        if item.snooze.isEnabled {
+        if item.snooze.isEnabled || item.preAlert.isEnabled {
             let countdownPresentation = AlarmPresentation.Countdown(
                 title: LocalizedStringResource(stringLiteral: title)
             )
@@ -252,9 +257,31 @@ final class AlarmKitManager: AlarmKitManaging {
             tintColor: BrandColor.currentAccent()
         )
 
-        // Snooze countdown duration (post-alert) drives custom snooze length.
-        let countdown = item.snooze.isEnabled
-            ? Alarm.CountdownDuration(preAlert: nil, postAlert: TimeInterval(item.snooze.durationMinutes * 60))
+        // Countdown durations:
+        //  • preAlert — a SYSTEM-rendered countdown surface for the final N
+        //    minutes before the alarm (mirrors the user's pre-alert lead time).
+        //    Unlike our Live Activity, it needs no app process to appear.
+        //    NOTE: semantics of preAlert with a .fixed schedule are
+        //    under-documented — validate on device; if it misbehaves, the lever
+        //    is simply reverting to preAlert: nil.
+        //  • postAlert — custom snooze length after a Snooze tap.
+        let preAlertSeconds: TimeInterval? = {
+            guard item.preAlert.isEnabled else { return nil }
+            let configured = TimeInterval(item.preAlert.minutesBefore * 60)
+            let remaining = occurrence.timeIntervalSinceNow
+            guard remaining <= configured else { return configured }
+            // The countdown window has already (partially) elapsed — e.g. the
+            // alarm was created/edited 10 min before a fire with a 15-min
+            // pre-alert. schedule() behavior for an elapsed-window countdown is
+            // UNDOCUMENTED; never hand the system that shape. Clamp to the time
+            // actually left (countdown starts now), or omit when it's too close
+            // for a countdown to be meaningful.
+            return remaining > 60 ? remaining - 1 : nil
+        }()
+        let postAlertSeconds: TimeInterval? = item.snooze.isEnabled
+            ? TimeInterval(item.snooze.durationMinutes * 60) : nil
+        let countdown = (preAlertSeconds != nil || postAlertSeconds != nil)
+            ? Alarm.CountdownDuration(preAlert: preAlertSeconds, postAlert: postAlertSeconds)
             : nil
 
         // Sound: the pre-alert already plays the user's custom sound. For the

@@ -179,6 +179,12 @@ extension PunctualApp {
 /// Decides between onboarding and the main list.
 struct RootView: View {
     @Environment(PermissionManager.self) private var permissions
+    /// Once onboarding is on screen it stays until IT says it's done —
+    /// `needsOnboarding` flips as soon as the first permission resolves, and
+    /// switching on that alone used to tear the screen down mid-flow (the
+    /// second system dialog then floated over an unexplained alarm list).
+    @State private var startedOnboarding = false
+    @State private var onboardingDone = false
 
     var body: some View {
         if skipOnboarding {
@@ -187,8 +193,9 @@ struct RootView: View {
             // Brief neutral splash until the real permission state is known, so we
             // never flash the onboarding screen to users who already granted access.
             LaunchSplashView()
-        } else if permissions.needsOnboarding {
-            OnboardingView()
+        } else if (permissions.needsOnboarding || startedOnboarding) && !onboardingDone {
+            OnboardingView(onDone: { onboardingDone = true })
+                .onAppear { startedOnboarding = true }
         } else {
             AlarmListView()
         }

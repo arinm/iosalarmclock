@@ -31,16 +31,16 @@ final class ProFeatureManager {
         var title: String {
             switch self {
             case .vacationPause: "Vacation pause (date ranges)"
-            case .customPreAlertTiming: "Custom pre-alert timing"
-            case .multiplePreAlerts: "Multiple pre-alerts"
-            case .preAlertMessages: "Custom pre-alert messages"
+            case .customPreAlertTiming: "Custom heads-up timing"
+            case .multiplePreAlerts: "Multiple heads-ups"
+            case .preAlertMessages: "Custom heads-up messages"
             case .advancedSnooze: "Advanced snooze"
             case .alarmGroups: "Alarm groups"
             case .calendarAwareSkip: "Holiday & calendar auto-skip"
             case .themes: "Themes & accents"
             case .widgetCustomization: "Widget customization"
             case .appIcons: "Alternate app icons"
-            case .customSounds: "Custom pre-alert sound"
+            case .customSounds: "Custom heads-up sound"
             }
         }
 
