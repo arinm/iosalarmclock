@@ -1,3 +1,4 @@
 User-agent: *
 Allow: /
-Sitemap: https://arinm.github.io/iosalarmclock/sitemap.xml
+
+Sitemap: https://punctualalarm.com/sitemap.xml

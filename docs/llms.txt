@@ -1,0 +1,14 @@
+# Punctual — Smart Alarm for iPhone
+
+> Punctual is a premium alarm app for iPhone (iOS 26+, built on Apple's AlarmKit,
+> rings through Silent mode and Focus). Core is free forever with no ads: live
+> countdown to the next ring, heads-up notification before the alarm, and Skip
+> Today (skip one day, alarm stays armed for tomorrow). Pro ($1.99/mo, $9.99/yr,
+> $19.99 lifetime) adds vacation pause, custom heads-ups, alarm groups, calendar
+> auto-skip, themes, icons, custom heads-up sounds. No data collection.
+
+## Pages
+- [Home & FAQ](https://punctualalarm.com/): features, pricing, FAQ
+- [Support](https://punctualalarm.com/support.html): troubleshooting
+- [Privacy](https://punctualalarm.com/privacy.html): no-data-collection policy
+- [Terms](https://punctualalarm.com/terms.html): subscription & purchase terms
