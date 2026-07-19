@@ -55,8 +55,11 @@ struct AlarmListView: View {
                         .accessibilityLabel("Settings")
                 }
             }
-            // Reachable bottom + (the redesign's signature).
-            .overlay(alignment: .bottom) {
+            // Reachable bottom + (the redesign's signature). safeAreaInset (not
+            // an overlay) so the List automatically keeps its end clear of the
+            // button — at max scroll the last card's Skip button sits fully
+            // above the +, instead of being covered by it.
+            .safeAreaInset(edge: .bottom) {
                 if !alarms.isEmpty { addButton }
             }
             .sheet(isPresented: $creatingNew) {
@@ -150,7 +153,6 @@ struct AlarmListView: View {
                 }
                 .listStyle(.plain)
                 .scrollContentBackground(.hidden)
-                .contentMargins(.bottom, 120, for: .scrollContent) // clear the floating +
                 .animation(.snappy, value: banners.current?.id)
                 // A new alarm sorts by time and can land OFF-SCREEN — scroll its
                 // card (and the banner above it) into view so the confirmation
@@ -169,7 +171,8 @@ struct AlarmListView: View {
     /// handled by onboarding).
     @ViewBuilder
     private var permissionBanner: some View {
-        if permissions.hasResolved && permissions.alarmKitState == .denied {
+        if !ProcessInfo.processInfo.arguments.contains("--app-store-screenshots"),
+           permissions.hasResolved && permissions.alarmKitState == .denied {
             Button {
                 if let url = URL(string: UIApplication.openSettingsURLString) {
                     UIApplication.shared.open(url)
@@ -211,7 +214,7 @@ struct AlarmListView: View {
                 .shadow(color: theme.accentColor.opacity(0.5), radius: 18, y: 4)
         }
         .accessibilityLabel("Add alarm")
-        .padding(.bottom, 28)
+        .padding(.vertical, 10)
     }
 
     @ViewBuilder

@@ -1,0 +1,53 @@
+[
+  {
+    "attachments" : [
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "2EE79F4A-F25A-4139-8142-5E1184ACD84F",
+        "deviceName" : "iPhone 17 Pro Max",
+        "exportedFileName" : "E7C5A8EC-6315-40B3-88C4-B2823898F007.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "06-SkipConfirmation_0_59BAC630-7AAE-469A-A995-C6E4580A3790.png",
+        "timestamp" : 1784292191.962
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "2EE79F4A-F25A-4139-8142-5E1184ACD84F",
+        "deviceName" : "iPhone 17 Pro Max",
+        "exportedFileName" : "1D442BD0-1888-407E-A08B-895E311F683D.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "04-Paywall_0_429EE140-DB55-4ADE-9946-D5C7FDCEC680.png",
+        "timestamp" : 1784292175.919
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "2EE79F4A-F25A-4139-8142-5E1184ACD84F",
+        "deviceName" : "iPhone 17 Pro Max",
+        "exportedFileName" : "3EC8A6EE-00F4-432E-A7C6-18251DBC4B58.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "03-Settings_0_AAB9FB40-B409-46EA-A155-6EBE8D7878D3.png",
+        "timestamp" : 1784292170.186
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "2EE79F4A-F25A-4139-8142-5E1184ACD84F",
+        "deviceName" : "iPhone 17 Pro Max",
+        "exportedFileName" : "C9BBDEA6-716A-4A43-B575-7B9C526688D7.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "02-Editor_0_81AE77EF-CBD7-4412-B286-BB2A78E6DF67.png",
+        "timestamp" : 1784292163.107
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "2EE79F4A-F25A-4139-8142-5E1184ACD84F",
+        "deviceName" : "iPhone 17 Pro Max",
+        "exportedFileName" : "04F3CE65-5327-47A3-9D04-F67BA79E537A.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "01-Home_0_8959BAA5-65F4-45AC-8304-E54B78E3ACC9.png",
+        "timestamp" : 1784292159.06
+      }
+    ],
+    "testIdentifier" : "ScreenshotTests/testCaptureScreens()",
+    "testIdentifierURL" : "test://com.apple.xcode/Punctual/PunctualUITests/ScreenshotTests/testCaptureScreens"
+  }
+]

@@ -24,6 +24,17 @@ final class PermissionManager {
     var needsOnboarding: Bool { alarmKitState == .notDetermined }
 
     func refresh() async {
+        #if DEBUG
+        // Screenshot mode: the simulator reports AlarmKit as denied, which puts
+        // the orange "Alarms can't ring" warning in every App Store shot.
+        // Present as fully authorized instead — DEBUG-only, never ships.
+        if ProcessInfo.processInfo.arguments.contains("--app-store-screenshots") {
+            alarmKitState = .authorized
+            notificationState = .authorized
+            hasResolved = true
+            return
+        }
+        #endif
         switch await alarmKit.authorizationState() {
         case .authorized: alarmKitState = .authorized
         case .denied: alarmKitState = .denied
