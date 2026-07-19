@@ -16,6 +16,7 @@ struct SettingsView: View {
 
     @State private var showPaywall = false
     @State private var appIcon = "default"
+    @State private var showSoundPicker = false
 
     var body: some View {
         NavigationStack {
@@ -32,19 +33,24 @@ struct SettingsView: View {
                         ProLockRow(title: "Snooze", value: "9 min") { showPaywall = true }
                     }
                     if pro.isAvailable(.customSounds) {
-                        Picker("Sound", selection: $defaultSoundName) {
-                            Text("Default").tag("")
-                            ForEach(sounds.sounds, id: \.self) { file in
-                                Text(sounds.displayName(file)).tag(file)
+                        // Opens the FULL sound picker (import, preview, delete) —
+                        // an inline Picker can only choose, not import.
+                        Button { showSoundPicker = true } label: {
+                            HStack {
+                                Text("Sound")
+                                Spacer()
+                                Text(defaultSoundName.isEmpty ? "Default" : sounds.displayName(defaultSoundName))
+                                    .foregroundStyle(.secondary)
                             }
                         }
+                        .tint(.primary)
                     } else {
                         ProLockRow(title: "Sound", value: "Default") { showPaywall = true }
                     }
                 } header: {
                     Text("Defaults for new alarms")
                 } footer: {
-                    Text("New alarms start from these values — including the sound. Import sounds from any alarm's Sound picker.")
+                    Text("New alarms start from these values — including the sound.")
                 }
 
                 Section("Permissions") {
@@ -139,6 +145,14 @@ struct SettingsView: View {
             .navigationTitle("Settings")
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
             .sheet(isPresented: $showPaywall) { PaywallView() }
+            // Bridge: SoundPickerView binds String? (nil = default), the stored
+            // default is String ("" = default).
+            .sheet(isPresented: $showSoundPicker) {
+                SoundPickerView(soundName: Binding(
+                    get: { defaultSoundName.isEmpty ? nil : defaultSoundName },
+                    set: { defaultSoundName = $0 ?? "" }
+                ))
+            }
             .onAppear { appIcon = UIApplication.shared.alternateIconName ?? "default" }
         }
     }

@@ -237,12 +237,10 @@ final class AlarmKitManager: AlarmKitManaging {
         // Whether the system also renders Stop on the SNOOZE surface is a device
         // behavior to validate; the in-app disable/delete path (see
         // AlarmScheduler) is the guaranteed way to cancel a running snooze.
-        // The countdown presentation also backs the PRE-ALERT countdown below
-        // (system-rendered "rings in N min" surface in the final minutes before
-        // the alarm — no app process needed), so provide it whenever either the
-        // pre-alert or snooze uses a countdown state.
+        // Countdown presentation backs the SNOOZE state only (preAlert was
+        // removed — see the countdown-duration note below).
         let presentation: AlarmPresentation
-        if item.snooze.isEnabled || item.preAlert.isEnabled {
+        if item.snooze.isEnabled {
             let countdownPresentation = AlarmPresentation.Countdown(
                 title: LocalizedStringResource(stringLiteral: title)
             )
@@ -258,41 +256,30 @@ final class AlarmKitManager: AlarmKitManaging {
             tintColor: BrandColor.currentAccent()
         )
 
-        // Countdown durations:
-        //  • preAlert — a SYSTEM-rendered countdown surface for the final N
-        //    minutes before the alarm (mirrors the user's pre-alert lead time).
-        //    Unlike our Live Activity, it needs no app process to appear.
-        //    NOTE: semantics of preAlert with a .fixed schedule are
-        //    under-documented — validate on device; if it misbehaves, the lever
-        //    is simply reverting to preAlert: nil.
-        //  • postAlert — custom snooze length after a Snooze tap.
-        let preAlertSeconds: TimeInterval? = {
-            guard item.preAlert.isEnabled else { return nil }
-            let configured = TimeInterval(item.preAlert.minutesBefore * 60)
-            let remaining = occurrence.timeIntervalSinceNow
-            guard remaining <= configured else { return configured }
-            // The countdown window has already (partially) elapsed — e.g. the
-            // alarm was created/edited 10 min before a fire with a 15-min
-            // pre-alert. schedule() behavior for an elapsed-window countdown is
-            // UNDOCUMENTED; never hand the system that shape. Clamp to the time
-            // actually left (countdown starts now), or omit when it's too close
-            // for a countdown to be meaningful.
-            return remaining > 60 ? remaining - 1 : nil
-        }()
+        // Countdown duration: postAlert ONLY (custom snooze length).
+        //
+        // `preAlert` was tried in build 8 (system countdown surface at T−15)
+        // and REMOVED after device validation in build 11: with preAlert set,
+        // a .fixed-schedule alarm takes on timer shape, and firing UNATTENDED
+        // (phone locked) auto-restarted the countdown instead of alerting —
+        // i.e. the alarm "auto-snoozed" and never rang until unlocked. Apple's
+        // own factories never combine schedule + preAlert; that combination is
+        // undocumented territory. DO NOT reintroduce preAlert here. The T−15
+        // heads-up remains covered by the pre-alert NOTIFICATION
+        // (PreAlertNotificationManager — documented, validated).
         let postAlertSeconds: TimeInterval? = item.snooze.isEnabled
             ? TimeInterval(item.snooze.durationMinutes * 60) : nil
-        let countdown = (preAlertSeconds != nil || postAlertSeconds != nil)
-            ? Alarm.CountdownDuration(preAlert: preAlertSeconds, postAlert: postAlertSeconds)
-            : nil
+        let countdown = postAlertSeconds.map {
+            Alarm.CountdownDuration(preAlert: nil, postAlert: $0)
+        }
 
-        // Sound: use the imported sound (Library/Sounds CAF) for the alarm too,
-        // falling back to the system default when none is chosen — or when the
-        // file is GONE (deleted sound still referenced by an alarm, dead default
-        // from Settings). `.named` has no documented missing-file contract, and
-        // "probably not silence" is not acceptable for an alarm: verify the file
-        // exists before handing the name to AlarmKit. DEVICE-VALIDATE: whether
-        // AlarmKit honours runtime-imported sounds is what this TestFlight
-        // round is checking.
+        // Sound: the imported sound (Library/Sounds CAF) for the alarm ring too.
+        // DEVICE-VALIDATED 2026-07-19 (build 11): AlarmKit plays a runtime-
+        // imported `.named` CAF for the alarm. Guarded by a file-existence
+        // check — `.named` has no documented missing-file contract, and a
+        // silent alarm is the one failure this product can never ship, so a
+        // dead reference (deleted sound, stale Settings default) provably
+        // falls back to `.default`.
         let alarmSound: AlertConfiguration.AlertSound
         if let name = item.soundName, !name.isEmpty,
            FileManager.default.fileExists(
