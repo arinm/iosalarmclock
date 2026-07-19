@@ -55,7 +55,9 @@ struct AlarmEditorView: View {
             _vibration = State(initialValue: true)
             _groupName = State(initialValue: "")
             _autoSkipCalendar = State(initialValue: false)
-            _soundName = State(initialValue: nil)
+            // Default sound from Settings (Pro); empty string = system default.
+            let defaultSound = d.string(forKey: "defaultSoundName") ?? ""
+            _soundName = State(initialValue: defaultSound.isEmpty ? nil : defaultSound)
             _preAlertMessage = State(initialValue: "")
             _additionalPreAlerts = State(initialValue: [])
         case .edit(let item):
@@ -105,10 +107,8 @@ struct AlarmEditorView: View {
                     } else {
                         ProLockRow(title: "Sound", value: "Default") { showPaywall = true }
                     }
-                } header: {
-                    Text("Heads-up sound")
                 } footer: {
-                    Text("Plays with the heads-up notification. The alarm itself uses the system alarm sound.")
+                    Text("Used for the heads-up notification and the alarm ring.")
                 }
 
                 Section {

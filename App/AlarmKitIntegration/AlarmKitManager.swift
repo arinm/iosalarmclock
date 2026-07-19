@@ -4,6 +4,7 @@ import AlarmCore
 #if canImport(AlarmKit)
 import AlarmKit
 import AppIntents
+import ActivityKit   // AlertConfiguration.AlertSound (AlarmKit alarm sound type)
 #endif
 
 /// Diagnostics — view in Console.app or Xcode's console (subsystem
@@ -284,16 +285,29 @@ final class AlarmKitManager: AlarmKitManaging {
             ? Alarm.CountdownDuration(preAlert: preAlertSeconds, postAlert: postAlertSeconds)
             : nil
 
-        // Sound: the pre-alert already plays the user's custom sound. For the
-        // AlarmKit alarm itself we keep `.default` until it's verified ON A REAL
-        // iOS 26 DEVICE whether AlarmKit accepts a runtime-imported sound from
-        // Library/Sounds (vs. bundle-only). When confirmed, swap to the custom
-        // sound here using `item.soundName`. See SoundManager / README.
+        // Sound: use the imported sound (Library/Sounds CAF) for the alarm too,
+        // falling back to the system default when none is chosen — or when the
+        // file is GONE (deleted sound still referenced by an alarm, dead default
+        // from Settings). `.named` has no documented missing-file contract, and
+        // "probably not silence" is not acceptable for an alarm: verify the file
+        // exists before handing the name to AlarmKit. DEVICE-VALIDATE: whether
+        // AlarmKit honours runtime-imported sounds is what this TestFlight
+        // round is checking.
+        let alarmSound: AlertConfiguration.AlertSound
+        if let name = item.soundName, !name.isEmpty,
+           FileManager.default.fileExists(
+               atPath: FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask)[0]
+                   .appendingPathComponent("Sounds").appendingPathComponent(name).path
+           ) {
+            alarmSound = .named(name)
+        } else {
+            alarmSound = .default
+        }
         return AlarmManager.AlarmConfiguration(
             countdownDuration: countdown,
             schedule: schedule,
             attributes: attributes,
-            sound: .default
+            sound: alarmSound
         )
     }
     #endif

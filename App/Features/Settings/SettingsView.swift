@@ -5,10 +5,14 @@ struct SettingsView: View {
     @Environment(PermissionManager.self) private var permissions
     @Environment(ProFeatureManager.self) private var pro
     @Environment(ThemeManager.self) private var theme
+    @Environment(SoundManager.self) private var sounds
     @Environment(\.dismiss) private var dismiss
 
     @AppStorage("defaultPreAlertMinutes") private var defaultPreAlert = 15
     @AppStorage("defaultSnoozeMinutes") private var defaultSnooze = 9
+    /// Default sound (filename in Library/Sounds) seeded into NEW alarms —
+    /// empty string = system default. Pro, like per-alarm sounds.
+    @AppStorage("defaultSoundName") private var defaultSoundName = ""
 
     @State private var showPaywall = false
     @State private var appIcon = "default"
@@ -16,7 +20,7 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Defaults for new alarms") {
+                Section {
                     if pro.isAvailable(.customPreAlertTiming) {
                         Stepper("Heads-up: \(defaultPreAlert) min", value: $defaultPreAlert, in: 1...120, step: 5)
                     } else {
@@ -27,6 +31,20 @@ struct SettingsView: View {
                     } else {
                         ProLockRow(title: "Snooze", value: "9 min") { showPaywall = true }
                     }
+                    if pro.isAvailable(.customSounds) {
+                        Picker("Sound", selection: $defaultSoundName) {
+                            Text("Default").tag("")
+                            ForEach(sounds.sounds, id: \.self) { file in
+                                Text(sounds.displayName(file)).tag(file)
+                            }
+                        }
+                    } else {
+                        ProLockRow(title: "Sound", value: "Default") { showPaywall = true }
+                    }
+                } header: {
+                    Text("Defaults for new alarms")
+                } footer: {
+                    Text("New alarms start from these values — including the sound. Import sounds from any alarm's Sound picker.")
                 }
 
                 Section("Permissions") {

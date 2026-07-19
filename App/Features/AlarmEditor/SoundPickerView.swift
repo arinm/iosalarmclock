@@ -1,10 +1,10 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// Pro: pick the pre-alert sound — Default, or one of the user's imported sounds.
-/// This drives the heads-up notification sound (the AlarmKit alarm itself uses
-/// the system alarm sound). Import pulls audio from Files/Voice Memos and
-/// converts it (see SoundManager).
+/// Pro: pick the alarm sound — Default, or one of the user's imported sounds.
+/// Drives both the heads-up notification and the alarm ring (device-validated
+/// this round). Import pulls audio from Files/Voice Memos and converts it
+/// (see SoundManager).
 struct SoundPickerView: View {
     @Binding var soundName: String?
     @Environment(SoundManager.self) private var sounds
@@ -42,10 +42,10 @@ struct SoundPickerView: View {
                 } header: {
                     Text("Your sounds")
                 } footer: {
-                    Text("Import your own audio — the first 30 seconds are used (trimmed & converted automatically). Apple Music tracks are protected and can't be imported.")
+                    Text("Import your own audio — the first ~30 seconds are used (trimmed & converted automatically). Apple Music tracks are protected and can't be imported.")
                 }
             }
-            .navigationTitle("Heads-up Sound")
+            .navigationTitle("Sound")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) { Button("Done") { sounds.stopPreview(); dismiss() } }

@@ -14,7 +14,10 @@ import Observation
 @MainActor
 @Observable
 final class SoundManager {
-    static let maxSeconds: Double = 30
+    /// Apple's rule: notification audio must be UNDER 30 seconds — at exactly
+    /// 30.0 (where any longer import lands after trimming) the system silently
+    /// plays the DEFAULT sound instead. Clamp safely below the limit.
+    static let maxSeconds: Double = 29.5
 
     private(set) var sounds: [String] = []   // CAF filenames in Library/Sounds
     private var player: AVAudioPlayer?
@@ -66,6 +69,11 @@ final class SoundManager {
 
     func delete(_ file: String) {
         try? FileManager.default.removeItem(at: url(for: file))
+        // Don't leave Settings' default pointing at a dead file (the Picker
+        // would render blank and new alarms would seed an unresolvable name).
+        if UserDefaults.standard.string(forKey: "defaultSoundName") == file {
+            UserDefaults.standard.removeObject(forKey: "defaultSoundName")
+        }
         refresh()
     }
 
@@ -128,17 +136,30 @@ final class SoundManager {
 
         let queue = DispatchQueue(label: "com.punctual.soundconvert")
         await withCheckedContinuation { (cont: CheckedContinuation<Void, Never>) in
+            // The ready-callback can fire again after a failure path — a second
+            // resume on a CheckedContinuation traps. Guarded; runs serially on
+            // `queue`, so a plain flag is safe.
+            var resumed = false
+            func finish() {
+                if !resumed { resumed = true; cont.resume() }
+            }
             input.requestMediaDataWhenReady(on: queue) {
                 while input.isReadyForMoreMediaData {
                     // Bail out (resume) if the writer failed, else we'd hang forever.
                     if writer.status == .failed || reader.status == .failed {
-                        cont.resume(); return
+                        reader.cancelReading()
+                        input.markAsFinished()
+                        finish(); return
                     }
                     if let sample = output.copyNextSampleBuffer() {
-                        if !input.append(sample) { cont.resume(); return } // append failed
+                        if !input.append(sample) { // append failed
+                            reader.cancelReading()
+                            input.markAsFinished()
+                            finish(); return
+                        }
                     } else {
                         input.markAsFinished()
-                        writer.finishWriting { cont.resume() }
+                        writer.finishWriting { finish() }
                         return
                     }
                 }
@@ -150,6 +171,18 @@ final class SoundManager {
             try? FileManager.default.removeItem(at: dest)
             throw writer.error ?? NSError(domain: "SoundManager", code: 3,
                 userInfo: [NSLocalizedDescriptionKey: "Couldn't convert this audio file."])
+        }
+
+        // PROVE the under-30s rule (iOS silently plays the default sound at
+        // ≥30.0s): AVFoundation doesn't guarantee the last decoded buffer is
+        // truncated at the timeRange cut, so verify the written file. The 29.5s
+        // cap leaves ~0.4s of slack for buffer granularity; anything at 29.9s+
+        // is rejected rather than shipped broken.
+        let writtenSeconds = try await AVURLAsset(url: dest).load(.duration).seconds
+        guard writtenSeconds < 29.9 else {
+            try? FileManager.default.removeItem(at: dest)
+            throw NSError(domain: "SoundManager", code: 4,
+                userInfo: [NSLocalizedDescriptionKey: "Converted audio ended up too long for a notification sound."])
         }
     }
 }
