@@ -26,13 +26,19 @@ final class LiveActivityManager {
             let now = Date.now
             let inWindow = soonest.map { $0.fireDate > now && $0.fireDate.timeIntervalSince(now) <= windowHours * 3600 } ?? false
 
-            // End (awaited) any LIVE activity that no longer matches the target.
-            // ENDED activities are deliberately left alone: the skip intent ends
-            // one with a "Today skipped — still active" farewell state and its
-            // own dismissal policy — ending it again here would yank that card
-            // off the Lock Screen instantly.
+            // End (awaited) any still-visible activity that no longer matches the
+            // target. Must cover BOTH `.active` AND `.stale`: once the shown
+            // fireDate passes (staleDate = fireDate), a fired alarm's card flips to
+            // `.stale` — still on the Lock Screen / Dynamic Island showing "Alarm
+            // time has passed" — but it is NOT `.active`, so filtering on `.active`
+            // alone left it stuck there forever (Stop / toggle-off / snooze all
+            // failed to clear it until the user removed it by hand). `.ended`
+            // activities are still deliberately left alone: the skip intent ends
+            // one with a "Today skipped — still active" farewell state and its own
+            // dismissal policy — ending it again here would yank that card off
+            // instantly.
             for activity in Activity<PunctualActivityAttributes>.activities where
-                activity.activityState == .active
+                (activity.activityState == .active || activity.activityState == .stale)
                 && !(inWindow && activity.attributes.alarmID == soonest?.id.uuidString) {
                 await activity.end(nil, dismissalPolicy: .immediate)
             }
