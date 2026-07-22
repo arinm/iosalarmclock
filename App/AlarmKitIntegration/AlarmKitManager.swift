@@ -34,6 +34,19 @@ protocol AlarmKitManaging {
     /// when the truth can't be read. Lets the scheduler verify persisted state
     /// against reality instead of trusting it.
     func liveAlarmIDs() -> Set<UUID>?
+    /// ONE snapshot of the system's alarms split into (all ids, active subset),
+    /// where "active" = any alarm NOT in `.scheduled` state (counting down,
+    /// snoozing, paused, or alerting right now). Both sets come from a single
+    /// read so `active ⊆ all` always holds and they share fate — the orphan
+    /// sweep relies on the active set as the sole protection for an alarm
+    /// ringing/snoozing whose occurrence has left the tracked dates. Fails
+    /// CLOSED (`nil`) when unreadable, so the sweep purges nothing on a bad read.
+    func alarmSnapshot() -> (all: Set<UUID>, active: Set<UUID>)?
+    /// Cancel arbitrary alarm ids directly (orphan purge). Unlike
+    /// `cancelOccurrences`, these ids aren't derived from an item — the sweep
+    /// passes system-held ids it has already proven belong to no tracked
+    /// occurrence. Cancelling an unknown/stopped id is a harmless no-op.
+    func cancelRawIDs(_ ids: Set<UUID>) async
 }
 
 enum AlarmAuthState: Sendable { case notDetermined, authorized, denied }
@@ -174,6 +187,33 @@ final class AlarmKitManager: AlarmKitManaging {
         return Set(alarms.map(\.id))
         #else
         return nil
+        #endif
+    }
+
+    /// One read of the system's alarms → (all ids, active subset). "Active" is
+    /// any alarm NOT in `.scheduled` state (alerting/countdown/paused). Deriving
+    /// both from a SINGLE read guarantees `active ⊆ all` and gives them shared
+    /// fate: the orphan sweep must never lose the active set (its only guard for
+    /// a live ring) while keeping the all set. Fails CLOSED (`nil`) on a bad read.
+    func alarmSnapshot() -> (all: Set<UUID>, active: Set<UUID>)? {
+        #if canImport(AlarmKit)
+        guard let alarms = try? AlarmManager.shared.alarms else { return nil }
+        let all = Set(alarms.map(\.id))
+        let active = Set(alarms.filter { $0.state != .scheduled }.map(\.id))
+        return (all, active)
+        #else
+        return nil
+        #endif
+    }
+
+    func cancelRawIDs(_ ids: Set<UUID>) async {
+        #if canImport(AlarmKit)
+        for id in ids { try? AlarmManager.shared.cancel(id: id) }
+        if !ids.isEmpty {
+            alarmLog.notice("Purged \(ids.count, privacy: .public) orphan alarm(s) held by the system but tracked by no occurrence")
+        }
+        #else
+        alarmLog.notice("[AlarmKit unavailable] would purge \(ids.count) orphan(s)")
         #endif
     }
 

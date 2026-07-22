@@ -145,6 +145,15 @@ final class AlarmScheduler {
     /// Authoritative read of the system's current alarm ids (nil = unreadable).
     func currentLiveAlarmIDs() -> Set<UUID>? { alarmKit.liveAlarmIDs() }
 
+    /// One snapshot of the system's alarms → (all ids, active subset). Used by
+    /// the store's orphan sweep, which needs both from a single read. `nil` when
+    /// unreadable (sweep then purges nothing).
+    func alarmSnapshot() -> (all: Set<UUID>, active: Set<UUID>)? { alarmKit.alarmSnapshot() }
+
+    /// Cancel system-held alarm ids the store has determined are orphans (held by
+    /// the system but wanted by no tracked occurrence).
+    func purgeAlarmIDs(_ ids: Set<UUID>) async { await alarmKit.cancelRawIDs(ids) }
+
     /// Post the "Snoozed" confirmation notification for an item (see
     /// PreAlertNotificationManager.announceSnooze).
     func announceSnooze(for item: AlarmItem) { preAlerts.announceSnooze(for: item) }
@@ -173,6 +182,19 @@ final class AlarmScheduler {
         return occurrences.allSatisfy {
             liveAlarmIDs.contains(AlarmKitManager.occurrenceID(item: item.id, date: $0))
         }
+    }
+
+    /// Best-effort IMMEDIATE silence: cancel the AlarmKit alarms currently recorded
+    /// for `item` (and its pre-alerts) WITHOUT writing any persisted state. Meant
+    /// to be called OUTSIDE the serial scheduling chain the instant the user turns
+    /// an alarm off or deletes it, so the ring stops even if a refresh is in flight
+    /// ahead of the authoritative reschedule. Safe outside the lock precisely
+    /// because it never mutates `armedOccurrences` (so it can't clobber a concurrent
+    /// reschedule); it only issues idempotent AlarmKit cancels. The serialized
+    /// reschedule/cancel that follows clears the persisted state for real.
+    func eagerSilence(_ item: AlarmItem) async {
+        await alarmKit.cancelOccurrences(item.armedOccurrences + item.recentlyFiredOccurrences, for: item)
+        await preAlerts.cancelPreAlert(for: item)
     }
 
     /// Tear down all arming for an alarm (used on delete). Includes any recently
