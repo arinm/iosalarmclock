@@ -352,11 +352,13 @@ struct AlarmEditorView: View {
         // Confirmation banner ("Alarm set — rings in 7h 59m") shown inline under
         // the card once the editor sheet dismisses. Reads the engine-computed
         // nextOccurrence AFTER the store reschedules, so the countdown is truth.
-        func confirm(_ item: AlarmItem, verb: String) {
+        func confirm(_ item: AlarmItem, verb: String, snoozeStopped: Bool = false) {
             guard item.isEnabled, let next = item.nextOccurrence else { return }
+            let when = NotificationActionHandler.describe(next, calendar: .current)
             banners.show(.neutral,
                          title: "\(verb) — rings in \(CountdownFormatter.string(until: next, from: .now))",
-                         subtitle: NotificationActionHandler.describe(next, calendar: .current),
+                         // Tell the user the running snooze was stopped by this edit.
+                         subtitle: snoozeStopped ? "Snooze stopped · \(when)" : when,
                          alarmID: item.id)
         }
 
@@ -379,7 +381,7 @@ struct AlarmEditorView: View {
             }
         case .edit(let item):
             Task {
-                await store.update(item) {
+                let snoozeStopped = await store.update(item) {
                     $0.hour = h; $0.minute = m; $0.label = label
                     $0.mode = alarmMode; $0.repeatWeekdays = weekdays; $0.oneTimeDate = oneTime
                     $0.vibrationEnabled = vibration; $0.snooze = finalSnooze; $0.preAlert = finalPreAlert
@@ -389,7 +391,7 @@ struct AlarmEditorView: View {
                     $0.soundName = finalSound
                 }
                 await ensureHeadsUpPermission(finalPreAlert.isEnabled)
-                confirm(item, verb: "Saved")
+                confirm(item, verb: "Saved", snoozeStopped: snoozeStopped)
             }
         }
         UINotificationFeedbackGenerator().notificationOccurred(.success)

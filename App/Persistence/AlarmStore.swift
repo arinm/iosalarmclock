@@ -57,7 +57,15 @@ final class AlarmStore {
         }
     }
 
-    func update(_ item: AlarmItem, _ mutate: (AlarmItem) -> Void) async {
+    /// Returns `true` if this edit stopped a snooze that was counting down — so
+    /// the caller can tell the user (a moved alarm supersedes the old snooze).
+    @discardableResult
+    func update(_ item: AlarmItem, _ mutate: (AlarmItem) -> Void) async -> Bool {
+        // Snapshot the fields that define WHEN the alarm rings, so we can tell a
+        // genuine reschedule from a label/sound-only edit (see below).
+        let (h0, m0, mode0, days0, date0) =
+            (item.hour, item.minute, item.mode, item.repeatWeekdays, item.oneTimeDate)
+
         // Apply the semantic change (skip mark, new label, isEnabled…) and commit
         // it SYNCHRONOUSLY: the UI (e.g. a toggle bound to isEnabled) reflects it
         // in the same runloop turn instead of snapping back while a refresh ahead
@@ -68,12 +76,31 @@ final class AlarmStore {
         mutate(item)
         item.touch()
         save()
+
+        // Did the user actually MOVE the alarm (time / mode / repeat days / date)?
+        let rescheduled = item.hour != h0 || item.minute != m0 || item.mode != mode0
+            || item.repeatWeekdays != days0 || item.oneTimeDate != date0
+        // Was a snooze actually counting down at that moment? (Only then do we
+        // tell the user we stopped it — reflects the "Snoozing" state they see.)
+        let stoppedSnooze = rescheduled && snoozingItemIDs.contains(item.id)
+
         // Force the slow path: armed alarms bake in configuration (label, snooze,
         // tint) that the scheduler's date-window comparison can't see.
         await serialized {
+            // Moving the alarm supersedes any snooze still counting down from a
+            // PRIOR firing: without this, the reschedule arms the new time but the
+            // old snooze also re-rings (reschedule keeps past-dated snoozes so a
+            // passive refresh can't silence a live one). Cancel it ONLY on a real
+            // reschedule — label/sound edits, skip, pause and passive refreshes
+            // leave a running snooze untouched.
+            if rescheduled {
+                await self.scheduler.cancelRunningSnooze(item)
+                self.snoozingItemIDs.remove(item.id)   // drop the "Snoozing" pill
+            }
             await self.scheduler.reschedule(item, force: true)
             self.save()
         }
+        return stoppedSnooze
     }
 
     func delete(_ item: AlarmItem) async {
