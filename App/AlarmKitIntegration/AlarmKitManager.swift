@@ -29,7 +29,11 @@ protocol AlarmKitManaging {
     /// Cancel the AlarmKit alarms previously armed for these exact fire dates.
     /// Ids are derived deterministically from (item.id, date), so this works
     /// across processes (widget/Siri) and across app launches.
-    func cancelOccurrences(_ dates: [Date], for item: AlarmItem) async
+    /// Returns the dates VERIFIED to be gone from the system afterwards (empty
+    /// when the live list couldn't be read), so callers know whether it is safe
+    /// to forget their cancel handle for an occurrence.
+    @discardableResult
+    func cancelOccurrences(_ dates: [Date], for item: AlarmItem) async -> [Date]
     /// The ids of every alarm the system holds for this app right now, or `nil`
     /// when the truth can't be read. Lets the scheduler verify persisted state
     /// against reality instead of trusting it.
@@ -59,6 +63,26 @@ struct PunctualMetadata: AlarmMetadata {
     let alarmItemID: UUID
     let label: String
     let occurrence: Date
+
+    /// TOLERANT DECODE — load-bearing now that a widget actually decodes this.
+    /// Alarms live in the AlarmKit daemon for days, so a build that ADDS a field
+    /// here would otherwise fail to decode the metadata of alarms scheduled by
+    /// the PREVIOUS build, and the system may then drop those alarms — silently
+    /// recreating the very "it didn't ring" failure this file exists to prevent.
+    /// Every field must therefore stay optional-with-fallback; add new ones the
+    /// same way (`decodeIfPresent` + default), never as a hard requirement.
+    init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        alarmItemID = try c.decodeIfPresent(UUID.self, forKey: .alarmItemID) ?? UUID()
+        label = try c.decodeIfPresent(String.self, forKey: .label) ?? ""
+        occurrence = try c.decodeIfPresent(Date.self, forKey: .occurrence) ?? .distantPast
+    }
+
+    init(alarmItemID: UUID, label: String, occurrence: Date) {
+        self.alarmItemID = alarmItemID
+        self.label = label
+        self.occurrence = occurrence
+    }
 }
 #endif
 
@@ -169,7 +193,29 @@ final class AlarmKitManager: AlarmKitManaging {
                 armed.append(date)
                 alarmLog.notice("Scheduled '\(name, privacy: .public)' id \(id, privacy: .public) @ \(date, privacy: .public)")
             } catch {
-                alarmLog.error("Schedule FAILED '\(name, privacy: .public)' @ \(date, privacy: .public): \(error.localizedDescription, privacy: .public)")
+                // The alarm ceiling is dynamic (Apple: "no set number") and is
+                // reported as a real error — call it out by name so a user who
+                // hits it produces a diagnosable log instead of a silent no-ring.
+                if case AlarmManager.AlarmError.maximumLimitReached = error {
+                    alarmLog.fault("Schedule FAILED '\(name, privacy: .public)' @ \(date, privacy: .public): ALARM LIMIT REACHED — the system refused to hold more alarms")
+                } else {
+                    alarmLog.error("Schedule FAILED '\(name, privacy: .public)' @ \(date, privacy: .public): \(error.localizedDescription, privacy: .public)")
+                }
+            }
+        }
+
+        // Cross-check against the system, but REPORT ONLY — never drop.
+        // Absence from `AlarmManager.alarms` immediately after `schedule()` is
+        // ambiguous: it can mean "not scheduled" or "the daemon list hasn't
+        // propagated yet". Dropping on that ambiguity would remove our cancel
+        // handle for an alarm the system may really hold, and the occurrence
+        // would then fall out of the orphan sweep's legitimate set and be purged
+        // — our own safety net deleting the user's real alarm. A throw from
+        // `schedule` is the only proof of failure, and that already drops above.
+        if !armed.isEmpty, let live = liveAlarmIDs() {
+            let missing = armed.filter { !live.contains(occurrenceID(item: item, date: $0)) }
+            if !missing.isEmpty {
+                alarmLog.fault("Arm VERIFICATION for '\(name, privacy: .public)': \(missing.count, privacy: .public) occurrence(s) not (yet) visible in AlarmManager.alarms — keeping them tracked: \(missing, privacy: .public)")
             }
         }
         return armed
@@ -208,9 +254,15 @@ final class AlarmKitManager: AlarmKitManaging {
 
     func cancelRawIDs(_ ids: Set<UUID>) async {
         #if canImport(AlarmKit)
-        for id in ids { try? AlarmManager.shared.cancel(id: id) }
+        var purged = 0
+        for id in ids {
+            do { try AlarmManager.shared.cancel(id: id); purged += 1 }
+            catch {
+                alarmLog.error("Purge FAILED id \(id, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            }
+        }
         if !ids.isEmpty {
-            alarmLog.notice("Purged \(ids.count, privacy: .public) orphan alarm(s) held by the system but tracked by no occurrence")
+            alarmLog.notice("Purged \(purged, privacy: .public)/\(ids.count, privacy: .public) orphan alarm(s) held by the system but tracked by no occurrence")
         }
         #else
         alarmLog.notice("[AlarmKit unavailable] would purge \(ids.count) orphan(s)")
@@ -231,17 +283,42 @@ final class AlarmKitManager: AlarmKitManaging {
         #endif
     }
 
-    func cancelOccurrences(_ dates: [Date], for item: AlarmItem) async {
+    @discardableResult
+    func cancelOccurrences(_ dates: [Date], for item: AlarmItem) async -> [Date] {
         #if canImport(AlarmKit)
         // Cancel exactly the occurrences that were armed (the caller passes the
         // persisted `armedOccurrences`). Deterministic ids mean this works even
         // when a different process/launch did the arming.
         for date in dates {
-            try? AlarmManager.shared.cancel(id: occurrenceID(item: item, date: date))
+            let id = occurrenceID(item: item, date: date)
+            do {
+                try AlarmManager.shared.cancel(id: id)
+            } catch {
+                // Routine: delete / eagerSilence pass ids that may never have been
+                // armed or are already stopped. Debug level so it can't drown the
+                // signal we actually care about (the verification below).
+                alarmLog.debug("Cancel threw for id \(id, privacy: .public) @ \(date, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            }
         }
-        if !dates.isEmpty { alarmLog.notice("Cancelled \(dates.count) armed occurrence(s)") }
+
+        guard !dates.isEmpty else { return [] }
+        // Verify by ABSENCE — unlike verifying a schedule, this is unambiguous:
+        // an id the system no longer lists is genuinely gone. Callers use the
+        // result to decide whether it's safe to forget their cancel handle.
+        guard let live = liveAlarmIDs() else {
+            alarmLog.notice("Cancelled \(dates.count, privacy: .public) occurrence(s) — UNVERIFIED (alarm list unreadable)")
+            return []   // unverifiable → callers must keep their handles
+        }
+        let cleared = dates.filter { !live.contains(occurrenceID(item: item, date: $0)) }
+        if cleared.count == dates.count {
+            alarmLog.notice("Cancelled \(cleared.count, privacy: .public) occurrence(s), verified gone")
+        } else {
+            alarmLog.error("Cancel INCOMPLETE: \(dates.count - cleared.count, privacy: .public) of \(dates.count, privacy: .public) occurrence(s) STILL held by the system")
+        }
+        return cleared
         #else
         alarmLog.notice("[AlarmKit unavailable] would cancel \(dates.count) alarm(s)")
+        return dates
         #endif
     }
 

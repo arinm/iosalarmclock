@@ -61,6 +61,12 @@ final class AlarmItem {
     /// deleting the alarm can't cancel the pending snooze and it rings anyway.
     /// Pruned to a short recent window; only meaningful while snooze is enabled.
     var recentlyFiredOccurrences: [Date] = []
+    /// True when the last scheduling pass could NOT arm everything it wanted
+    /// (system refused, authorization missing, alarm ceiling hit, or the arm
+    /// didn't survive verification). Without this the UI happily shows
+    /// "rings in 7h" for an alarm the system isn't actually holding — the one
+    /// lie an alarm app must never tell. Surfaced on the card.
+    var lastArmFailed: Bool = false
     var createdAt: Date
     var updatedAt: Date
 

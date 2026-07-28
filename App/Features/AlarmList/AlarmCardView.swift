@@ -41,13 +41,13 @@ struct AlarmCardView: View {
                                 // symmetric with the "Alarm set" banner.
                                 if let next = alarm.nextOccurrence {
                                     banners.show(.neutral,
-                                                 title: "Alarm on — rings in \(CountdownFormatter.string(until: next, from: .now))",
+                                                 title: "Alarm on - rings in \(CountdownFormatter.string(until: next, from: .now))",
                                                  subtitle: NotificationActionHandler.describe(next, calendar: .current),
                                                  alarmID: alarm.id)
                                 }
                             } else {
                                 banners.show(.disabled,
-                                             title: "Alarm off — won't ring",
+                                             title: "Alarm off - won't ring",
                                              subtitle: "Until you turn it back on",
                                              alarmID: alarm.id,
                                              undo: { [store] in await store.setEnabled(alarm, true) })
@@ -65,6 +65,19 @@ struct AlarmCardView: View {
 
             statusLine
 
+            // Honest failure surface: the countdown above says when this alarm
+            // SHOULD ring, but if the last scheduling pass couldn't hand it to
+            // the system there is nothing to ring. Say so instead of letting the
+            // card imply an alarm that doesn't exist.
+            if alarm.isEnabled, alarm.lastArmFailed {
+                Label("Couldn't schedule this alarm - it won't ring. Check alarm permission.",
+                      systemImage: "exclamationmark.triangle.fill")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Theme.pauseFg)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityLabel("Warning: this alarm could not be scheduled and will not ring")
+            }
+
             // Running snooze: first-class "stop just today" — kills only the
             // pending re-ring; the alarm stays armed for its next occurrence.
             // (Without this, silencing a snooze meant toggling the whole alarm
@@ -72,16 +85,26 @@ struct AlarmCardView: View {
             if alarm.isEnabled, store.snoozingItemIDs.contains(alarm.id) {
                 Button {
                     Task {
-                        await store.stopSnooze(alarm)
-                        let next = NotificationActionHandler.describe(alarm.nextOccurrence, calendar: .current)
-                        banners.show(.neutral,
-                                     title: "Snooze stopped",
-                                     subtitle: "Still active — next alarm: \(next)",
-                                     alarmID: alarm.id)
-                        UINotificationFeedbackGenerator().notificationOccurred(.success)
+                        // Only claim success when the re-ring is confirmed gone —
+                        // otherwise say so, rather than showing "stopped" and
+                        // letting the button reappear a second later.
+                        if await store.stopSnooze(alarm) {
+                            let next = NotificationActionHandler.describe(alarm.nextOccurrence, calendar: .current)
+                            banners.show(.neutral,
+                                         title: "Snooze stopped",
+                                         subtitle: "Still active - next alarm: \(next)",
+                                         alarmID: alarm.id)
+                            UINotificationFeedbackGenerator().notificationOccurred(.success)
+                        } else {
+                            banners.show(.disabled,
+                                         title: "Couldn't stop the snooze",
+                                         subtitle: "Turn the alarm off to silence it",
+                                         alarmID: alarm.id)
+                            UINotificationFeedbackGenerator().notificationOccurred(.warning)
+                        }
                     }
                 } label: {
-                    Label("Snoozing — stop for today", systemImage: "zzz")
+                    Label("Snoozing - stop for today", systemImage: "zzz")
                         .font(.subheadline.weight(.semibold))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
@@ -96,7 +119,7 @@ struct AlarmCardView: View {
                         if let day = await store.skipNextOccurrence(alarm) {
                             let next = NotificationActionHandler.describe(alarm.nextOccurrence, calendar: .current)
                             banners.show(.skip,
-                                         title: "Skipped \(NotificationActionHandler.dayPhrase(day, calendar: .current)) — still active",
+                                         title: "Skipped \(NotificationActionHandler.dayPhrase(day, calendar: .current)) - still active",
                                          subtitle: "Next alarm: \(next)",
                                          alarmID: alarm.id,
                                          undo: { [store] in await store.unskip(alarm, day: day) })

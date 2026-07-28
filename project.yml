@@ -101,6 +101,9 @@ targets:
       # Widget UI + bundle + Live Activity
       - PunctualWidget/NextAlarmWidget.swift
       - PunctualWidget/AlarmLiveActivity.swift
+      # AlarmKit-owned Live Activity — required whenever an alarm ships a
+      # countdown presentation, or the system may fail to alert.
+      - PunctualWidget/AlarmKitLiveActivity.swift
       - PunctualWidget/PunctualWidgetBundle.swift
       # Shared code compiled into both targets (separate modules, no clash)
       - App/Persistence/AlarmItem.swift

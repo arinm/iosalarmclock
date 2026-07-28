@@ -1,5 +1,8 @@
 import Foundation
+import OSLog
 import AlarmCore
+
+private let schedulerLog = Logger(subsystem: "com.punctual.app", category: "Scheduler")
 
 /// Coordinates the three sides of scheduling for one alarm:
 ///   1. recompute next occurrence(s) via the pure engine,
@@ -21,7 +24,26 @@ final class AlarmScheduler {
     /// the app can go this many fires without being opened and alarms still ring.
     /// Seven covers roughly a week of a daily alarm — a safe buffer that stays
     /// well clear of any per-app alarm ceiling for a handful of alarms.
-    private let lookahead = 7
+    private static let fullLookahead = 7
+    private let lookahead = AlarmScheduler.fullLookahead
+
+    /// Total one-shots we're willing to have armed across ALL alarms at once.
+    /// AlarmKit's per-app ceiling is dynamic and undocumented ("no set number",
+    /// per Apple) and reports in the wild put it near ~100, with schedules past
+    /// it dropped — which for an alarm app means a silent no-ring. Staying well
+    /// under it is cheap insurance.
+    private static let armBudget = 60
+    /// Never shrink below this: even a crowded install must survive a couple of
+    /// days without the app being opened.
+    private static let minLookahead = 3
+
+    /// How many occurrences to arm PER ALARM. Full depth for a normal install
+    /// (up to 8 enabled alarms keeps the full week), shrinking only when enough
+    /// alarms are enabled that the full window would approach the ceiling.
+    static func armDepth(enabledAlarms: Int, maxDepth: Int = fullLookahead) -> Int {
+        guard enabledAlarms > 1 else { return maxDepth }
+        return max(minLookahead, min(maxDepth, armBudget / enabledAlarms))
+    }
 
     /// How long a just-fired occurrence may still be alive as a running snooze in
     /// AlarmKit (native snooze can be repeated). We remember fired occurrences for
@@ -52,11 +74,19 @@ final class AlarmScheduler {
     /// alarms bake in configuration (label, snooze, tint) the date comparison
     /// can't see. Only the refresh passes (launch/foreground/observer) may
     /// fast-path — that's also what keeps the observer feedback loop terminal.
+    /// `depth` — how many occurrences to arm for THIS alarm. The store passes a
+    /// value shrunk to keep the app-wide total under the AlarmKit ceiling (see
+    /// `armDepth`); `nil` uses the full window.
+    /// `snoozeJustDisabled` — the caller observed this edit flip snooze from ON
+    /// to OFF. Only then may we cancel past-dated occurrences to kill a pending
+    /// re-ring; see the branch below for why a passive refresh must never do it.
     func reschedule(_ item: AlarmItem, now: Date = .now,
-                    liveAlarmIDs: Set<UUID>? = nil, force: Bool = false) async {
+                    liveAlarmIDs: Set<UUID>? = nil, force: Bool = false,
+                    depth: Int? = nil, snoozeJustDisabled: Bool = false) async {
         // The window we WANT armed for the current state ([] when disabled).
         let desired = item.isEnabled
-            ? calculator.nextOccurrences(for: item.schedule, after: now, calendar: calendar, count: lookahead)
+            ? calculator.nextOccurrences(for: item.schedule, after: now, calendar: calendar,
+                                         count: depth ?? lookahead)
             : []
 
         // Fast path — the armed AlarmKit window is already exactly right, so DON'T
@@ -92,12 +122,31 @@ final class AlarmScheduler {
             let justFired = item.armedOccurrences.filter { $0 <= now && $0 > horizon }
             item.recentlyFiredOccurrences = Array(Set(item.recentlyFiredOccurrences + justFired))
                 .filter { $0 > horizon }
-        } else if !item.recentlyFiredOccurrences.isEmpty {
+        } else if snoozeJustDisabled || !item.recentlyFiredOccurrences.isEmpty {
             // Snooze was just turned OFF while an occurrence may still be
             // snoozing — cancel it before dropping the record, or the pending
-            // re-ring survives as an orphan we can no longer target.
-            await alarmKit.cancelOccurrences(item.recentlyFiredOccurrences, for: item)
-            item.recentlyFiredOccurrences = []
+            // re-ring survives as an orphan we can no longer target. Covers BOTH
+            // bookkeeping states: on a cold launch (no refresh since the fire)
+            // the snoozing occurrence is still sitting past-dated in
+            // `armedOccurrences` and was never moved into `recentlyFired`.
+            //
+            // GATED ON THE TRANSITION, never on the current setting: this branch
+            // cancels PAST-dated occurrences, and a past-dated occurrence is
+            // exactly what an alarm ringing right now looks like. Running it on
+            // every passive refresh of every snooze-less alarm would silence a
+            // live ring about a second after it started — see the invariant
+            // spelled out at the cancel step below.
+            let snoozing = item.recentlyFiredOccurrences + item.armedOccurrences.filter { $0 <= now }
+            if !snoozing.isEmpty {
+                let cleared = Set(await alarmKit.cancelOccurrences(snoozing, for: item))
+                // Keep a handle on anything whose cancel wasn't CONFIRMED gone.
+                // Step 2 below overwrites `armedOccurrences` with the fresh
+                // window, so this array is the only place an unconfirmed
+                // past-dated occurrence can survive to be cancelled again — and
+                // the orphan sweep can't rescue it either, since it preserves
+                // anything in an active state (a live snooze is active).
+                item.recentlyFiredOccurrences = snoozing.filter { !cleared.contains($0) }
+            }
         }
 
         // 1. Cancel what is armed. While the alarm STAYS enabled, only cancel
@@ -116,8 +165,16 @@ final class AlarmScheduler {
 
         guard item.isEnabled, let first = desired.first else {
             item.armedOccurrences = []
-            item.recentlyFiredOccurrences = []
+            // Keep the snooze record for an alarm that is still ENABLED but has
+            // no future occurrence (a one-time alarm whose date has passed, or
+            // one fully paused/skipped out). Its snooze may still be counting
+            // down in AlarmKit, and wiping the record here left it impossible to
+            // target — stop-snooze, edit and even delete could no longer silence
+            // it. Disabling, by contrast, already cancelled it above, so the
+            // record is genuinely dead and is cleared.
+            if !item.isEnabled { item.recentlyFiredOccurrences = [] }
             item.nextOccurrence = nil
+            item.lastArmFailed = false
             return
         }
 
@@ -134,6 +191,15 @@ final class AlarmScheduler {
         //    short of `desired`, so every subsequent refresh takes the slow path
         //    and retries — the arm self-heals the moment permission is granted.
         item.armedOccurrences = await alarmKit.scheduleOccurrences(desired, for: item)
+        // Warn the user only when the IMMINENT ring failed to arm — that's the
+        // one the card is promising. Losing a far-out occurrence (e.g. the alarm
+        // ceiling refusing #6 of 7) is a log-level concern, not a "this won't
+        // ring" warning, and flagging it would leave a permanent false alarm on a
+        // card whose next ring is perfectly armed.
+        item.lastArmFailed = !item.armedOccurrences.contains(first)
+        if item.armedOccurrences.count < desired.count {
+            schedulerLog.error("Armed \(item.armedOccurrences.count, privacy: .public)/\(desired.count, privacy: .public) occurrence(s) for '\(item.label, privacy: .public)'")
+        }
 
         // 4. Pre-alert heads-ups for the whole armed window, so occurrences the
         //    user hits without reopening the app still get their warning.
@@ -168,10 +234,25 @@ final class AlarmScheduler {
     /// still sitting in `armedOccurrences` with a past date. Cancelling only
     /// `recentlyFired` in that window would silently no-op while the UI says
     /// "Snooze stopped". Future occurrences stay untouched.
-    func cancelRunningSnooze(_ item: AlarmItem, now: Date = .now) async {
+    /// Returns whether every targeted occurrence is CONFIRMED gone, so callers
+    /// don't tell the user "Snooze stopped" when it may still be counting down.
+    @discardableResult
+    func cancelRunningSnooze(_ item: AlarmItem, now: Date = .now) async -> Bool {
         let pastArmed = item.armedOccurrences.filter { $0 <= now }
-        await alarmKit.cancelOccurrences(item.recentlyFiredOccurrences + pastArmed, for: item)
-        item.recentlyFiredOccurrences = []
+        // Forget ONLY the occurrences the system confirmed are gone. Dropping a
+        // date whose cancel silently failed would throw away our last handle on a
+        // still-live snooze — and the orphan sweep can't rescue it either, since
+        // it preserves anything in an active state. Anything unverified stays
+        // tracked so disable/delete/edit can try again.
+        let targets = item.recentlyFiredOccurrences + pastArmed
+        let cleared = Set(await alarmKit.cancelOccurrences(targets, for: item))
+        item.recentlyFiredOccurrences = item.recentlyFiredOccurrences.filter { !cleared.contains($0) }
+        // Also drop cleared past dates from `armedOccurrences`: left there, the
+        // very next `reschedule` re-derived them into `recentlyFiredOccurrences`
+        // (its just-fired capture reads exactly this set), resurrecting the record
+        // of an occurrence we just cancelled. Future occurrences are untouched.
+        item.armedOccurrences = item.armedOccurrences.filter { $0 > now || !cleared.contains($0) }
+        return cleared.count == Set(targets).count
     }
 
     /// Whether the system still holds every one of `occurrences` for `item`.

@@ -18,6 +18,15 @@ final class AlarmStore {
 
     // MARK: - Reads
 
+    /// Occurrences to arm per alarm right now: the full week for a normal
+    /// install, automatically shrunk when many alarms are enabled so the total
+    /// number of one-shots stays clear of AlarmKit's per-app ceiling (past which
+    /// schedules are dropped silently — a no-ring with no error).
+    private func currentArmDepth(_ items: [AlarmItem]? = nil) -> Int {
+        let all = items ?? allAlarms()
+        return AlarmScheduler.armDepth(enabledAlarms: all.filter(\.isEnabled).count)
+    }
+
     func allAlarms() -> [AlarmItem] {
         let descriptor = FetchDescriptor<AlarmItem>(
             sortBy: [SortDescriptor(\.hour), SortDescriptor(\.minute)]
@@ -52,7 +61,7 @@ final class AlarmStore {
         // Only the AlarmKit reschedule (which reads/writes armedOccurrences) needs
         // serializing against other reschedules — the insert above is instant.
         await serialized {
-            await self.scheduler.reschedule(item, force: true)
+            await self.scheduler.reschedule(item, force: true, depth: self.currentArmDepth())
             self.save()
         }
     }
@@ -65,6 +74,9 @@ final class AlarmStore {
         // genuine reschedule from a label/sound-only edit (see below).
         let (h0, m0, mode0, days0, date0) =
             (item.hour, item.minute, item.mode, item.repeatWeekdays, item.oneTimeDate)
+        // Snooze ON→OFF is the ONLY safe trigger for cancelling past-dated
+        // occurrences (a running snooze). See AlarmScheduler.reschedule.
+        let snoozeWasEnabled = item.snooze.isEnabled
 
         // Apply the semantic change (skip mark, new label, isEnabled…) and commit
         // it SYNCHRONOUSLY: the UI (e.g. a toggle bound to isEnabled) reflects it
@@ -82,25 +94,29 @@ final class AlarmStore {
             || item.repeatWeekdays != days0 || item.oneTimeDate != date0
         // Was a snooze actually counting down at that moment? (Only then do we
         // tell the user we stopped it — reflects the "Snoozing" state they see.)
-        let stoppedSnooze = rescheduled && snoozingItemIDs.contains(item.id)
+        let wasSnoozing = rescheduled && snoozingItemIDs.contains(item.id)
 
         // Force the slow path: armed alarms bake in configuration (label, snooze,
         // tint) that the scheduler's date-window comparison can't see.
-        await serialized {
+        return await serialized {
             // Moving the alarm supersedes any snooze still counting down from a
             // PRIOR firing: without this, the reschedule arms the new time but the
             // old snooze also re-rings (reschedule keeps past-dated snoozes so a
             // passive refresh can't silence a live one). Cancel it ONLY on a real
             // reschedule — label/sound edits, skip, pause and passive refreshes
             // leave a running snooze untouched.
+            var snoozeStopped = false
             if rescheduled {
-                await self.scheduler.cancelRunningSnooze(item)
-                self.snoozingItemIDs.remove(item.id)   // drop the "Snoozing" pill
+                snoozeStopped = await self.scheduler.cancelRunningSnooze(item)
+                // Only drop the "Snoozing" pill once the re-ring is confirmed
+                // gone; otherwise reconcileSnoozes would just bring it back.
+                if snoozeStopped { self.snoozingItemIDs.remove(item.id) }
             }
-            await self.scheduler.reschedule(item, force: true)
+            await self.scheduler.reschedule(item, force: true, depth: self.currentArmDepth(),
+                                            snoozeJustDisabled: snoozeWasEnabled && !item.snooze.isEnabled)
             self.save()
+            return wasSnoozing && snoozeStopped
         }
-        return stoppedSnooze
     }
 
     func delete(_ item: AlarmItem) async {
@@ -129,7 +145,7 @@ final class AlarmStore {
         save()
         await scheduler.eagerSilence(item)
         await serialized {
-            await self.scheduler.reschedule(item, force: true)
+            await self.scheduler.reschedule(item, force: true, depth: self.currentArmDepth())
             self.save()
         }
     }
@@ -346,11 +362,17 @@ final class AlarmStore {
 
     /// Stop ONLY the running snooze — the alarm stays enabled and armed for its
     /// next occurrence. This is "silence it for today" without the off/on dance.
-    func stopSnooze(_ item: AlarmItem) async {
+    /// Returns whether the snooze is CONFIRMED stopped. The caller must not claim
+    /// success on `false` — the re-ring may still be counting down, and
+    /// `reconcileSnoozes` would re-show the button seconds after we said it was
+    /// stopped.
+    @discardableResult
+    func stopSnooze(_ item: AlarmItem) async -> Bool {
         await serialized {
-            await self.scheduler.cancelRunningSnooze(item)
-            self.snoozingItemIDs.remove(item.id)
+            let stopped = await self.scheduler.cancelRunningSnooze(item)
+            if stopped { self.snoozingItemIDs.remove(item.id) }
             self.save()
+            return stopped
         }
     }
 
@@ -401,7 +423,8 @@ final class AlarmStore {
             if Set(item.autoSkippedDates) != Set(desired) { item.autoSkippedDates = desired }
         }
 
-        for item in items { await scheduler.reschedule(item, liveAlarmIDs: liveAlarmIDs) }
+        let depth = currentArmDepth(items)
+        for item in items { await scheduler.reschedule(item, liveAlarmIDs: liveAlarmIDs, depth: depth) }
         save()
 
         // Second direction of reconciliation: cancel alarms the SYSTEM still holds
