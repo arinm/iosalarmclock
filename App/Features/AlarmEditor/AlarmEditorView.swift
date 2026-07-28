@@ -214,7 +214,7 @@ struct AlarmEditorView: View {
             if alarmMode == .recurring {
                 RepeatDayPicker(selection: $weekdays)
                 if weekdays.isEmpty {
-                    Label("No days selected — rings every day at \(timeOnlyString).",
+                    Label("No days selected - rings every day at \(timeOnlyString).",
                           systemImage: "repeat")
                         .font(.caption).foregroundStyle(.secondary)
                 } else {
@@ -231,7 +231,7 @@ struct AlarmEditorView: View {
             Toggle("Heads-up", isOn: $preAlert.isEnabled)
             if preAlert.isEnabled {
                 if permissions.hasResolved && permissions.notificationState == .denied {
-                    Label("Notifications are off — the heads-up won't show. The alarm still rings.",
+                    Label("Notifications are off - the heads-up won't show. The alarm still rings.",
                           systemImage: "bell.badge.slash")
                         .font(.caption).foregroundStyle(.orange)
                 }
@@ -356,7 +356,7 @@ struct AlarmEditorView: View {
             guard item.isEnabled, let next = item.nextOccurrence else { return }
             let when = NotificationActionHandler.describe(next, calendar: .current)
             banners.show(.neutral,
-                         title: "\(verb) — rings in \(CountdownFormatter.string(until: next, from: .now))",
+                         title: "\(verb) - rings in \(CountdownFormatter.string(until: next, from: .now))",
                          // Tell the user the running snooze was stopped by this edit.
                          subtitle: snoozeStopped ? "Snooze stopped · \(when)" : when,
                          alarmID: item.id)

@@ -29,7 +29,7 @@ struct AlarmLiveActivity: Widget {
                         // Today's occurrence was skipped, but the alarm is still
                         // armed for the NEXT day — reassure without hiding it.
                         if context.state.skippedToday {
-                            Label("Today skipped — still active", systemImage: "checkmark.circle.fill")
+                            Label("Today skipped - still active", systemImage: "checkmark.circle.fill")
                                 .font(.caption2).foregroundStyle(BrandColor.skip)
                         }
                         if isPast(context) {
@@ -60,7 +60,7 @@ struct AlarmLiveActivity: Widget {
         // Always count down to the next real ring (fireDate is already the next
         // NON-skipped occurrence), even when today was skipped. After the fire
         // time passes, don't show a dead 00:00.
-        isPast(context) ? Text("—") : countdownText(to: context.state.fireDate)
+        isPast(context) ? Text("-") : countdownText(to: context.state.fireDate)
     }
 }
 
@@ -107,7 +107,7 @@ private struct LockScreenLiveActivityView: View {
                 // Today's occurrence was skipped — reassure it's still armed for
                 // the next day (the countdown above is to that next ring).
                 if context.state.skippedToday {
-                    Label("Today skipped — still active", systemImage: "checkmark.circle.fill")
+                    Label("Today skipped - still active", systemImage: "checkmark.circle.fill")
                         .font(.caption).foregroundStyle(BrandColor.skip)
                 }
             }

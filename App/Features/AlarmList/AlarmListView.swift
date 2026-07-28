@@ -27,7 +27,7 @@ struct AlarmListView: View {
         guard let day = await store.skipNextOccurrence(alarm) else { return }
         let next = NotificationActionHandler.describe(alarm.nextOccurrence, calendar: .current)
         banners.show(.skip,
-                     title: "Skipped \(NotificationActionHandler.dayPhrase(day, calendar: .current)) — still active",
+                     title: "Skipped \(NotificationActionHandler.dayPhrase(day, calendar: .current)) - still active",
                      subtitle: "Next alarm: \(next)",
                      alarmID: alarm.id,
                      undo: { [store] in await store.unskip(alarm, day: day) })
@@ -104,12 +104,15 @@ struct AlarmListView: View {
                         VStack(spacing: Theme.stackSpacing) {
                             if let banner = banners.current, banner.alarmID == alarm.id {
                                 ActionBannerView(banner: banner)
-                                    // Subtle pop-in: scale from 92% + slide, fade out on dismiss.
+                                    // Bubble pop-in: scale up from 70% with a spring
+                                    // overshoot (below) so the confirmation grabs the
+                                    // eye instead of quietly sliding in; gentle
+                                    // scale-down + fade on dismiss.
                                     .transition(.asymmetric(
-                                        insertion: .scale(scale: 0.92, anchor: .top)
-                                            .combined(with: .move(edge: .top))
+                                        insertion: .scale(scale: 0.7, anchor: .center)
                                             .combined(with: .opacity),
-                                        removal: .opacity
+                                        removal: .scale(scale: 0.9, anchor: .center)
+                                            .combined(with: .opacity)
                                     ))
                             }
                             AlarmCardView(alarm: alarm, now: now)
@@ -153,7 +156,8 @@ struct AlarmListView: View {
                 }
                 .listStyle(.plain)
                 .scrollContentBackground(.hidden)
-                .animation(.snappy, value: banners.current?.id)
+                // Springy overshoot drives the banner's bubble pop-in (see transition).
+                .animation(.spring(response: 0.38, dampingFraction: 0.6), value: banners.current?.id)
                 // A new alarm sorts by time and can land OFF-SCREEN — scroll its
                 // card (and the banner above it) into view so the confirmation
                 // is never announced to nobody.
@@ -246,10 +250,14 @@ struct ActionBannerView: View {
     let banner: BannerCenter.Banner
     @Environment(BannerCenter.self) private var banners
     @Environment(ThemeManager.self) private var theme
+    /// Flipped on appear to fire the icon's one-shot bounce in sync with the
+    /// banner's pop-in, so the eye lands on the confirmation.
+    @State private var popped = false
 
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: icon).font(.title3).foregroundStyle(tint)
+                .symbolEffect(.bounce, options: .nonRepeating, value: popped)
             VStack(alignment: .leading, spacing: 2) {
                 Text(banner.title).font(.subheadline.weight(.semibold))
                 if let subtitle = banner.subtitle {
@@ -280,6 +288,11 @@ struct ActionBannerView: View {
                 .strokeBorder(tint.opacity(0.5), lineWidth: 1)
         )
         .shadow(color: .black.opacity(0.10), radius: 14, y: 5)
+        // Fire the icon bounce as the banner pops in. Keyed on the banner id too:
+        // SwiftUI can reuse this view instance for a NEW banner, in which case
+        // `onAppear` never runs again and the bounce would silently stop happening.
+        .onAppear { popped.toggle() }
+        .onChange(of: banner.id) { _, _ in popped.toggle() }
     }
 
     private var icon: String {
@@ -418,7 +431,7 @@ struct GroupPauseSheet: View {
                             await store.pauseGroup(groupName, range: range)
                             banners.show(.paused,
                                          title: "Paused “\(groupName)” until \(PauseRangeSheet.dateFmt.string(from: e))",
-                                         subtitle: "Every alarm in the group — then resumes automatically",
+                                         subtitle: "Every alarm in the group - then resumes automatically",
                                          alarmID: anchor,
                                          undo: { [store] in await store.unpauseGroup(groupName, range: range) })
                         }

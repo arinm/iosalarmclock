@@ -49,7 +49,7 @@ struct AlarmDetailView: View {
                             guard let day = await store.skipNextOccurrence(alarm) else { return }
                             let next = NotificationActionHandler.describe(alarm.nextOccurrence, calendar: .current)
                             banners.show(.skip,
-                                         title: "Skipped \(NotificationActionHandler.dayPhrase(day, calendar: .current)) — still active",
+                                         title: "Skipped \(NotificationActionHandler.dayPhrase(day, calendar: .current)) - still active",
                                          subtitle: "Next alarm: \(next)",
                                          alarmID: alarm.id,
                                          undo: { [store] in await store.unskip(alarm, day: day) })
@@ -128,7 +128,7 @@ struct AlarmDetailView: View {
         if !pro.isPro {
             Section {
                 Button { showPaywall = true } label: {
-                    Label("Unlock Pro — pause, themes, groups & more", systemImage: "sparkles")
+                    Label("Unlock Pro - pause, themes, groups & more", systemImage: "sparkles")
                 }
             }
         }

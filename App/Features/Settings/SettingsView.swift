@@ -50,7 +50,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Defaults for new alarms")
                 } footer: {
-                    Text("New alarms start from these values — including the sound.")
+                    Text("New alarms start from these values - including the sound.")
                 }
 
                 Section("Permissions") {

@@ -61,7 +61,7 @@ final class StoreManager {
     var yearly: Product? { products[Self.yearlyID] }
     var lifetime: Product? { products[Self.lifetimeID] }
 
-    func displayPrice(_ id: String) -> String { products[id]?.displayPrice ?? "—" }
+    func displayPrice(_ id: String) -> String { products[id]?.displayPrice ?? "-" }
 
     /// "Save N%" for yearly vs 12× monthly, when both prices are known.
     var yearlySavingsText: String? {

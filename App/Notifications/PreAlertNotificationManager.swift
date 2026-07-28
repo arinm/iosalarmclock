@@ -105,7 +105,7 @@ final class PreAlertNotificationManager {
         let label = item.label.isEmpty ? "Alarm" : item.label
         let content = UNMutableNotificationContent()
         content.title = "Snoozed"
-        content.body = "\(label) — snoozed for \(item.snooze.durationMinutes) min. It'll ring again."
+        content.body = "\(label) - snoozed for \(item.snooze.durationMinutes) min. It'll ring again."
         content.sound = nil
         // Same id per alarm → a repeat snooze replaces the old note, no pile-up.
         center.add(UNNotificationRequest(identifier: "snoozed-\(item.id.uuidString)",

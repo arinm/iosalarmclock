@@ -89,7 +89,7 @@ struct PauseRangeSheet: View {
                             if showsBanner {
                                 banners.show(.paused,
                                              title: "Paused until \(Self.dateFmt.string(from: e))",
-                                             subtitle: "From \(Self.dateFmt.string(from: s)) — then resumes automatically",
+                                             subtitle: "From \(Self.dateFmt.string(from: s)) - then resumes automatically",
                                              alarmID: alarm.id,
                                              undo: { [store] in await store.unpause(alarm, range: range) })
                             }

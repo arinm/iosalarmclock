@@ -33,7 +33,7 @@ struct SkipNextAlarmIntent: AppIntent {
         // Name the actual day skipped — it may not be "today" (e.g. a weekday
         // alarm skipped on a Saturday skips Monday).
         let dayText = Self.dayPhrase(skippedDay)
-        return .result(dialog: "Skipped \(dayText). Your alarm is still active — next at \(when).")
+        return .result(dialog: "Skipped \(dayText). Your alarm is still active - next at \(when).")
     }
 
     private static func dayPhrase(_ day: DateOnly?) -> String {

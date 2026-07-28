@@ -70,7 +70,7 @@ final class NotificationActionHandler: NSObject, @preconcurrency UNUserNotificat
         // store.update already re-armed via the scheduler; report the new next.
         let next = Self.describe(alarm.nextOccurrence, calendar: calendar)
         banners.show(.skip,
-                     title: "Skipped \(Self.dayPhrase(day, calendar: calendar)) — still active",
+                     title: "Skipped \(Self.dayPhrase(day, calendar: calendar)) - still active",
                      subtitle: "Next alarm: \(next)",
                      alarmID: alarm.id,
                      undo: { [store] in await store.unskip(alarm, day: day) })

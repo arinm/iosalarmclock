@@ -49,7 +49,7 @@ struct OnboardingView: View {
                 FeatureRow(icon: "bell.badge", title: "Get a heads-up",
                            detail: "A friendly nudge before the alarm goes off.")
                 FeatureRow(icon: "forward.end.fill", title: "Skip just today",
-                           detail: "One tap — tomorrow stays armed.")
+                           detail: "One tap - tomorrow stays armed.")
             }
             .padding()
             .punctualCard()
@@ -63,10 +63,10 @@ struct OnboardingView: View {
             VStack(spacing: 14) {
                 Image(systemName: "bell.badge")
                     .font(.system(size: 56)).foregroundStyle(Theme.accent)
-                Text("One more thing —\nthe heads-up")
+                Text("One more thing -\nthe heads-up")
                     .font(.largeTitle.weight(.bold))
                     .multilineTextAlignment(.center)
-                Text("A friendly notification before each alarm, with a Skip today button right on it. This is what makes Punctual smart — and it needs notification permission.")
+                Text("A friendly notification before each alarm, with a Skip today button right on it. This is what makes Punctual smart - and it needs notification permission.")
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
             }
@@ -98,7 +98,7 @@ struct OnboardingView: View {
                 .buttonStyle(.borderedProminent)
                 .disabled(requesting)
 
-                Text("Required — this is how Punctual rings, even in silent mode.")
+                Text("Required - this is how Punctual rings, even in silent mode.")
                     .font(.caption).foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
 

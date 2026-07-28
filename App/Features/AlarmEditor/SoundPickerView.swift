@@ -42,7 +42,7 @@ struct SoundPickerView: View {
                 } header: {
                     Text("Your sounds")
                 } footer: {
-                    Text("Import your own audio — the first ~30 seconds are used (trimmed & converted automatically). Apple Music tracks are protected and can't be imported.")
+                    Text("Import your own audio - the first ~30 seconds are used (trimmed & converted automatically). Apple Music tracks are protected and can't be imported.")
                 }
             }
             .navigationTitle("Sound")

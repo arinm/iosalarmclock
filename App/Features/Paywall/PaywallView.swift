@@ -31,7 +31,7 @@ struct PaywallView: View {
                     featureList
                     comingSoon
 
-                    Text("The core alarm — countdown, heads-up and Skip today — is free forever. No ads.")
+                    Text("The core alarm - countdown, heads-up and Skip today - is free forever. No ads.")
                         .font(.caption2).foregroundStyle(.secondary).multilineTextAlignment(.center)
 
                     legalFooter
@@ -61,7 +61,7 @@ struct PaywallView: View {
     }
 
     private var ownedBadge: some View {
-        Label(storeKit.isSubscriber ? "You're a Pro subscriber — thank you!" : "You have Pro Lifetime — thank you!",
+        Label(storeKit.isSubscriber ? "You're a Pro subscriber - thank you!" : "You have Pro Lifetime - thank you!",
               systemImage: "checkmark.seal.fill")
             .font(.headline).foregroundStyle(Theme.accent)
             .padding().frame(maxWidth: .infinity).punctualCard()
@@ -164,9 +164,9 @@ struct PaywallView: View {
                     restoreMessage = nil
                     let synced = await storeKit.restore()
                     restoreMessage = storeKit.isPro
-                        ? "Purchases restored — you're Pro!"
+                        ? "Purchases restored - you're Pro!"
                         : (synced ? "No previous purchases found."
-                                  : "Couldn't reach the App Store — check your sign-in and try again.")
+                                  : "Couldn't reach the App Store - check your sign-in and try again.")
                     restoring = false
                 }
             } label: {
