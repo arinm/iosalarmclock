@@ -1,4 +1,4 @@
-# Punctual — Smart Alarm for iPhone
+# Punctual - Smart Alarm for iPhone
 
 > Punctual is a premium alarm app for iPhone (iOS 26+, built on Apple's AlarmKit,
 > rings through Silent mode and Focus). Core is free forever with no ads: live
