@@ -20,10 +20,11 @@ GAP   = C * GAP_PCT / 100
 DRAWN = C - GAP
 
 INSET = 0.74         # the mark occupied 74% of the tile on the board
+SITE_INSET = 0.94    # web logo renders at ~30px: the Home Screen inset leaves it tiny
 
-def mark(color):
+def mark(color, inset=None):
     return f'''
-  <g transform="translate(512 512) scale({INSET}) translate(-512 -512)">
+  <g transform="translate(512 512) scale({inset or INSET}) translate(-512 -512)">
     <g fill="none" stroke="{color}" stroke-linecap="round">
       <!-- bells -->
       <g stroke-width="{SW}">
@@ -52,12 +53,12 @@ def mark(color):
     <circle cx="{CX}" cy="{CY}" r="34" fill="{color}"/>
   </g>'''
 
-def tile(c, top, bottom):
+def tile(c, top, bottom, inset=None):
     return f'''<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
   <defs><linearGradient id="g" x1="0" y1="0" x2="0.42" y2="1">
     <stop offset="0" stop-color="{top}"/><stop offset="1" stop-color="{bottom}"/>
   </linearGradient></defs>
-  <rect width="1024" height="1024" fill="url(#g)"/>{mark(c)}
+  <rect width="1024" height="1024" fill="url(#g)"/>{mark(c, inset)}
 </svg>'''
 
 def transparent(c):
@@ -68,7 +69,8 @@ def transparent(c):
 def png(svg, out, size):
     pathlib.Path(out).parent.mkdir(parents=True, exist_ok=True)
     tmp = pathlib.Path("/tmp/_icon.svg"); tmp.write_text(svg)
-    subprocess.run(["cairosvg", str(tmp), "-o", out, "-W", str(size), "-H", str(size)], check=True)
+    # NOTE: -W/-H set the *parent container* size, not the output size.
+    subprocess.run(["cairosvg", str(tmp), "-o", out, "--output-width", str(size), "--output-height", str(size)], check=True)
 
 # colourways: (asset name, mark, tile top, tile bottom) - board tile was #2A1B22 -> #101019
 WAYS = [
@@ -88,7 +90,7 @@ png(tile("#FFB396", "#17111A", "#08080D"), f"{ROOT}/App/Assets.xcassets/AppIcon.
 png(transparent("#FFFFFF"), f"{ROOT}/App/Assets.xcassets/AppIcon.appiconset/AppIcon-Tinted.png", 1024)
 png(transparent("#FFFFFF"), f"{ROOT}/App/Assets.xcassets/PunctualMark.imageset/PunctualMark.png", 512)
 for s in (64, 180):
-    png(tile("#FFA98A", "#2A1B22", "#101019"), f"{ROOT}/docs/assets/icon-{s}.png", s)
+    png(tile("#FFA98A", "#2A1B22", "#101019", SITE_INSET), f"{ROOT}/docs/assets/icon-{s}.png", s)
 for s in (180, 120, 87, 60, 40, 29):
     png(tile("#FFA98A", "#2A1B22", "#101019"), f"{SCRATCH}/proof-{s}.png", s)
 print("done")
