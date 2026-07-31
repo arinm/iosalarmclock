@@ -73,7 +73,11 @@ final class StoreManager {
         return rounded > 0 ? "Save \(rounded)%" : nil
     }
 
-    func refreshEntitlements() async {
+    /// `force` — act on the read even if it comes back EMPTY. Only the paths that
+    /// carry real evidence of a change (a revocation from `Transaction.updates`,
+    /// an explicit user-initiated Restore) may force; routine refreshes must not,
+    /// or a transient empty read silently strips a paying user (see below).
+    func refreshEntitlements(force: Bool = false) async {
         #if DEBUG
         // Screenshot mode: present as Free so the paywall shows purchase tiers.
         if ProcessInfo.processInfo.arguments.contains("--demo-free") {
@@ -82,8 +86,10 @@ final class StoreManager {
         #endif
         var pro = false
         var sub = false
+        var found: [String] = []
         for await result in Transaction.currentEntitlements {
             guard case .verified(let t) = result, t.revocationDate == nil else { continue }
+            found.append(t.productID)
             if t.productID == Self.lifetimeID { pro = true }
             if Self.subscriptionIDs.contains(t.productID) {
                 // currentEntitlements only yields active (non-expired) subs.
@@ -96,6 +102,24 @@ final class StoreManager {
         if let at = directGrantAt, Date.now.timeIntervalSince(at) < directGrantGrace {
             pro = pro || grantedPro
             sub = sub || grantedSub
+        }
+        // An EMPTY read while we already hold Pro is not evidence of a lapse — it
+        // is the exact failure this refresh exists to retry (signed-out Apple
+        // Account, store not yet synced, cold `storekitd`). Acting on it would be
+        // destructive, not just cosmetic: `isPro` going false resets the Pro theme
+        // to disk and makes the editor strip Pro fields off the next saved alarm.
+        // Keep last-known-good; a genuine lapse is re-derived at the next cold
+        // launch (where `resolved` is false), and refunds/revocations force.
+        if found.isEmpty, isPro, resolved, !force {
+            storeLog.error("Entitlement read returned NOTHING while Pro - keeping last-known-good")
+            return
+        }
+        // Always log the raw outcome: the most valuable signal (an empty read
+        // masked by the direct-grant grace) never changes `isPro`, so a
+        // change-gated log would drop exactly the case worth diagnosing.
+        storeLog.info("Entitlements read: pro=\(pro, privacy: .public) sub=\(sub, privacy: .public) ids=[\(found.joined(separator: ","), privacy: .public)]")
+        if isPro != pro || isSubscriber != sub || !resolved {
+            storeLog.notice("Entitlements CHANGED → pro=\(pro, privacy: .public) sub=\(sub, privacy: .public)")
         }
         isPro = pro
         isSubscriber = sub
@@ -184,7 +208,7 @@ final class StoreManager {
     func restore() async -> Bool {
         do {
             try await AppStore.sync()
-            await refreshEntitlements()
+            await refreshEntitlements(force: true)   // user asked; trust the synced result
             return true
         } catch {
             storeLog.error("restore: AppStore.sync failed: \(error.localizedDescription, privacy: .public)")
@@ -202,8 +226,8 @@ final class StoreManager {
                         // Grant directly (same lag rationale as in purchase()).
                         self?.apply(transaction)
                     } else {
-                        // Refund/revocation — re-derive the full truth.
-                        await self?.refreshEntitlements()
+                        // Refund/revocation — real evidence, so force the downgrade.
+                        await self?.refreshEntitlements(force: true)
                     }
                 }
             }

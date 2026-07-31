@@ -134,6 +134,13 @@ struct PunctualApp: App {
             switch phase {
             case .active:
                 applyAppearance(theme.appearance) // ensure window style is set once shown
+                // Re-read entitlements on every foreground: a single empty read at
+                // launch (StoreKit not synced, flaky sandbox) used to leave a
+                // paying user on Free for the whole session with nothing retrying.
+                // Deliberately a SEPARATE task — re-arming alarms is the app's
+                // core resilience step and must never queue behind a StoreKit
+                // round-trip that can hang or be cut short by a quick app switch.
+                Task { await store_kit.refreshEntitlements() }
                 Task {
                     await permissions.refresh()
                     await store.refreshAllSchedules() // re-arm look-ahead window
