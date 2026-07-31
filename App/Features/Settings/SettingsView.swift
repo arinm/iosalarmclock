@@ -137,8 +137,13 @@ struct SettingsView: View {
                 Section {
                     Text("Punctual uses Apple's AlarmKit for real alarms that ring through silent mode and Focus. Because skip-today and vacation pause are managed by the app, the next alarm is re-armed whenever you open Punctual. Open the app at least occasionally so far-future alarms stay armed.")
                         .font(.footnote).foregroundStyle(.secondary)
+                    Label("For anything you can't afford to miss, set a second alarm - ideally in another app or on another device.",
+                          systemImage: "exclamationmark.shield")
+                        .font(.footnote).foregroundStyle(.secondary)
                 } header: {
                     Text("Reliability")
+                } footer: {
+                    Text("No alarm app can guarantee a ring: alarm delivery ultimately depends on iOS and your device's state, and a phone that's off, out of battery, or in a failed state can't ring at all. Punctual is provided without any warranty - please don't rely on it alone for critical wake-ups.")
                 }
             }
             .punctualBackground()

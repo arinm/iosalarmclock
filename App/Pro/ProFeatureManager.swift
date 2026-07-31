@@ -40,7 +40,7 @@ final class ProFeatureManager {
             case .themes: "Themes & accents"
             case .widgetCustomization: "Widget customization"
             case .appIcons: "Alternate app icons"
-            case .customSounds: "Custom heads-up sound"
+            case .customSounds: "Custom alarm sound"
             }
         }
 
@@ -57,7 +57,7 @@ final class ProFeatureManager {
             case .themes: "Accents & light/dark"
             case .widgetCustomization: "Dedicated Pro widget styles (coming soon)"
             case .appIcons: "Match your Home Screen"
-            case .customSounds: "Your own audio for the heads-up"
+            case .customSounds: "Your own audio for the heads-up and the alarm"
             }
         }
 
