@@ -54,6 +54,13 @@ No alarm app can guarantee a ring - iOS ultimately decides when alarms fire, and
 
 Requires iOS 26 or later (Punctual is built on Apple's AlarmKit framework).
 
+SUBSCRIPTION DETAILS
+Punctual Pro is available as a monthly or yearly auto-renewing subscription, or as a one-time Lifetime purchase. Payment is charged to your Apple Account at confirmation. Subscriptions renew automatically unless auto-renew is turned off at least 24 hours before the end of the current period; you can manage or cancel anytime in your Apple Account settings. Current prices are shown in the app before you buy.
+
+Terms of Use: https://punctualalarm.com/terms.html
+Privacy Policy: https://punctualalarm.com/privacy.html
+Support & FAQ: https://punctualalarm.com/support.html
+
 Questions? contact@arinitsolutions.com · punctualalarm.com
 
 ## What's New (v1.0)
