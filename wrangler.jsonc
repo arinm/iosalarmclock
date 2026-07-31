@@ -1,0 +1,14 @@
+{
+  // Cloudflare Workers config for the punctualalarm.com marketing site.
+  // The site is plain static HTML in /docs (no build step) — this deploys it as
+  // an assets-only Worker, which is Cloudflare's current successor to Pages.
+  //
+  // The dashboard's "Deploy command" (npx wrangler deploy) reads this file.
+  "name": "iosalarmclock",
+  "compatibility_date": "2026-07-31",
+  "assets": {
+    "directory": "./docs",
+    // Serve docs/404.html for unknown paths instead of a bare Cloudflare error.
+    "not_found_handling": "404-page"
+  }
+}
