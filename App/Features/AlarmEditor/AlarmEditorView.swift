@@ -164,6 +164,16 @@ struct AlarmEditorView: View {
                     }
                 }
             }
+            // Pull an over-ceiling DRAFT down as soon as the ceiling is known,
+            // so the stepper never shows 30 while `save()` would store 15. Safe
+            // to write: `snooze` is in-memory draft state, not the user's
+            // persisted default — see SettingsView for why that distinction
+            // matters. Lives on the Form, not the Section: SwiftUI pushes
+            // Section modifiers down to each row, which would run this once per
+            // row instead of once per screen.
+            .task(id: snoozeCeiling) {
+                if snooze.durationMinutes > snoozeCeiling { snooze.durationMinutes = snoozeCeiling }
+            }
             .punctualBackground()
             .navigationTitle(isEditing ? "Edit Alarm" : "New Alarm")
             .navigationBarTitleDisplayMode(.inline)
@@ -277,12 +287,18 @@ struct AlarmEditorView: View {
         Section("Snooze") {
             Toggle("Snooze enabled", isOn: $snooze.isEnabled)
             if snooze.isEnabled {
-                if pro.isAvailable(.advancedSnooze) {
-                    Stepper("Duration: \(snooze.durationMinutes) min",
-                            value: $snooze.durationMinutes, in: 1...60)
-                } else {
-                    // Free: basic snooze at the default; a custom duration is Pro.
-                    ProLockRow(title: "Snooze duration", value: "9 min") { showPaywall = true }
+                // Free goes to 15 — parity with iOS 26's Clock, which caps its
+                // own custom snooze there. Pro sells the range past it.
+                //
+                // The ceiling drops ONLY once entitlements are known, matching
+                // `strip(_:)` below: during the cold-start window a Pro user
+                // reads as not-entitled, and capping the stepper then would
+                // silently shave a real 30-minute snooze on the next save.
+                Stepper("Duration: \(snooze.durationMinutes) min",
+                        value: $snooze.durationMinutes, in: 1...snoozeCeiling)
+                if snoozeCeiling < SnoozeSettings.maxDurationMinutes {
+                    ProLockRow(title: "Longer snooze",
+                               value: "up to \(SnoozeSettings.maxDurationMinutes) min") { showPaywall = true }
                 }
             }
         }
@@ -291,6 +307,23 @@ struct AlarmEditorView: View {
     // MARK: Logic
 
     private var isEditing: Bool { if case .edit = mode { return true }; return false }
+
+    /// Longest snooze this user may set right now. Free is capped at parity
+    /// with the system Clock.
+    ///
+    /// While entitlements are UNRESOLVED the cap still applies, but it can't
+    /// drag an existing value down: a Pro user's 30 stays 30 and is editable,
+    /// while a free user starting from 9 can't climb past 15. Raising the cap
+    /// outright during that window (which every other Pro control avoids by
+    /// staying locked) would let a free user race StoreKit and save 60 —
+    /// `strip(_:)` is a no-op until entitlements resolve, so nothing downstream
+    /// would catch it.
+    private var snoozeCeiling: Int {
+        if pro.isAvailable(.advancedSnooze) { return SnoozeSettings.maxDurationMinutes }
+        return pro.entitlementsResolved
+            ? SnoozeSettings.freeCeilingMinutes
+            : max(SnoozeSettings.freeCeilingMinutes, snooze.durationMinutes)
+    }
 
     private func components() -> (h: Int, m: Int) {
         let c = Calendar.current.dateComponents([.hour, .minute], from: time)
@@ -330,8 +363,17 @@ struct AlarmEditorView: View {
         }
         let finalPreAlert = strip(.customPreAlertTiming)
             ? PreAlertSettings(isEnabled: preAlert.isEnabled, minutesBefore: 15) : preAlert
+        // Duration CLAMPS to the free ceiling rather than resetting to 9: a
+        // lapsed Pro user keeps their 12-minute snooze instead of being knocked
+        // back to a default they never chose. `maxCount` still RESETS, because
+        // it has no free-tier meaning to preserve — nothing enforces it and no
+        // UI sets it, so letting it through would leave the gate open for
+        // whenever it does get implemented.
         let finalSnooze = strip(.advancedSnooze)
-            ? SnoozeSettings(isEnabled: snooze.isEnabled, durationMinutes: 9, maxCount: 3) : snooze
+            ? SnoozeSettings(isEnabled: snooze.isEnabled,
+                             durationMinutes: min(snooze.durationMinutes, SnoozeSettings.freeCeilingMinutes),
+                             maxCount: SnoozeSettings.default.maxCount)
+            : snooze
         let finalMessage = strip(.preAlertMessages) ? "" : preAlertMessage
         let finalExtra = strip(.multiplePreAlerts) ? [] : Array(additionalPreAlerts).sorted()
         let finalGroup = strip(.alarmGroups) ? "" : groupName.trimmingCharacters(in: .whitespaces)

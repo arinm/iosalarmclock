@@ -6,12 +6,22 @@ public enum AlarmMode: String, Codable, Sendable, CaseIterable {
     case oneTimeDate
 }
 
-/// Snooze configuration. `maxCount` caps how many times the user may snooze
-/// before the alarm stops offering it.
+/// Snooze configuration.
 public struct SnoozeSettings: Codable, Hashable, Sendable {
     public var isEnabled: Bool
     public var durationMinutes: Int
+    /// RESERVED — persisted and editable, but NOTHING ENFORCES IT YET. Capping
+    /// snooze needs the alarm re-armed on each snooze (AlarmKit takes
+    /// `postAlert` once, at schedule time), which is a change to the snooze
+    /// path deliberately deferred. Don't advertise it as working.
     public var maxCount: Int
+
+    /// Longest snooze the free tier allows. iOS 26's own Clock caps custom
+    /// snooze at 15 minutes, so matching it is parity, not a giveaway — Pro
+    /// sells what the system CAN'T do, which starts at 16.
+    public static let freeCeilingMinutes = 15
+    /// Longest snooze anyone can set.
+    public static let maxDurationMinutes = 60
 
     public init(isEnabled: Bool = true, durationMinutes: Int = 9, maxCount: Int = 3) {
         self.isEnabled = isEnabled

@@ -1,4 +1,5 @@
 import SwiftUI
+import AlarmCore
 
 /// Screen 5 — defaults, permissions status, Pro, and honest reliability notes.
 struct SettingsView: View {
@@ -18,6 +19,33 @@ struct SettingsView: View {
     @State private var appIcon = "default"
     @State private var showSoundPicker = false
 
+    /// Longest default snooze this user may set. Free reaches 15 - parity with
+    /// iOS 26's Clock, which caps its own custom snooze there - and Pro sells
+    /// the range past it.
+    ///
+    /// While entitlements are UNRESOLVED the cap holds but can't drag an
+    /// existing value down, so the cold-start window neither shaves a real Pro
+    /// user's default nor lets a free user race StoreKit up to 60.
+    private var snoozeCeiling: Int {
+        if pro.isAvailable(.advancedSnooze) { return SnoozeSettings.maxDurationMinutes }
+        return pro.entitlementsResolved
+            ? SnoozeSettings.freeCeilingMinutes
+            : max(SnoozeSettings.freeCeilingMinutes, defaultSnooze)
+    }
+
+    /// The default-snooze stepper, capped for the free tier on READ only.
+    ///
+    /// Deliberately NOT a `.task` that writes the clamped value back: this is
+    /// `@AppStorage`, so clamping on disk would permanently destroy a lapsed
+    /// Pro user's 45-minute default — it would still read 15 after they
+    /// resubscribe. Same failure as the entitlement refresh that used to reset
+    /// the Pro theme. Entitlement state may narrow what we SHOW; it must never
+    /// overwrite what the user chose while they were entitled.
+    private var cappedSnooze: Binding<Int> {
+        Binding(get: { min($defaultSnooze.wrappedValue, snoozeCeiling) },
+                set: { $defaultSnooze.wrappedValue = $0 })
+    }
+
     var body: some View {
         NavigationStack {
             Form {
@@ -27,10 +55,13 @@ struct SettingsView: View {
                     } else {
                         ProLockRow(title: "Heads-up", value: "15 min") { showPaywall = true }
                     }
-                    if pro.isAvailable(.advancedSnooze) {
-                        Stepper("Snooze: \(defaultSnooze) min", value: $defaultSnooze, in: 1...60)
-                    } else {
-                        ProLockRow(title: "Snooze", value: "9 min") { showPaywall = true }
+                    // Reads through a clamp instead of rewriting the stored
+                    // value: see `cappedSnooze`.
+                    Stepper("Snooze: \(cappedSnooze.wrappedValue) min",
+                            value: cappedSnooze, in: 1...snoozeCeiling)
+                    if snoozeCeiling < SnoozeSettings.maxDurationMinutes {
+                        ProLockRow(title: "Longer snooze",
+                                   value: "up to \(SnoozeSettings.maxDurationMinutes) min") { showPaywall = true }
                     }
                     if pro.isAvailable(.customSounds) {
                         // Opens the FULL sound picker (import, preview, delete) —
@@ -131,6 +162,22 @@ struct SettingsView: View {
                 Section("Punctual Pro") {
                     Button { showPaywall = true } label: {
                         Label(pro.isPro ? "You're on Pro" : "Upgrade to Pro", systemImage: "sparkles")
+                    }
+                }
+
+                // Guideline 3.1.2(c) requires these inside the app. The paywall
+                // carries them too; a reviewer who never opens the paywall
+                // still has to be able to find them, and a user who already
+                // bought has no reason to reopen it.
+                Section("Legal") {
+                    Link(destination: Legal.terms) {
+                        Label("Terms of Use (EULA)", systemImage: "doc.text")
+                    }
+                    Link(destination: Legal.privacy) {
+                        Label("Privacy Policy", systemImage: "hand.raised")
+                    }
+                    Link(destination: Legal.support) {
+                        Label("Support & FAQ", systemImage: "questionmark.circle")
                     }
                 }
 

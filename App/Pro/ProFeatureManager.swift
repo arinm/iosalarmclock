@@ -34,7 +34,7 @@ final class ProFeatureManager {
             case .customPreAlertTiming: "Custom heads-up timing"
             case .multiplePreAlerts: "Multiple heads-ups"
             case .preAlertMessages: "Custom heads-up messages"
-            case .advancedSnooze: "Advanced snooze"
+            case .advancedSnooze: "Longer snooze"
             case .alarmGroups: "Alarm groups"
             case .calendarAwareSkip: "Holiday & calendar auto-skip"
             case .themes: "Themes & accents"
@@ -51,7 +51,9 @@ final class ProFeatureManager {
             case .customPreAlertTiming: "Any lead time, not just 15 min"
             case .multiplePreAlerts: "Stack 60 + 15 + 5 min heads-ups"
             case .preAlertMessages: "Your own reminder text"
-            case .advancedSnooze: "Custom snooze duration"
+            // iOS 26's Clock added custom snooze capped at 15 min, so the
+            // duration itself is no longer sellable — only the range past it is.
+            case .advancedSnooze: "Snooze up to 60 min, past the system's 15"
             case .alarmGroups: "Bulk skip / pause a whole set"
             case .calendarAwareSkip: "Skip on calendar days off"
             case .themes: "Accents & light/dark"
