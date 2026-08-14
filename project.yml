@@ -46,7 +46,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.punctual.app
         CODE_SIGN_ENTITLEMENTS: App/Punctual.entitlements
         MARKETING_VERSION: "1.0"
-        CURRENT_PROJECT_VERSION: "18"
+        CURRENT_PROJECT_VERSION: "19"
         DEVELOPMENT_TEAM: KLRCQTV8AC
         CODE_SIGN_STYLE: Automatic
         # iPhone-only (matches the product + iPhone-only App Store screenshots;
@@ -125,7 +125,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.punctual.app.widget
         CODE_SIGN_ENTITLEMENTS: PunctualWidget/PunctualWidget.entitlements
         MARKETING_VERSION: "1.0"      # must match the app
-        CURRENT_PROJECT_VERSION: "18"  # must match the app
+        CURRENT_PROJECT_VERSION: "19"  # must match the app
         TARGETED_DEVICE_FAMILY: "1"   # iPhone-only, matches the app
         DEVELOPMENT_TEAM: KLRCQTV8AC
         CODE_SIGN_STYLE: Automatic
