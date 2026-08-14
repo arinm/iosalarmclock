@@ -18,7 +18,7 @@ alarm clock,wake up,snooze,countdown,morning,routine,vacation,pause,silent,loud,
 Punctual is the smart alarm Apple's Clock never became. See exactly when your alarm rings, get a heads-up before it does, and skip just one day - tomorrow stays armed.
 
 THE PROBLEM WITH EVERY ALARM APP
-Day off tomorrow? Your only option is turning the alarm off - and praying you remember to turn it back on. Punctual fixes exactly that.
+iOS can skip exactly one alarm - the wake-up alarm in your Sleep Schedule. For every other alarm you own, a day off leaves you one option: switch it off, and hope you remember to switch it back on. Punctual gives every alarm the treatment Apple reserved for one.
 
 SKIP TODAY, NEVER FORGET TOMORROW
 One tap skips only today's ring. The alarm stays active for tomorrow, you see it confirmed in green - "Skipped today, still active" - and there's an Undo if you change your mind. Skip from the alarm card, from the heads-up notification, or right from the Lock Screen.
@@ -33,12 +33,12 @@ RINGS THROUGH SILENT MODE AND FOCUS
 Built on Apple's AlarmKit, Punctual rings exactly like the built-in Clock - through Silent mode and through Focus.
 
 FREE FOREVER
-The core experience - unlimited alarms, live countdown, heads-up, Skip today, snooze - is free. No ads. No account. No tracking. Everything stays on your device.
+The core experience - unlimited alarms, live countdown, heads-up, Skip today, and snooze with your own duration up to 15 minutes - is free. No ads. No account. No tracking. Everything stays on your device.
 
 PUNCTUAL PRO - WHEN YOU WANT MORE
 • Vacation pause: silence alarms for a date range; they resume automatically
 • Custom heads-up timing, multiple heads-ups, and your own messages
-• Custom snooze duration
+• Longer snooze: up to 60 minutes, past the 15-minute system limit
 • Alarm groups: skip or pause a whole set at once
 • Calendar auto-skip: days off in your calendar skip themselves
 • Themes, accent colors, alternate app icons
