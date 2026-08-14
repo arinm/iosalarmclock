@@ -69,13 +69,18 @@ struct PaywallView: View {
 
     private var tiers: some View {
         VStack(spacing: 12) {
-            tierButton(id: StoreManager.yearlyID, title: "Yearly",
-                       caption: "Billed annually · cancel anytime",
+            // Guideline 3.1.2(c) wants the TITLE, the LENGTH and the PRICE of
+            // each auto-renewing subscription visible in the purchase flow.
+            // Price comes from `displayPrice`; title and length are spelled out
+            // here — "Yearly / Billed annually" left the length implied, which
+            // is what a reviewer marks as missing.
+            tierButton(id: StoreManager.yearlyID, title: "Punctual Pro - Yearly",
+                       caption: "12 months · auto-renews · cancel anytime",
                        highlighted: true, badge: storeKit.yearlySavingsText ?? "Best value")
-            tierButton(id: StoreManager.monthlyID, title: "Monthly",
-                       caption: "Lowest entry · cancel anytime", highlighted: false, badge: nil)
-            tierButton(id: StoreManager.lifetimeID, title: "Lifetime",
-                       caption: "Pay once · features forever", highlighted: false, badge: nil)
+            tierButton(id: StoreManager.monthlyID, title: "Punctual Pro - Monthly",
+                       caption: "1 month · auto-renews · cancel anytime", highlighted: false, badge: nil)
+            tierButton(id: StoreManager.lifetimeID, title: "Punctual Pro - Lifetime",
+                       caption: "One-time purchase · does not renew", highlighted: false, badge: nil)
 
             // Required auto-renewal disclosure (App Review 3.1.2) — must live
             // near the purchase buttons, not buried in the legal footer.
@@ -179,9 +184,14 @@ struct PaywallView: View {
                     .font(.footnote.weight(.medium))
                     .foregroundStyle(storeKit.isPro ? Theme.accent : .secondary)
             }
+            // Guideline 3.1.2(c) requires FUNCTIONAL links, and build 12 was
+            // rejected because these still pointed at the retired GitHub Pages
+            // site, which 404s. They must track the live domain — if the site
+            // ever moves again, these move with it or the next build is
+            // rejected the same way.
             HStack(spacing: 16) {
-                Link("Terms", destination: URL(string: "https://arinm.github.io/iosalarmclock/terms.html")!)
-                Link("Privacy", destination: URL(string: "https://arinm.github.io/iosalarmclock/privacy.html")!)
+                Link("Terms of Use (EULA)", destination: Legal.terms)
+                Link("Privacy Policy", destination: Legal.privacy)
             }
             .font(.caption2).foregroundStyle(.secondary)
         }

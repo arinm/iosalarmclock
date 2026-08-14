@@ -6,6 +6,20 @@ import OSLog
 /// category "Store"). TestFlight/sandbox purchase issues are invisible without this.
 private let storeLog = Logger(subsystem: "com.punctual.app", category: "Store")
 
+/// The legal URLs App Review checks. Guideline 3.1.2(c) requires FUNCTIONAL
+/// links to both from inside the app, and build 12 was rejected because the
+/// paywall still pointed at the retired GitHub Pages site (404).
+///
+/// SINGLE SOURCE OF TRUTH — every in-app link resolves here. If the site ever
+/// moves again, change these two lines and nothing is left behind. The URLs
+/// must also match the Privacy Policy field and the description in App Store
+/// Connect, which App Review cross-checks.
+enum Legal {
+    static let terms = URL(string: "https://punctualalarm.com/terms.html")!
+    static let privacy = URL(string: "https://punctualalarm.com/privacy.html")!
+    static let support = URL(string: "https://punctualalarm.com/support.html")!
+}
+
 /// StoreKit 2 entitlement authority for the Punctual Pro ladder:
 ///   • monthly  (auto-renewable)  com.punctual.app.pro.monthly
 ///   • yearly   (auto-renewable)  com.punctual.app.pro.yearly

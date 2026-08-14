@@ -38,7 +38,10 @@ struct OnboardingView: View {
                 Text("Skip today,\nnever forget tomorrow")
                     .font(.largeTitle.weight(.bold))
                     .multilineTextAlignment(.center)
-                Text("The Android-style smart alarm Apple Clock should have had.")
+                // NEVER name a rival mobile platform here or anywhere else in
+                // the binary: App Review rejected build 12 under guideline
+                // 2.3.10 over one such word in this exact line.
+                Text("The smart alarm Apple's Clock should have had.")
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
             }

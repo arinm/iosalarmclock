@@ -1,12 +1,12 @@
 # Punctual — *Skip today, never forget tomorrow*
 
-The Android-style smart alarm Apple Clock should have had. A focused, premium,
+The smart alarm Apple's Clock should have had. A focused, premium,
 iOS 26 native alarm manager built around one workflow:
 
 > **Create alarm → see how long until it rings → get a pre-alert → skip only today → alarm stays active tomorrow.**
 
 Not a bloated alarm app. No sleep tracking, no math puzzles, no social alarms, no
-music streaming. Just the Android-grade convenience iPhone users miss, with
+music streaming. Just the alarm management iPhone users are missing, with
 Apple-native polish.
 
 ---
@@ -16,7 +16,7 @@ Apple-native polish.
 Apple Clock is reliable but thin: no "rings in 7h 42m" countdown, no pre-alert,
 no skip-just-today, no vacation pause, no per-day exceptions. Galarm has some of
 these but is cluttered and dated. Alarmy is a heavy "punish the sleeper" app.
-**Nobody owns "Apple polish + Android alarm management + obsessive skip-today
+**Nobody owns "Apple polish + deep alarm management + obsessive skip-today
 focus."** iOS 26's **AlarmKit** finally makes real third-party alarms possible,
 so the moment is now.
 
