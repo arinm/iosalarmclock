@@ -95,7 +95,12 @@ struct OnboardingView: View {
                         if granted { step = .headsUp }
                     }
                 } label: {
-                    Text(requesting ? "Asking…" : "Allow alarms")
+                    // "Continue", NOT "Allow alarms": guideline 5.1.1(iv) forbids
+                    // a priming button that tells the user how to answer the
+                    // system dialog that follows. Build 19 was rejected over
+                    // this exact label. Explaining WHY above the button is fine
+                    // and expected — only the button verb is constrained.
+                    Text(requesting ? "Asking…" : "Continue")
                         .font(.headline).frame(maxWidth: .infinity).padding(.vertical, 6)
                 }
                 .buttonStyle(.borderedProminent)
@@ -124,7 +129,10 @@ struct OnboardingView: View {
                         onDone()
                     }
                 } label: {
-                    Text(requesting ? "Asking…" : "Allow the heads-up")
+                    // Same rule as the alarms step above. App Review only cited
+                    // that one, but this button primes a permission dialog too,
+                    // so it would have been the next rejection.
+                    Text(requesting ? "Asking…" : "Continue")
                         .font(.headline).frame(maxWidth: .infinity).padding(.vertical, 6)
                 }
                 .buttonStyle(.borderedProminent)
