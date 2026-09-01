@@ -8,8 +8,14 @@ Punctual - Smart Alarm
 ## Subtitle (25/30)
 Skip today, keep tomorrow
 
-## Promotional Text (160/170 - editable anytime without review)
-Launch offer: the full smart alarm - live countdown, heads-up before it rings, one-tap Skip - free forever. Pro unlocks vacation pause, groups, themes and more.
+## Promotional Text (169/170 - editable anytime without review)
+See a live countdown to every alarm, get a heads-up notification before it rings, and skip just today with one tap - tomorrow stays armed. Built on Apple's AlarmKit.
+
+<!-- The old text opened "Launch offer: ... free forever". App Review did not
+     cite it (only the screenshots), but "offer" and "free" are the same class
+     of price reference under 2.3.7, and promo text sits right under the
+     subtitle where a reviewer reads it. Not worth a fourth rejection. -->
+
 
 ## Keywords (98/100)
 alarm clock,wake up,snooze,countdown,morning,routine,vacation,pause,silent,loud,recurring,heads up
@@ -79,4 +85,11 @@ Welcome to Punctual 1.0 - the smart alarm for iPhone. Skip today, never forget t
 3. Set it in seconds
 4. Make it yours
 5. One tap. One day skipped.
-6. Go Pro when you're ready - Vacation pause, groups, custom heads-ups. Core stays free.
+6. Go Pro when you're ready - Vacation pause, groups, custom heads-ups.
+
+> NEVER put a price, a discount, or the word "free" in a screenshot, a caption,
+> the subtitle, or the promotional text. Guideline 2.3.7 treats "free" as a
+> price reference, and build 20 was rejected for the paywall screenshot ($9.99,
+> SAVE 58%). Pricing belongs in the DESCRIPTION only - Apple says so explicitly
+> in the rejection. DO NOT upload a paywall screenshot: there is no version of
+> that screen without prices on it.
