@@ -30,10 +30,16 @@ final class ScreenshotTests: XCTestCase {
             settings.tap()
             snap("03-Settings", wait: 2)
 
+            // The paywall shot shows prices, so it can NEVER go in the App Store
+            // screenshot set - guideline 2.3.7 counts prices, discounts and even
+            // the word "free" as price references, and build 20 was rejected for
+            // exactly this image. It IS the right image for the App Review
+            // screenshot each In-App Purchase requires, which is internal to
+            // review and never shown to users. Hence the filename.
             let upgrade = app.buttons["Upgrade to Pro"]
             if upgrade.waitForExistence(timeout: 3) {
                 upgrade.tap()
-                snap("04-Paywall", wait: 3)
+                snap("NOT-FOR-STORE-iap-review-Paywall", wait: 3)
                 tapIfExists(app.buttons["Close"])
             }
             tapIfExists(app.buttons["Done"])
