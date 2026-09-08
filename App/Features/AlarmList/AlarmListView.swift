@@ -10,6 +10,8 @@ struct AlarmListView: View {
     @Environment(ProFeatureManager.self) private var pro
     @Environment(ThemeManager.self) private var theme
     @Environment(PermissionManager.self) private var permissions
+    @Environment(\.requestReview) private var requestReview
+    @Environment(\.scenePhase) private var scenePhase
     @Query(sort: [SortDescriptor(\AlarmItem.hour), SortDescriptor(\AlarmItem.minute)])
     private var alarms: [AlarmItem]
 
@@ -48,6 +50,19 @@ struct AlarmListView: View {
                 }
             }
             .punctualBackground()
+            // Only ASKS. The counting lives in AlarmStore.refreshAllSchedules,
+            // which runs on every foreground and observer event — a SwiftUI
+            // `.task(id:)` would miss the common case of returning to an app
+            // still in memory, and would undercount mornings.
+            //
+            // Asking stays here: `requestReview` needs a live view, and the home
+            // screen is where someone lands after being woken. Fires on first
+            // appear and on every return to foreground, so a user who has earned
+            // it gets asked at the next natural moment.
+            .task { AppReviewPrompt.askIfEarned(requestReview) }
+            .onChange(of: scenePhase) { _, phase in
+                if phase == .active { AppReviewPrompt.askIfEarned(requestReview) }
+            }
             .navigationTitle("Alarms")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {

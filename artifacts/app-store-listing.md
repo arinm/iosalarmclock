@@ -1,12 +1,21 @@
-# Punctual - App Store listing (v1.0, EN-US)
+# Punctual - App Store listing (v1.0.1, EN-US)
 
 Character limits: name 30 · subtitle 30 · promo 170 · keywords 100 · description 4000.
 
-## App Name (22/30)
-Punctual - Smart Alarm
+> ASO: name, subtitle and keywords are the ONLY indexed fields - Apple does not
+> index the description. Never repeat a word across them; each one is indexed
+> once, so a repeat is wasted characters. The subtitle used to carry the tagline
+> "Skip today, keep tomorrow", which reads beautifully and ranks for nothing;
+> branding is the name's and the icon's job. Ranking for "alarm" itself is not
+> reachable without thousands of ratings - the play is long-tail (shift, holiday,
+> weekday, vacation). Changing any of these three requires a NEW app version
+> submitted for review; only Promotional Text is editable in place.
 
-## Subtitle (25/30)
-Skip today, keep tomorrow
+## App Name (27/30)
+Punctual: Smart Alarm Clock
+
+## Subtitle (29/30)
+Skip a day, shifts & holidays
 
 ## Promotional Text (169/170 - editable anytime without review)
 See a live countdown to every alarm, get a heads-up notification before it rings, and skip just today with one tap - tomorrow stays armed. Built on Apple's AlarmKit.
@@ -17,8 +26,8 @@ See a live countdown to every alarm, get a heads-up notification before it rings
      subtitle where a reviewer reads it. Not worth a fourth rejection. -->
 
 
-## Keywords (98/100)
-alarm clock,wake up,snooze,countdown,morning,routine,vacation,pause,silent,loud,recurring,heads up
+## Keywords (95/100)
+wake,up,countdown,snooze,vacation,work,weekday,morning,repeat,timer,sleep,bedtime,reminder,ring
 
 ## Description
 Punctual is the smart alarm Apple's Clock never became. See exactly when your alarm rings, get a heads-up before it does, and skip just one day - tomorrow stays armed.
@@ -69,8 +78,11 @@ Support & FAQ: https://punctualalarm.com/support.html
 
 Questions? contact@arinitsolutions.com · punctualalarm.com
 
-## What's New (v1.0)
-Welcome to Punctual 1.0 - the smart alarm for iPhone. Skip today, never forget tomorrow.
+## What's New (v1.0.1)
+- Set your own snooze duration on any alarm, up to 15 minutes.
+- A clearer note about alarm reliability during setup.
+- Manage a purchase directly from Settings.
+- Small fixes and polish.
 
 ## Other ASC fields
 - Primary category: Utilities · Secondary: Lifestyle

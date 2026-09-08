@@ -91,6 +91,10 @@ struct PunctualApp: App {
                     // foreground re-arm). The live id set lets the scheduler heal
                     // occurrences cancelled outside the app.
                     alarmKit.observeAlarmUpdates { [store, alarmKit] liveIDs in
+                        // Count the ring BEFORE the refresh clears past-dated
+                        // occurrences. Lives here, not in AlarmStore, because the
+                        // store is also compiled into the widget extension.
+                        AppReviewPrompt.noteFired(store.firedOccurrences())
                         await store.refreshAllSchedules(liveAlarmIDs: liveIDs)
                         // After the refresh (which captures just-fired occurrences),
                         // confirm any newly-snoozing alarm with a local notification
@@ -143,6 +147,7 @@ struct PunctualApp: App {
                 Task { await store_kit.refreshEntitlements() }
                 Task {
                     await permissions.refresh()
+                    AppReviewPrompt.noteFired(store.firedOccurrences()) // before the refresh clears them
                     await store.refreshAllSchedules() // re-arm look-ahead window
                     // Surface a snooze that happened while we weren't running
                     // (no notification — the moment has passed; UI state only).

@@ -7,6 +7,7 @@ struct SettingsView: View {
     @Environment(ProFeatureManager.self) private var pro
     @Environment(ThemeManager.self) private var theme
     @Environment(SoundManager.self) private var sounds
+    @Environment(StoreManager.self) private var storeKit
     @Environment(\.dismiss) private var dismiss
 
     @AppStorage("defaultPreAlertMinutes") private var defaultPreAlert = 15
@@ -18,6 +19,8 @@ struct SettingsView: View {
     @State private var showPaywall = false
     @State private var appIcon = "default"
     @State private var showSoundPicker = false
+    @State private var refunding = false
+    @State private var refundMessage: String?
 
     /// Longest default snooze this user may set. Free reaches 15 - parity with
     /// iOS 26's Clock, which caps its own custom snooze there - and Pro sells
@@ -178,6 +181,28 @@ struct SettingsView: View {
                     }
                     Link(destination: Legal.support) {
                         Label("Support & FAQ", systemImage: "questionmark.circle")
+                    }
+                    // Only shown to someone who actually bought something.
+                    // Apple owns the refund decision; this just saves the user
+                    // from hunting for reportaproblem.apple.com.
+                    if pro.isPro {
+                        Button {
+                            Task {
+                                refunding = true
+                                refundMessage = nil   // don't leave the last result under a new attempt
+                                refundMessage = await storeKit.requestRefund()
+                                refunding = false
+                            }
+                        } label: {
+                            HStack {
+                                Label("Request a refund", systemImage: "arrow.uturn.backward")
+                                if refunding { Spacer(); ProgressView() }
+                            }
+                        }
+                        .disabled(refunding)
+                        if let refundMessage {
+                            Text(refundMessage).font(.footnote).foregroundStyle(.secondary)
+                        }
                     }
                 }
 

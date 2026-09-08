@@ -75,6 +75,16 @@ struct OnboardingView: View {
             }
             .padding()
             .punctualCard()
+
+            // The reliability warning belongs HERE, not only in Settings and the
+            // Terms: this is the one screen every user passes through, before
+            // they have trusted a single alarm. Someone who never opens Settings
+            // should still have been told once, plainly, on their way in.
+            Label("No alarm app can guarantee a ring - iOS decides. For anything you can't afford to miss, set a second alarm too.",
+                  systemImage: "exclamationmark.shield")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.leading)
         }
     }
 

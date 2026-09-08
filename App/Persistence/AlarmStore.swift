@@ -27,6 +27,23 @@ final class AlarmStore {
         return AlarmScheduler.armDepth(enabledAlarms: all.filter(\.isEnabled).count)
     }
 
+    /// Occurrences we really armed whose time has already passed — i.e. rings
+    /// that actually happened.
+    ///
+    /// Read this BEFORE `refreshAllSchedules`: that pass is exactly what clears
+    /// past-dated occurrences. Deliberately plain data with no opinion about the
+    /// caller: `AlarmStore` is compiled into the widget extension as well, so it
+    /// must not reference app-only types.
+    ///
+    /// Trustworthy as a "did it ring" signal because the calculator never emits a
+    /// skipped or paused day (`guard !s.isSuppressed(day)`) and the scheduler
+    /// records only occurrences that ACTUALLY armed.
+    func firedOccurrences(asOf now: Date = .now) -> [Date] {
+        allAlarms()
+            .filter(\.isEnabled)
+            .flatMap { $0.armedOccurrences.filter { $0 <= now } }
+    }
+
     func allAlarms() -> [AlarmItem] {
         let descriptor = FetchDescriptor<AlarmItem>(
             sortBy: [SortDescriptor(\.hour), SortDescriptor(\.minute)]
@@ -301,6 +318,7 @@ final class AlarmStore {
         // it out — long enough that a just-disabled alarm could still fire. The
         // result is a plain value set; only APPLYING it needs the lock.
         let calendarDays = await calendarSkipDaysIfNeeded()
+
         await serialized {
             await self.refreshPass(liveAlarmIDs: liveAlarmIDs ?? self.scheduler.currentLiveAlarmIDs(),
                                    calendarDays: calendarDays)

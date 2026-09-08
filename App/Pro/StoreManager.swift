@@ -1,6 +1,7 @@
 import Foundation
 import StoreKit
 import OSLog
+import UIKit
 
 /// Purchase-flow diagnostics — view in Console.app (subsystem "com.punctual.app",
 /// category "Store"). TestFlight/sandbox purchase issues are invisible without this.
@@ -85,6 +86,41 @@ final class StoreManager {
         let pct = (Decimal(1) - (y / full)) * 100
         let rounded = Int((pct as NSDecimalNumber).doubleValue.rounded())
         return rounded > 0 ? "Save \(rounded)%" : nil
+    }
+
+    /// Open Apple's refund sheet for the user's most recent Pro purchase.
+    ///
+    /// We cannot refund anyone ourselves - Apple owns the transaction and the
+    /// decision. All this does is put the right screen in front of the user
+    /// instead of making them hunt for reportaproblem.apple.com. Returns a
+    /// message to show, or nil when the user simply backed out.
+    func requestRefund() async -> String? {
+        let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+        guard let scene = scenes.first(where: { $0.activationState == .foregroundActive }) ?? scenes.first
+        else { return "Couldn't open the refund screen." }
+
+        var latest: StoreKit.Transaction?
+        for await result in StoreKit.Transaction.currentEntitlements {
+            guard case .verified(let t) = result else { continue }
+            if let current = latest, current.purchaseDate >= t.purchaseDate { continue }
+            latest = t
+        }
+        guard let transaction = latest else { return "No purchase found to refund." }
+
+        do {
+            switch try await transaction.beginRefundRequest(in: scene) {
+            case .success:
+                storeLog.notice("Refund requested for \(transaction.productID, privacy: .public)")
+                return "Refund requested - Apple will email you about it."
+            case .userCancelled:
+                return nil
+            @unknown default:
+                return nil
+            }
+        } catch {
+            storeLog.error("Refund request failed: \(error.localizedDescription, privacy: .public)")
+            return "Couldn't reach the App Store. Please try again later."
+        }
     }
 
     /// `force` — act on the read even if it comes back EMPTY. Only the paths that
