@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="apple-itunes-app" content="app-id=6783932992">
+<title>How to Skip an Alarm for One Day on iPhone | Punctual</title>
+<meta name="description" content="No 'skip once' button for regular iPhone alarms? Every built-in workaround, the catch with each, and how to skip one day while tomorrow stays armed.">
+<meta name="theme-color" content="#0a0a10">
+<link rel="canonical" href="https://punctualalarm.com/skip-an-alarm-for-one-day.html">
+<link rel="icon" href="assets/icon-64.png" type="image/png">
+<link rel="apple-touch-icon" href="assets/icon-180.png">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Punctual">
+<meta property="og:title" content="How to skip an alarm for just one day on iPhone">
+<meta property="og:description" content="Every built-in way to skip one day of an iPhone alarm, the catch with each, and how to keep tomorrow armed.">
+<meta property="og:url" content="https://punctualalarm.com/skip-an-alarm-for-one-day.html">
+<meta property="og:image" content="https://punctualalarm.com/assets/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[{"@type":"Article","@id":"https://punctualalarm.com/skip-an-alarm-for-one-day.html#article","headline":"How to skip an alarm for just one day on iPhone","description":"Every way to skip one day of an iPhone alarm without switching it off, the catch with each, and how to keep tomorrow armed.","url":"https://punctualalarm.com/skip-an-alarm-for-one-day.html","mainEntityOfPage":"https://punctualalarm.com/skip-an-alarm-for-one-day.html","inLanguage":"en","dateModified":"2026-09-24","datePublished":"2026-09-24","author":{"@id":"https://punctualalarm.com/#org"},"publisher":{"@id":"https://punctualalarm.com/#org"},"about":{"@id":"https://punctualalarm.com/#app"}},{"@type":"FAQPage","@id":"https://punctualalarm.com/skip-an-alarm-for-one-day.html#faq","mainEntity":[{"@type":"Question","name":"Can I skip several days in a row, like a vacation?","acceptedAnswer":{"@type":"Answer","text":"The Clock app can't pause a regular alarm for a range of dates. In Punctual, Vacation pause silences an alarm for the dates you pick and resumes it automatically afterwards; it is part of Punctual Pro."}},{"@type":"Question","name":"Will the skipped alarm definitely ring the next day?","acceptedAnswer":{"@type":"Answer","text":"With Punctual's Skip today, only that one occurrence is skipped and the alarm stays armed. With the built-in workarounds, only if you undo them in time. Either way, no alarm app can guarantee a ring: for anything you can't afford to miss, set a second, independent alarm."}},{"@type":"Question","name":"Does this work in Silent mode or Focus?","acceptedAnswer":{"@type":"Answer","text":"Yes. Alarms from the Clock app, and from apps built on Apple's AlarmKit such as Punctual, ring through Silent mode and Focus."}}]}]}
+</script>
+<style>
+:root{
+  --bg:#0a0a10; --bg2:#12121b; --card:rgba(255,255,255,.045); --line:rgba(255,255,255,.09);
+  --txt:#f3f3f6; --muted:#a2a2ae; --accent:#ff9a73; --accent2:#ffb38f;
+  --skip:#74c98e; --radius:20px; --maxw:1080px;
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+body{margin:0;background:radial-gradient(1200px 600px at 50% -200px,rgba(255,154,115,.10),transparent),var(--bg);
+  color:var(--txt);font-family:var(--font);line-height:1.6;-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+img{max-width:100%;display:block}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 20px}
+h1,h2,h3{line-height:1.15;letter-spacing:-.02em;margin:0 0 .4em}
+h1{font-size:clamp(2.1rem,5.5vw,3.6rem);font-weight:800}
+h2{font-size:clamp(1.5rem,3.5vw,2.2rem);font-weight:800;margin-top:0}
+p{margin:0 0 1em;color:var(--muted)}
+.lead{font-size:1.2rem;color:var(--txt)}
+.accent{color:var(--accent)}
+
+/* header */
+header{position:sticky;top:0;z-index:10;backdrop-filter:blur(14px);
+  background:rgba(10,10,16,.7);border-bottom:1px solid var(--line)}
+header .wrap{display:flex;align-items:center;gap:16px;height:64px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;color:var(--txt)}
+.brand img{width:30px;height:30px;border-radius:8px}
+nav{margin-left:auto;display:flex;gap:22px;align-items:center}
+nav a{color:var(--muted);font-weight:600;font-size:.95rem}
+nav a:hover{color:var(--txt);text-decoration:none}
+.btn{display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:#1a0f0a;
+  font-weight:700;padding:11px 18px;border-radius:999px;border:0;cursor:pointer}
+.btn:hover{background:var(--accent2);text-decoration:none}
+.btn.ghost{background:transparent;color:var(--txt);border:1px solid var(--line)}
+
+/* hero */
+.hero{padding:72px 0 40px}
+.hero .wrap{display:grid;grid-template-columns:1.1fr .9fr;gap:48px;align-items:center}
+.hero .eyebrow{color:var(--accent);font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:.85rem}
+.hero-icon{width:84px;height:84px;border-radius:20px;margin-bottom:20px;box-shadow:0 14px 40px rgba(255,154,115,.25)}
+.hero-shot{justify-self:center;width:300px;max-width:78vw;border-radius:42px;
+  box-shadow:0 30px 80px rgba(0,0,0,.6);border:1px solid var(--line)}
+.cta-row{display:flex;gap:14px;flex-wrap:wrap;margin-top:24px}
+
+/* sections */
+section{padding:56px 0;border-top:1px solid var(--line)}
+.section-head{max-width:680px;margin:0 auto 40px;text-align:center}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.feature{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:22px}
+.feature .ico{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;
+  background:rgba(255,154,115,.14);color:var(--accent);font-size:20px;margin-bottom:14px}
+.feature h3{font-size:1.12rem;margin-bottom:.3em}
+.ftag{font-size:.6rem;font-weight:800;letter-spacing:.04em;color:var(--accent);
+  border:1px solid var(--accent);border-radius:999px;padding:1px 7px;margin-left:8px;vertical-align:middle}
+.btn.disabled{opacity:.75;cursor:default}
+.btn.disabled:hover{background:var(--accent)}
+.feature p{margin:0;font-size:.96rem}
+
+.split{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center}
+.split img{border-radius:38px;width:280px;max-width:70vw;margin:0 auto;
+  box-shadow:0 24px 60px rgba(0,0,0,.55);border:1px solid var(--line)}
+
+/* pricing */
+.tiers{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;max-width:760px;margin:0 auto}
+.tier{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:24px;text-align:center}
+.tier.best{border-color:rgba(255,154,115,.55);background:rgba(255,154,115,.08)}
+.tier .price{font-size:1.8rem;font-weight:800;color:var(--txt);margin:.2em 0}
+.tier .per{color:var(--muted);font-size:.9rem}
+.badge{display:inline-block;background:var(--accent);color:#1a0f0a;font-weight:700;font-size:.72rem;
+  padding:3px 9px;border-radius:999px;margin-bottom:8px}
+.free-note{text-align:center;color:var(--muted);margin-top:22px}
+
+/* faq */
+.faq{max-width:760px;margin:0 auto}
+details{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:4px 18px;margin-bottom:12px}
+summary{cursor:pointer;font-weight:700;padding:14px 0;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";float:right;color:var(--accent);font-weight:800}
+details[open] summary::after{content:"–"}
+details p{padding-bottom:14px;margin:0}
+
+/* legal pages */
+.doc{max-width:760px;margin:0 auto;padding:48px 0}
+.doc h1{font-size:2.2rem}
+.doc h2{font-size:1.3rem;margin-top:1.6em}
+.doc p,.doc li{color:#cfcfd6}
+.doc a{font-weight:600}
+
+/* footer */
+footer{border-top:1px solid var(--line);padding:40px 0;color:var(--muted)}
+footer .wrap{display:flex;flex-wrap:wrap;gap:18px;align-items:center;justify-content:space-between}
+footer nav{margin:0;gap:18px}
+
+@media(max-width:860px){
+  .hero .wrap,.split{grid-template-columns:1fr;text-align:center}
+  .hero-icon{margin-inline:auto}
+  .grid,.tiers{grid-template-columns:1fr}
+  nav .navlink{display:none}
+}
+
+/* guide page */
+.eyebrow{color:var(--accent);font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:.8rem;margin:0 0 .6em}
+.doc .lead{font-size:1.15rem;color:#e6e6ec}
+.doc ol,.doc ul{padding-left:1.3em}
+.doc li{margin:.25em 0}
+.doc h3{font-size:1.05rem;margin:1.4em 0 .3em}
+.answer{background:rgba(255,154,115,.08);border:1px solid rgba(255,154,115,.35);border-radius:16px;padding:18px 22px;margin:1.6em 0}
+.answer > strong{display:block;color:var(--accent);margin-bottom:.4em}
+.answer ul{margin:0}
+.catch{border-left:3px solid rgba(255,154,115,.55);padding-left:14px}
+.table-scroll{overflow-x:auto;margin:1em 0}
+.doc table{width:100%;border-collapse:collapse;font-size:.95rem}
+.doc th,.doc td{text-align:left;padding:10px 12px;border-top:1px solid var(--line);vertical-align:top;color:#cfcfd6}
+.doc thead th{border-top:0;color:var(--txt);font-weight:700}
+.doc td.no{color:#8FC7A0;font-weight:700}
+.doc td.yes{color:#E2B23E}
+.cta{margin:1.4em 0 .6em}
+.updated{font-size:.9rem}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <a class="brand" href="/"><img src="assets/icon-64.png" alt="Punctual icon">Punctual</a>
+  <nav><a class="navlink" href="/">Home</a><a href="support.html">Support</a><a href="https://apps.apple.com/app/id6783932992">Get the app</a></nav>
+</div></header>
+
+<main class="wrap"><article class="doc">
+  <p class="eyebrow">iPhone alarm guide</p>
+  <h1>How to skip an alarm for just one day on iPhone</h1>
+  <p class="lead">Day off tomorrow, but your alarm repeats every weekday? The iPhone Clock app has no &ldquo;skip once&rdquo; button for regular alarms. Here is every way that works, what each one costs you, and the one that doesn't need you to remember anything.</p>
+
+  <div class="answer">
+    <strong>Quick answer</strong>
+    <ul>
+      <li><strong>Your Sleep Schedule wake-up alarm:</strong> Clock &rarr; Alarms &rarr; under <em>Sleep | Wake Up</em> tap <em>Change</em> &rarr; switch off <em>Wake Up Alarm</em>. This changes the next wake-up only.</li>
+      <li><strong>Any other alarm:</strong> there is no built-in skip. Switch it off (and back on later), or remove tomorrow from its Repeat days (and add it back later).</li>
+      <li><strong>With Punctual:</strong> tap <em>Skip today</em>. Only that ring is skipped; the alarm stays armed for the next day.</li>
+    </ul>
+  </div>
+
+  <h2>1. Your Sleep Schedule alarm: turn off the next wake-up</h2>
+  <p>If the alarm you want to skip is the wake-up alarm from your Sleep Schedule, iOS lets you change just the next one:</p>
+  <ol>
+    <li>Open <strong>Clock</strong> and go to <strong>Alarms</strong>.</li>
+    <li>Under <strong>Sleep | Wake Up</strong>, tap <strong>Change</strong>.</li>
+    <li>Switch off <strong>Wake Up Alarm</strong>, then tap <strong>Done</strong>.</li>
+  </ol>
+  <p>Changes made here apply to your next wake-up only, so the schedule carries on afterwards. On Apple Watch it's a single button: open <strong>Alarms</strong>, tap the wake-up alarm, then <strong>Skip for Tonight</strong>.</p>
+  <p class="catch"><strong>The catch:</strong> this works for one alarm only - the Sleep Schedule one. Your other alarms, like a 6:30 gym alarm or a medication reminder, don't get this option.</p>
+
+  <h2>2. Any alarm: switch it off tonight</h2>
+  <ol>
+    <li>Open <strong>Clock</strong> and go to <strong>Alarms</strong>.</li>
+    <li>Switch the alarm off.</li>
+  </ol>
+  <p class="catch"><strong>The catch:</strong> the alarm stays off until you switch it back on. Forget once, and it stays silent on the next workday too - which is exactly how most &ldquo;I overslept after the holiday&rdquo; mornings happen.</p>
+
+  <h2>3. A repeating alarm: remove the day from Repeat</h2>
+  <ol>
+    <li>Open <strong>Clock</strong> &rarr; <strong>Alarms</strong> and tap the alarm to edit it.</li>
+    <li>Tap <strong>Repeat</strong> and untick tomorrow's day.</li>
+    <li>Go back and tap <strong>Save</strong>.</li>
+  </ol>
+  <p class="catch"><strong>The catch:</strong> the same problem, better hidden. The alarm still looks on, so nothing reminds you that a weekday is missing - and it isn't just tomorrow: that day stays off every week until you add it back.</p>
+
+  <h2>4. Skip just one day with Punctual</h2>
+  <p>Punctual is an alarm app for iPhone built on Apple's AlarmKit - the system alarm engine behind the Clock app - so its alarms ring through Silent mode and Focus. It adds the button iOS is missing:</p>
+  <ol>
+    <li>Tap <strong>Skip today</strong> on the alarm: in the app, on the heads-up notification Punctual sends before the alarm, or on the Lock Screen.</li>
+    <li>The card confirms it in green - <em>skipped, still active</em> - with an Undo if you change your mind.</li>
+  </ol>
+  <p>Only that one ring is skipped. The next day the alarm rings as normal - nothing to switch back on, nothing to remember. Skip today is part of the free app. Punctual needs iOS 26 or later.</p>
+  <p class="cta"><a class="btn" href="https://apps.apple.com/app/id6783932992">Download on the App Store</a></p>
+
+  <h2>Which one should you use?</h2>
+  <div class="table-scroll"><table>
+    <thead><tr><th scope="col">Method</th><th scope="col">Works for</th><th scope="col">Must you undo it?</th></tr></thead>
+    <tbody>
+      <tr><td>Turn off the next wake-up</td><td>Only the Sleep Schedule alarm</td><td class="no">No</td></tr>
+      <tr><td>Switch the alarm off</td><td>Any alarm</td><td class="yes">Yes - switch it back on</td></tr>
+      <tr><td>Remove the day from Repeat</td><td>Repeating alarms</td><td class="yes">Yes - add the day back</td></tr>
+      <tr><td>Punctual: Skip today</td><td>Any Punctual alarm</td><td class="no">No</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>Questions</h2>
+  <h3>Can I skip several days in a row, like a vacation?</h3>
+  <p>The Clock app can't pause a regular alarm for a range of dates. In Punctual, Vacation pause silences an alarm for the dates you pick and resumes it automatically afterwards; it is part of Punctual Pro.</p>
+  <h3>Will the skipped alarm definitely ring the next day?</h3>
+  <p>With Punctual's Skip today, only that one occurrence is skipped and the alarm stays armed. With the built-in workarounds, only if you undo them in time. Either way, no alarm app can guarantee a ring: for anything you can't afford to miss, set a second, independent alarm.</p>
+  <h3>Does this work in Silent mode or Focus?</h3>
+  <p>Yes. Alarms from the Clock app, and from apps built on Apple's AlarmKit such as Punctual, ring through Silent mode and Focus.</p>
+
+  <p class="updated"><em>Updated September 2026, for iOS 26 and later.</em></p>
+</article></main>
+
+<footer><div class="wrap">
+  <span>© 2026 Punctual · Arin IT Solutions</span>
+  <nav><a href="/">Home</a><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="support.html">Support</a></nav>
+</div></footer>
+</body>
+</html>

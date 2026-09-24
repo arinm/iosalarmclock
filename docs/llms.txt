@@ -7,8 +7,11 @@
 > $19.99 lifetime) adds vacation pause, custom heads-ups, alarm groups, calendar
 > auto-skip, themes, icons, custom heads-up sounds. No data collection.
 
+Download: https://apps.apple.com/app/id6783932992
+
 ## Pages
 - [Home & FAQ](https://punctualalarm.com/): features, pricing, FAQ
+- [How to skip an alarm for one day on iPhone](https://punctualalarm.com/skip-an-alarm-for-one-day.html): every built-in way, the catch with each
 - [Support](https://punctualalarm.com/support.html): troubleshooting
 - [Privacy](https://punctualalarm.com/privacy.html): no-data-collection policy
 - [Terms](https://punctualalarm.com/terms.html): subscription & purchase terms
