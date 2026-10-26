@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Punctual — 04 decide from your pillow</title>
+<link rel="stylesheet" href="../lib/base.css">
+<style>
+#night{background:linear-gradient(180deg,#0b1130 0%,#0a0f26 35%,#070a18 70%,#05060c 100%)}
+#moon{position:absolute;left:0;top:0;width:150px;height:150px;margin:-75px 0 0 -75px;overflow:visible}
+#moonGlow{position:absolute;left:0;top:0;width:520px;height:520px;margin:-260px 0 0 -260px;border-radius:50%;background:radial-gradient(closest-side,rgba(255,226,206,.32),rgba(255,200,170,.08) 50%,rgba(255,200,170,0) 75%)}
+.tx{position:absolute;left:0;top:0;width:1080px;transform-origin:50% 50%}
+.tx .line{font-size:96px;font-weight:800;letter-spacing:-.045em;line-height:1.06}
+#tx2 .line{font-size:150px}
+#lock{position:absolute;left:0;top:0;width:1080px;text-align:center;transform-origin:540px 640px}
+#lkDate{position:absolute;left:0;top:488px;width:1080px;text-align:center;font-size:40px;font-weight:600;color:rgba(255,255,255,.72);letter-spacing:.005em}
+#lkTime{position:absolute;left:0;top:528px;width:1080px;text-align:center;font-size:260px;font-weight:300;letter-spacing:-.02em;line-height:1;font-variant-numeric:tabular-nums;color:rgba(255,255,255,.94)}
+.z{position:absolute;left:0;top:0;font-weight:800;color:#FFD9C7;opacity:0;text-shadow:0 0 30px rgba(255,170,140,.6)}
+#chip{position:absolute;left:0;top:0;display:flex;align-items:center;gap:14px;font-size:30px;font-weight:700;letter-spacing:.1em;color:#FFA885;background:rgba(255,168,133,.12);border:1.5px solid rgba(255,168,133,.32);padding:16px 28px;border-radius:999px;opacity:0;white-space:nowrap}
+#end{position:absolute;left:0;top:0;width:1080px;height:1920px}
+</style></head>
+<body><div id="stage"><div id="world" class="layer">
+  <div id="night" class="layer"></div>
+  <div id="moonGlow"></div><svg id="moon" viewBox="0 0 150 150"><defs><mask id="cres"><rect width="150" height="150" fill="#fff"/><circle cx="104" cy="52" r="58" fill="#000"/></mask></defs><circle cx="75" cy="75" r="62" fill="#FFE6D6" mask="url(#cres)"/></svg>
+  <div id="lock"><div id="lkDate">Thursday, October 8</div><div id="lkTime">6:15</div></div>
+  <div id="host" class="layer"></div>
+  <div class="z" id="z0" style="font-size:72px">z</div><div class="z" id="z1" style="font-size:56px">z</div><div class="z" id="z2" style="font-size:44px">z</div>
+  <div id="chip"></div>
+  <div id="end" class="layer"></div>
+  <div class="tx" id="tx1"><div class="line"></div><div class="line"></div></div>
+  <div class="tx" id="tx2"><div class="line"></div></div>
+  <div class="tx" id="tx3"><div class="line"></div><div class="line"></div></div>
+  <div class="tx" id="tx4"><div class="line"></div><div class="line"></div></div>
+  <div class="ripple" id="ripple"></div><div class="touch" id="touch"></div>
+</div></div>
+<script>window.CLIP={w:1080,h:1920,fps:60,dur:8.6,sub:[[0.7,1.1,6],[2.7,3.2,6],[6.6,7.0,6]]};</script>
+<script src="../lib/engine.js"></script>
+<script>
+const TXT={tx1:[['15','minutes'],['before','it','<span class="mu">rings…</span>']],tx2:[['Day','<span class="a">off?</span>']],
+  tx3:[['Skip','it','from'],['your','<span class="a">pillow.</span>']],tx4:[['Tomorrow'],['stays','<span class="a">armed.</span>']]};
+const WIN={tx1:[0.0,1.62],tx2:[1.98,3.12],tx3:[3.42,4.92],tx4:[5.20,6.50]};
+let Wd={},G={},N,L,STARS=[];
+function init(){
+  for(const id in TXT){const lines=$(id).querySelectorAll('.line');Wd[id]=TXT[id].flatMap((ws,i)=>setWords(lines[i],ws));G[id+'h']=$(id).offsetHeight;}
+  $('stage').insertBefore($('night'),$('dust'));
+  N=buildNotif($('host'),{width:880,title:'Alarm in 15 minutes',body:'Wake up · 6:30 AM'});
+  G.cy=868+N.h/2; G.sb=skipCentre(N,540,G.cy);
+  $('chip').innerHTML=ICON.clock(34,'#FFA885',2.2)+'TOMORROW 6:30 · ARMED'; G.chip=[$('chip').offsetWidth,$('chip').offsetHeight];
+  L=buildLockup($('end'),{cy:740,tag:'Skip it <span class="a">from your pillow.</span>'});
+  let s=987654; const r=()=>((s=(s*16807)%2147483647)/2147483647);
+  for(let i=0;i<150;i++) STARS.push({x:r()*1080,y:r()*1250,r:.5+r()*1.8,a:.25+r()*.6,f:.4+r()*1.6,ph:r()*6.28});
+}
+function drawSky(t,dim){
+  const c=$('dust'), x=c.getContext('2d'); x.clearRect(0,0,1080,1920);
+  for(const p of STARS){const a=p.a*(0.55+0.45*Math.sin(p.ph+t*p.f*2.4))*dim; x.fillStyle=`rgba(235,240,255,${a.toFixed(3)})`; x.beginPath(); x.arc(p.x,p.y,p.r,0,6.2832); x.fill();}
+}
+function render(t){
+  for(const id in WIN){const [a,b]=WIN[id],on=t>a-0.05&&t<b+0.5;show(id,on);if(!on)continue;
+    wordsInOut(Wd[id],t,a,b,{odur:0.26}); let s=1; if(id==='tx2') s=1+0.3*(1-E.outBack(seg(t,a,a+0.42),2.2));
+    tf($(id),`translateY(${(306-G[id+'h']/2).toFixed(2)}px) scale(${s.toFixed(4)})`);}
+  const endIn=t>6.62, nightFade=1-E.inOutCubic(seg(t,6.55,6.95));
+  op($('night'),nightFade);
+  // moon: sits top right, glows brighter once you've chosen to sleep in
+  const sleep=E.inOutCubic(seg(t,3.35,3.9));
+  const mx=872, my=172+6*Math.sin(2*Math.PI*0.2*t);
+  tf($('moon'),`translate(${mx}px,${my.toFixed(2)}px) scale(${(0.82+0.07*sleep).toFixed(4)})`); op($('moon'),(0.8+0.2*sleep)*nightFade);
+  tf($('moonGlow'),`translate(${mx}px,${my.toFixed(2)}px) scale(${(1+0.35*sleep+0.03*Math.sin(2*Math.PI*.5*t)).toFixed(4)})`); op($('moonGlow'),(0.7+0.3*sleep)*nightFade);
+  // lock screen: on at the hook, dims as the phone goes back to sleep
+  const lkIn=E.outExpo(seg(t,0,0.5));
+  op($('lock'),(0.5+0.5*lkIn)*(1-0.62*sleep)*(1-seg(t,6.5,6.8))); tf($('lock'),`scale(${(1.06-0.06*lkIn-0.04*sleep).toFixed(4)})`);
+  // the heads-up
+  const nd=t-0.78, mp=E.outExpo(seg(t,2.75,3.3));
+  show('host',t>0.7&&t<6.7);
+  drawNotif(N,t,{cx:540,cy:G.cy,drop:spring(nd,7,1.45),rot:-4*(1-spring(nd,6.5,1.6)),morph:mp,pill:{w:760,h:108,cy:G.cy},tB:seg(t,3.0,3.18),tChk:seg(t,3.06,3.36),
+    fade:clamp(nd/0.1)*(1-E.inExpo(seg(t,6.3,6.62)))});
+  const wv=seg(t,0.95,1.05)*(1-seg(t,1.3,1.6)); tf(N.icon,`rotate(${(14*Math.sin(2*Math.PI*11*t)*wv).toFixed(2)}deg)`);
+  tf(N.skip,`scale(${(1-0.07*pulse(t,2.58,2.76)).toFixed(4)})`);
+  tapFX($('touch'),$('ripple'),t,{x:G.sb[0],y:G.sb[1],t0:2.30,from:[150,210]});
+  // z z z — drifting up from the dimmed clock
+  ['z0','z1','z2'].forEach((id,i)=>{const st=3.55+i*0.38, p=seg(t,st,st+1.5);
+    op($(id),p>0&&p<1?Math.sin(Math.PI*p)*0.9:0);
+    tf($(id),`translate(${(690+i*70+30*Math.sin(p*5+i)).toFixed(2)}px,${(600-i*40-250*p).toFixed(2)}px) rotate(${(-12+8*Math.sin(p*4)).toFixed(2)}deg)`);});
+  // tomorrow armed
+  const cp=clamp(spring(t-5.32,8,1.7),0,1.2), cOut=E.inExpo(seg(t,6.3,6.6));
+  op($('chip'),clamp((t-5.32)/0.1)*(1-cOut)); tf($('chip'),`translate(${(540-G.chip[0]/2).toFixed(2)}px,${(1130+20*(1-cp)).toFixed(2)}px) scale(${(0.7+0.3*cp).toFixed(4)})`);
+  $('chip').style.boxShadow=`0 0 ${(60*pulse(t,5.35,6.0)).toFixed(1)}px rgba(255,150,110,${(0.5*pulse(t,5.35,6.0)).toFixed(2)})`;
+  // end card
+  show('end',endIn); if(endIn) renderLockup(L,t,6.75,1.6);
+  // environment: stars instead of dust, warm glow only around what matters
+  drawSky(t,nightFade);
+  const [gx,gy,go]=keyed([[0,540,600,.18],[1.0,540,960,.3],[3.3,540,960,.35],[5.4,540,1110,.4],[6.7,540,740,.6],[8.7,540,760,.72]],t);
+  envGlow(gx,gy,go);
+  envStreak('streak1',740,t,7.15,7.45,.7);
+}
+boot({init,render});
+</script>
+</body></html>

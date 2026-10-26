@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Punctual — 05 going away</title>
+<link rel="stylesheet" href="../lib/base.css">
+<style>
+#bw{position:absolute;left:0;top:0;width:1080px;height:1920px;transform-origin:540px 640px}
+#board{position:absolute;left:40px;top:296px;width:1000px;height:568px;border-radius:40px;background:linear-gradient(180deg,#141418 0%,#0c0c10 100%);border:1.5px solid rgba(255,255,255,.07);box-shadow:0 50px 140px rgba(0,0,0,.75),inset 0 1px 0 rgba(255,255,255,.05)}
+#bhead{position:absolute;left:80px;top:318px;display:flex;align-items:center;gap:14px;font-size:24px;font-weight:700;letter-spacing:.22em;color:rgba(232,190,82,.8)}
+#rule{position:absolute;left:80px;top:524px;width:920px;height:1.5px;background:rgba(255,255,255,.07)}
+.colh{position:absolute;top:546px;font-size:19px;font-weight:700;letter-spacing:.2em;color:#6d6d78}
+.rowbg{position:absolute;left:62px;width:956px;height:82px;border-radius:20px}
+.rr{position:absolute;left:62px;width:956px;height:82px;border-radius:20px;border:3px solid #FFA885;opacity:0}
+.fc{position:absolute;--r:9px}
+.hf{position:absolute;left:0;width:100%;height:50%;overflow:hidden}
+.hf.t{top:0;border-radius:var(--r) var(--r) 0 0;background:linear-gradient(180deg,#27272e,#1e1e24)}
+.hf.b{top:50%;border-radius:0 0 var(--r) var(--r);background:linear-gradient(180deg,#1a1a20,#232329)}
+.hf span{position:absolute;left:0;width:100%;height:200%;display:flex;align-items:center;justify-content:center;font-weight:700;color:#F2EBDD}
+.hf.t span{top:0}
+.hf.b span{top:-100%}
+.ft{transform-origin:50% 100%;visibility:hidden}
+.fb{transform-origin:50% 0;visibility:hidden}
+.sh{position:absolute;left:0;top:0;width:100%;height:100%;background:#000;opacity:0}
+.hinge{position:absolute;left:0;top:50%;width:100%;height:2px;margin-top:-1px;background:rgba(0,0,0,.9)}
+#pill{position:absolute;left:0;top:0;display:flex;align-items:center;gap:16px;padding:20px 22px 20px 32px;border-radius:999px;background:rgba(226,178,62,.15);border:1.5px solid rgba(226,178,62,.3);color:#EDC86A;font-size:40px;font-weight:600;white-space:nowrap;opacity:0}
+#pill b{color:#F6D98E;font-weight:700}
+.pro{font-style:normal;font-size:20px;font-weight:800;letter-spacing:.14em;color:#1F0E06;background:#E2B23E;border-radius:12px;padding:7px 12px 6px 14px;margin-left:6px}
+#aglow{position:absolute;left:0;top:0;width:1400px;height:1400px;border-radius:50%;background:radial-gradient(closest-side,rgba(226,178,62,.26),rgba(226,178,62,.07) 45%,rgba(226,178,62,0) 72%);opacity:0}
+.tx{position:absolute;left:0;top:0;width:1080px;transform-origin:50% 50%}
+.tx .line{font-size:94px;font-weight:800;letter-spacing:-.045em;line-height:1.06}
+#plane{position:absolute;left:0;top:0;width:92px;height:92px;margin:-46px 0 0 -46px;filter:drop-shadow(0 0 18px rgba(255,214,190,.55))}
+.dot{position:absolute;left:0;top:0;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;background:#FFE3D2;opacity:0}
+#end{position:absolute;left:0;top:0;width:1080px;height:1920px}
+</style></head>
+<body><div id="stage"><div id="world" class="layer">
+  <div id="aglow"></div>
+  <div id="trail" class="layer"></div>
+  <svg id="plane" viewBox="0 0 24 24"><path fill="#FFF1E8" d="M22.6 12c0-.9-1-1.3-2-1.3h-5.8L9.9 3H7.7l2.6 7.7H5.4L3.6 8H2.2l1 4-1 4h1.4l1.8-2.7h4.9L7.7 21h2.2l4.9-7.7h5.8c1 0 2-.4 2-1.3z"/></svg>
+  <div id="bw">
+    <div id="board"></div>
+    <div id="bhead"><svg width="34" height="34" viewBox="0 0 24 24"><path fill="currentColor" d="M22.6 12c0-.9-1-1.3-2-1.3h-5.8L9.9 3H7.7l2.6 7.7H5.4L3.6 8H2.2l1 4-1 4h1.4l1.8-2.7h4.9L7.7 21h2.2l4.9-7.7h5.8c1 0 2-.4 2-1.3z"/></svg>DEPARTURES</div>
+    <div id="rule"></div>
+    <div id="rows" class="layer"></div>
+    <div id="cells" class="layer"></div>
+  </div>
+  <div id="pill"></div>
+  <div id="end" class="layer"></div>
+  <div class="tx" id="tx1"><div class="line"></div><div class="line"></div></div>
+  <div class="tx" id="tx2"><div class="line"></div><div class="line"></div></div>
+  <div class="tx" id="tx3"><div class="line"></div><div class="line"></div></div>
+</div></div>
+<script>window.CLIP={w:1080,h:1920,fps:60,dur:9.8,sub:[[0,1.4,5],[7.0,7.7,6]]};</script>
+<script src="../lib/engine.js"></script>
+<script>
+/* ---------- split-flap board ---------- */
+const PAL=['#F2EBDD','#EDBE52','#9BD3AC','#FFA885'];      // 0 board white · 1 paused amber · 2 on-time sage · 3 next-alarm peach
+const DRUM='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+const FD=0.075, FLIPS=[]; window.FLIPS=FLIPS;            // every flap that falls, for the sound design
+let seed=24601; const rnd=()=>((seed=(seed*16807)%2147483647)/2147483647);
+function buildCell(parent,x,y,w,h,font,size){
+  const c=el('div','fc',null,parent); c.style.left=x+'px'; c.style.top=y+'px'; c.style.width=w+'px'; c.style.height=h+'px';
+  if(size==='S') c.style.setProperty('--r','7px');
+  const mk=cls=>{const d=el('div','hf '+cls,'<span></span><i class="sh"></i>',c);d.firstChild.style.fontSize=font+'px';return {d,s:d.firstChild,sh:d.lastChild,c:null,k:null,v:null};};
+  const C={sT:mk('t'),sB:mk('b'),fT:mk('t ft'),fB:mk('b fb'),ev:[{t:-1e9,c:' ',k:0}],size,cx:Math.round(x+w/2),persp:h*4};
+  el('i','hinge',null,c); return C;
+}
+const put=(H,e)=>{if(H.c!==e.c){H.s.textContent=e.c;H.c=e.c;} if(H.k!==e.k){H.s.style.color=PAL[e.k];H.k=e.k;}};
+const vis=(H,on)=>{if(H.v!==on){H.d.style.visibility=on?'visible':'hidden';H.v=on;}};
+function drawCell(C,t){
+  const ev=C.ev; let k=0; while(k+1<ev.length&&ev[k+1].t<=t)k++;
+  const cur=ev[k], p=k>0?(t-cur.t)/FD:1;
+  if(p<1){const old=ev[k-1]; put(C.sT,cur); put(C.sB,old);
+    if(p<.5){const q=p/.5; vis(C.fT,1); vis(C.fB,0); put(C.fT,old);
+      C.fT.d.style.transform=`perspective(${C.persp}px) rotateX(${(-90*q).toFixed(2)}deg)`; op(C.fT.sh,.55*q); op(C.sT.sh,.45*(1-q)); op(C.sB.sh,0);}
+    else{const q=(p-.5)/.5; vis(C.fT,0); vis(C.fB,1); put(C.fB,cur);
+      C.fB.d.style.transform=`perspective(${C.persp}px) rotateX(${(90-90*q).toFixed(2)}deg)`; op(C.fB.sh,.5*(1-q)); op(C.sT.sh,0); op(C.sB.sh,.4*q);}
+  } else {put(C.sT,cur); put(C.sB,cur); vis(C.fT,0); vis(C.fB,0); op(C.sT.sh,0); op(C.sB.sh,0);}
+}
+/* schedule: every cell rattles through a few random flaps and lands on its letter */
+function flipTo(cells,str,T0,{stg=.03,base=3,extra=3,iv=.08,k=0,ks=null,force=false}={}){
+  cells.forEach((C,i)=>{const ch=str[i]??' ', kk=ks?ks[i]:k, last=C.ev[C.ev.length-1];
+    if(last.c===ch&&last.k===kk&&!force) return;
+    let tt=T0+i*stg; const n=(last.c===ch&&!force)?0:base+Math.floor(rnd()*(extra+1));
+    for(let j=0;j<n;j++){let r;do{r=DRUM[Math.floor(rnd()*DRUM.length)];}while(r===ch);C.ev.push({t:tt,c:r,k:0});FLIPS.push([+tt.toFixed(4),C.size,C.cx]);tt+=iv;}
+    C.ev.push({t:tt,c:ch,k:kk}); FLIPS.push([+tt.toFixed(4),C.size,C.cx]);
+  });
+}
+
+const TXT={tx1:[['Pause','them'],['for','the','<span class="am">trip.</span>']],
+  tx2:[['Nine','days'],['of','<span class="am">sleeping</span>','<span class="am">in.</span>']],
+  tx3:[['Back','on,'],['<span class="a">all</span>','<span class="a">by</span>','<span class="a">itself.</span>']]};
+const WIN={tx1:[1.62,2.98],tx2:[4.48,5.98],tx3:[6.24,7.04]};
+const ROWY=[588,670,752], DOTS=46;
+let Wd={},G={},TOP=[],ROWS=[],RBG=[],RR=[],L,DOT=[];
+const P0=[-90,1500],P1=[480,1470],P2=[1180,1020];
+const bez=u=>{const a=(1-u)*(1-u),b=2*(1-u)*u,c=u*u;return [a*P0[0]+b*P1[0]+c*P2[0],a*P0[1]+b*P1[1]+c*P2[1]];};
+const bezD=u=>[2*(1-u)*(P1[0]-P0[0])+2*u*(P2[0]-P1[0]),2*(1-u)*(P1[1]-P0[1])+2*u*(P2[1]-P1[1])];
+
+function init(){
+  for(const id in TXT){const lines=$(id).querySelectorAll('.line');Wd[id]=TXT[id].flatMap((ws,i)=>setWords(lines[i],ws));G[id+'h']=$(id).offsetHeight;}
+  // the headline row: 11 big flaps
+  for(let i=0;i<11;i++) TOP.push(buildCell($('cells'),70+i*86,374,80,120,76,'L'));
+  // three alarms: TIME | ALARM | STATUS
+  const cx=i=>79+i*46+(i>=5?26:0)+(i>=12?26:0);
+  ROWY.forEach((y,r)=>{RBG.push(el('div','rowbg',null,$('rows')));RBG[r].style.top=(y-9)+'px';
+    ROWS.push([...Array(19)].map((_,i)=>buildCell($('cells'),cx(i),y,42,64,40,'S')));});
+  [['TIME',0],['ALARM',5],['STATUS',12]].forEach(([s,i])=>{const h=el('div','colh',s,$('bw'));h.style.left=cx(i)+'px';});
+  for(let i=0;i<2;i++){const r=el('div','rr',null,$('rows'));r.style.top=(ROWY[0]-9)+'px';RR.push(r);}
+  // the trip, in flaps
+  TOP.forEach(C=>C.ev[0].c=DRUM[Math.floor(rnd()*26)]);          // first frame: board mid-shuffle
+  flipTo(TOP,'GOING AWAY?',0.0,{stg:.045,base:4,extra:3});
+  const R=[['06:30','WAKE UP','ON TIME'],['07:15','GYM','ON TIME'],['08:00','MEDS','ON TIME']];
+  R.forEach((cols,r)=>flipTo(ROWS[r],cols[0]+cols[1].padEnd(7)+cols[2],0.40+r*0.12,{stg:.02,base:3,extra:3,force:true,ks:[...Array(19)].map((_,i)=>i>=12?2:0)}));
+  [0,1].forEach(r=>flipTo(ROWS[r].slice(12),'PAUSED ',2.10+r*0.14,{stg:.024,base:2,extra:2,k:1}));
+  flipTo(TOP,'19 → 27 DEC',2.95,{stg:.02,base:1,extra:2,k:1});
+  const D=[['SAT',19],['SUN',20],['MON',21],['TUE',22],['WED',23],['THU',24],['FRI',25],['SAT',26],['SUN',27],['MON',28]];
+  const at=[4.40,4.95,5.10,5.23,5.35,5.47,5.59,5.72,5.88,6.09];
+  D.forEach(([d,n],i)=>flipTo(TOP,`${d}, ${n} DEC`,at[i],i===0?{stg:.02,base:1,extra:2,k:1}:{stg:.012,base:0,extra:0,k:i===9?3:1}));
+  [0,1].forEach(r=>flipTo(ROWS[r].slice(12),'ON TIME',6.12+r*0.08,{stg:.02,base:1,extra:2,k:2}));
+  flipTo(ROWS[0].slice(0,5),'06:30',6.12,{stg:.02,k:3});       // the next alarm to ring lights up
+  flipTo(TOP,' '.repeat(11),7.05,{stg:.015,base:1,extra:1});
+  ROWS.forEach((cells,r)=>flipTo(cells,' '.repeat(19),7.08+r*0.03,{stg:.008,base:1,extra:1}));
+  FLIPS.sort((a,b)=>a[0]-b[0]);
+  // pill: the app's own status line
+  $('pill').innerHTML=ICON.pause(34)+'<span>Paused until <b>Sun 27 Dec</b></span><i class="pro">PRO</i>';
+  G.pill=[$('pill').offsetWidth,$('pill').offsetHeight];
+  for(let i=0;i<DOTS;i++) DOT.push(el('i','dot',null,$('trail')));
+  L=buildLockup($('end'),{cy:740,tag:'Going away? <span class="am">Pause it.</span>',store:'PUNCTUAL PRO · ON THE APP STORE'});
+}
+
+function render(t){
+  // board camera: tilts up into place, leans in while the days fly, falls back for the end card
+  const bi=E.outCubic(seg(t,0,0.9)), bo=E.inCubic(seg(t,7.08,7.55));
+  const push=0.024*E.inOutCubic(seg(t,4.4,6.09))*(1-seg(t,6.4,7.0)), bump=0.016*pulse(t,6.09,6.34);
+  show('bw',t<7.6);
+  tf($('bw'),`perspective(1800px) translateY(${(60+46*(1-bi)+110*bo+4*Math.sin(2*Math.PI*.15*t)).toFixed(2)}px) rotateX(${(16*(1-bi)-26*bo).toFixed(3)}deg) scale(${(0.93+0.07*bi+push+bump-0.08*bo).toFixed(4)})`);
+  op($('bw'),(0.6+0.4*seg(t,0,0.22))*(1-seg(t,7.28,7.58)));
+  if(t<7.6){TOP.forEach(C=>drawCell(C,t)); ROWS.forEach(r=>r.forEach(C=>drawCell(C,t)));}
+  // row states: amber while paused, sage for meds (never paused), peach ring when 6:30 comes back
+  [0,1].forEach(r=>{const p=seg(t,2.25+r*.14,2.6+r*.14)*(1-seg(t,6.14+r*.08,6.42+r*.08)), w=r===0?pulse(t,6.14,7.0):0;
+    RBG[r].style.background=`rgba(${r===0&&w>0?'255,168,133':'226,178,62'},${(r===0&&w>0?.10*w:.075*p).toFixed(3)})`;
+    RBG[r].style.boxShadow=`inset 0 0 0 1.5px rgba(226,178,62,${(.28*p).toFixed(3)})${w>0?`, 0 0 ${(50*w).toFixed(1)}px rgba(255,150,110,${(.35*w).toFixed(3)})`:''}`;});
+  const m=seg(t,2.3,2.7)*(1-seg(t,7.0,7.2)); RBG[2].style.background=`rgba(143,199,160,${(.05*m).toFixed(3)})`;
+  RR.forEach((r,i)=>{const q=seg(t,6.26+i*.24,6.86+i*.24); op(r,q>0&&q<1?.8*(1-q):0); tf(r,`scale(${(1+0.07*E.outCubic(q)).toFixed(4)},${(1+0.5*E.outCubic(q)).toFixed(4)})`);});
+  // the app's status line, with an honest PRO tag
+  const pi=clamp(spring(t-3.22,8,1.7),0,1.2), po=E.inExpo(seg(t,5.98,6.22));
+  op($('pill'),clamp((t-3.22)/0.1)*(1-po)); tf($('pill'),`translate(${(540-G.pill[0]/2).toFixed(2)}px,${(952+24*(1-pi)+30*po).toFixed(2)}px) scale(${(0.7+0.3*pi).toFixed(4)})`);
+  // the plane: crosses once at the hook, leaves a dotted trail that fades
+  const u=lerp(0.1,1.08,seg(t,0,1.35)), [px,py]=bez(u), [dx,dy]=bezD(u);
+  show('plane',t<1.45); tf($('plane'),`translate(${px.toFixed(2)}px,${py.toFixed(2)}px) rotate(${(Math.atan2(dy,dx)*180/Math.PI).toFixed(2)}deg)`);
+  const tf0=1-seg(t,1.2,1.62); show('trail',t<1.65);
+  DOT.forEach((d,i)=>{const ui=0.1+i/DOTS, vis=ui<u-0.035; op(d,vis?.5*tf0*(0.4+0.6*(ui-0.1)):0);
+    if(vis){const [x,y]=bez(ui);tf(d,`translate(${x.toFixed(1)}px,${y.toFixed(1)}px)`);}});
+  // narration
+  for(const id in WIN){const [a,b]=WIN[id],on=t>a-0.05&&t<b+0.5;show(id,on);if(!on)continue;
+    wordsInOut(Wd[id],t,a,b,{odur:0.26}); tf($(id),`translateY(${(1196-G[id+'h']/2).toFixed(2)}px)`);}
+  // end card
+  show('end',t>7.3); if(t>7.3) renderLockup(L,t,7.35,1.6);
+  // environment: days rush by in the dust, amber light while paused, peach when it's back
+  ENV.dust.draw(t+9*E.inOutCubic(seg(t,4.4,6.1)),{boost:0.5*pulse(t,4.6,6.1)});
+  const ag=.6*seg(t,2.9,3.4)*(1-seg(t,6.05,6.45)); op($('aglow'),ag); tf($('aglow'),`translate(${540-700}px,${490-700}px) scale(${(1+.05*Math.sin(2*Math.PI*.4*t)).toFixed(4)})`);
+  const [gx,gy,go]=keyed([[0,540,620,.22],[2.9,540,620,.12],[6.0,540,620,.12],[6.3,540,700,.5],[7.3,540,740,.55],[9.8,540,760,.72]],t);
+  envGlow(gx,gy,go);
+  envStreak('streak1',740,t,7.75,8.05,.7);
+}
+boot({init,render});
+</script>
+</body></html>

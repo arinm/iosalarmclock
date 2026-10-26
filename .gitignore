@@ -11,3 +11,20 @@ xcuserdata/
 
 # XcodeGen output (project.yml is the source of truth — regenerate with `xcodegen generate`)
 *.xcodeproj
+
+# Marketing MEDIA (screenshots, App Store frames, rendered clips, audio) stays LOCAL only.
+# Versioned: every .md (how we made things) and the small sources that rebuild
+# the media - see artifacts/MARKETING.md.
+artifacts/*
+!artifacts/*.md
+!artifacts/generate-icons.py
+!artifacts/to-65-inch.sh
+!artifacts/motion/
+artifacts/motion/**
+!artifacts/motion/**/
+!artifacts/motion/**/*.md
+!artifacts/motion/**/*.html
+!artifacts/motion/**/*.js
+!artifacts/motion/**/*.css
+!artifacts/motion/**/*.py
+!artifacts/motion/**/*.sh

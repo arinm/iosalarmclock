@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Punctual — 03 always know when it rings</title>
+<link rel="stylesheet" href="../lib/base.css">
+<style>
+.tx{position:absolute;left:0;top:0;width:1080px;transform-origin:50% 50%}
+.tx .line{font-size:100px;font-weight:800;letter-spacing:-.045em;line-height:1.06}
+#picker{position:absolute;left:110px;top:640px;width:860px;height:560px;transform-origin:50% 50%;perspective:900px;-webkit-mask-image:linear-gradient(rgba(0,0,0,0) 0%,#000 26%,#000 74%,rgba(0,0,0,0) 100%)}
+#band{position:absolute;left:10px;right:10px;top:220px;height:120px;border-radius:26px;background:rgba(255,255,255,.075);border:1.5px solid rgba(255,255,255,.06)}
+.row{position:absolute;left:0;top:0;width:260px;margin-left:-130px;height:112px;line-height:112px;text-align:center;font-size:92px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+#live{position:absolute;left:0;top:1262px;width:1080px;display:flex;justify-content:center;align-items:center;gap:18px;font-size:62px;font-weight:500;color:#A6A6B0;transform-origin:50% 50%}
+#liveV{color:#FFA885;font-weight:700;font-variant-numeric:tabular-nums}
+.c3{position:absolute;left:100px;width:880px;height:258px;border-radius:38px;background:#1c1c21;border:1.5px solid rgba(255,255,255,.06);box-shadow:0 30px 90px rgba(0,0,0,.5);padding:26px 34px}
+.c3 .t{font-size:74px;font-weight:600;letter-spacing:-.025em;line-height:1.05}
+.c3 .l{font-size:28px;color:#9a9aa4;margin-top:2px}
+.c3 .chipL{margin-top:18px;font-size:30px}
+.c3 .togL{top:40px}
+.c3 .togL i{transform:translateX(52px)}
+#eq{position:absolute;left:0;top:930px;width:1080px;text-align:center;font-size:64px;font-weight:600;color:#c8c8d0;font-variant-numeric:tabular-nums;opacity:0}
+#eqIn{position:relative;display:inline-block}
+#eqIn .strike{height:.09em}
+#res{position:absolute;left:0;top:1080px;width:1080px;display:flex;justify-content:center;opacity:0}
+#res span{font-size:76px;font-weight:800;color:#1F0E06;background:#FFA885;border-radius:999px;padding:14px 44px;letter-spacing:-.02em;box-shadow:0 0 80px rgba(255,150,110,.5)}
+</style></head>
+<body><div id="stage"><div id="world" class="layer">
+  <div id="picker"><div id="band"></div></div>
+  <div id="live"><span id="liveI"></span><span>Rings in</span><span id="liveV">7h 42m</span></div>
+  <div id="cards" class="layer"></div>
+  <div id="eq"><span id="eqIn">6:30 AM − 10:48 PM = ?<i class="strike"></i></span></div>
+  <div id="res"><span>7h 42m</span></div>
+  <div id="lock" class="layer"></div>
+  <div class="tx" id="tx1"><div class="line"></div></div>
+  <div class="tx" id="tx2"><div class="line"></div><div class="line"></div></div>
+  <div class="tx" id="tx3"><div class="line"></div><div class="line"></div></div>
+  <div class="tx" id="tx4"><div class="line"></div><div class="line"></div></div>
+</div></div>
+<script>window.CLIP={w:1080,h:1920,fps:60,dur:8.8,sub:[[0,1.3,8],[3.8,4.3,6],[5.55,5.95,6]]};</script>
+<script src="../lib/engine.js"></script>
+<script>
+const TXT={tx1:[['Pick','a','time.']],tx2:[['See','exactly'],['when','it','<span class="a">rings.</span>']],
+  tx3:[['Every','alarm.'],['Counting','<span class="a">live.</span>']],tx4:[['No','more'],['mental','<span class="s">math.</span>']]};
+const WIN={tx1:[0.0,2.25],tx2:[2.58,3.72],tx3:[4.02,5.48],tx4:[5.78,6.70]};
+const NOW=22*60+48;
+const HOURS=[...Array(12)].map((_,i)=>String(i+1)), MINS=[...Array(60)].map((_,i)=>String(i).padStart(2,'0')), AMPM=['AM','PM'];
+const COLS=[{vals:HOURS,x:300-110},{vals:MINS,x:540-110},{vals:AMPM,x:790-110}];
+let Wd={},G={},CARDS=[],L;
+const fmt=m=>m>=60?`${Math.floor(m/60)}h ${m%60}m`:`${m}m`;
+
+function init(){
+  for(const id in TXT){const lines=$(id).querySelectorAll('.line');Wd[id]=TXT[id].flatMap((ws,i)=>setWords(lines[i],ws));G[id+'h']=$(id).offsetHeight;}
+  COLS.forEach(c=>{c.rows=[...Array(9)].map(()=>{const r=el('div','row',null,$('picker'));r.style.left=c.x+'px';return r;});});
+  $('liveI').innerHTML=ICON.clock(54);
+  const data=[['6:30 AM','Wake up',462],['7:15 AM','Gym',507],['8:00 AM','Meds',552]];
+  data.forEach(([tm,lb,m],i)=>{const c=el('div','c3',`<div class="t">${tm}</div><div class="l">${lb}</div><div class="chipL">${ICON.clock(30,'#d8d8de',2.2)}Rings in <b class="cv">${fmt(m)}</b></div><div class="togL" style="background:#FFA885"><i></i></div>`,$('cards'));
+    c.style.top=(500+i*300)+'px'; CARDS.push({el:c,m,v:c.querySelector('.cv')});});
+  L=buildLockup($('lock'),{cy:740,tag:'Always know <span class="a">when it rings.</span>'});
+}
+// wheel positions (float index into each column)
+function wheel(t){
+  const h=10-5*E.outBack(seg(t,0,2.0),1.05);          // 11 → 6
+  const m=45+105*E.outExpo(seg(t,0,2.25));             // whirls past 0 and lands on :30
+  const ap=1-E.outBack(seg(t,0.85,1.25),1.6);          // PM → AM
+  return [h,m,ap];
+}
+function picked(pos){const h=+HOURS[((Math.round(pos[0])%12)+12)%12], mm=((Math.round(pos[1])%60)+60)%60, am=Math.round(pos[2])===0;
+  let hh=h%12+(am?0:12); return ((hh*60+mm-NOW)%1440+1440)%1440;}
+
+function render(t){
+  // headlines
+  for(const id in WIN){const [a,b]=WIN[id],on=t>a-0.05&&t<b+0.5;show(id,on);if(!on)continue;wordsInOut(Wd[id],t,a,b,{odur:0.26});tf($(id),`translateY(${(360-G[id+'h']/2).toFixed(2)}px)`);}
+  // picker
+  const pIn=E.outExpo(seg(t,0,0.4)), pOut=E.inOutCubic(seg(t,3.80,4.25)), pos=wheel(t);
+  show('picker',t<4.3); op($('picker'),(0.6+0.4*pIn)*(1-pOut)); tf($('picker'),`translateY(${(-320*pOut).toFixed(2)}px) scale(${((1.12-0.12*pIn)*(1-0.55*pOut)).toFixed(4)})`);
+  COLS.forEach((c,ci)=>{const p=pos[ci], base=Math.floor(p), n=c.vals.length;
+    c.rows.forEach((r,k)=>{const idx=base+k-4, d=idx-p, ad=Math.abs(d);
+      if(ci===2&&(idx<0||idx>1)){op(r,0);return;}
+      r.textContent=c.vals[((idx%n)+n)%n];
+      tf(r,`translateY(${(280+d*112-56).toFixed(2)}px) rotateX(${(-d*23).toFixed(2)}deg) scale(${(1-0.06*ad).toFixed(4)})`);
+      op(r,clamp(1-ad/2.7)); r.style.color=rgba(mix([244,244,247],[112,112,124],clamp(ad*1.4)));});});
+  // live label: what the wheels show right now, recomputed every frame
+  let mm=picked(pos); if(t>=3.30) mm=461;
+  $('liveV').textContent=fmt(mm);
+  let changed=0; for(let k=1;k<=18;k++){ if(picked(wheel(t-k*0.01))!==mm){changed=k*0.01;break;} }
+  const bump=(changed&&t<2.6)?0.06*Math.exp(-changed*28):0, land=pulse(t,2.30,2.75), tick=t>=3.30?0.08*Math.exp(-(t-3.30)*10):0;
+  const lOut=E.inExpo(seg(t,3.80,4.10));
+  show('live',t<4.15); op($('live'),(0.55+0.45*seg(t,0,0.25))*(1-lOut));
+  tf($('live'),`translateY(${(-60*lOut).toFixed(2)}px) scale(${(1+bump+0.12*land+tick).toFixed(4)})`);
+  $('liveV').style.textShadow=`0 0 ${(40*land).toFixed(1)}px rgba(255,150,110,${(0.9*land).toFixed(2)})`;
+  // cards, each counting live
+  const cOut=E.inExpo(seg(t,5.55,5.85)); show('cards',t>3.9&&t<5.9);
+  const el=t<4.4?1:1+Math.floor((t-4.4)/0.55);
+  CARDS.forEach((c,i)=>{const p=E.outExpo(seg(t,3.95+i*0.09,4.6+i*0.09));
+    op(c.el,p*(1-cOut)); tf(c.el,`translateY(${(260*(1-p)-1300*cOut).toFixed(2)}px) scale(${(0.92+0.08*p).toFixed(4)})`);
+    c.v.textContent=fmt(c.m-el);
+    const k=t>4.4?(t-4.4)%0.55:1; tf(c.v,`scale(${(1+0.12*Math.exp(-k*14)).toFixed(4)})`); c.v.style.display='inline-block';});
+  // the math gag
+  const eq=E.outExpo(seg(t,6.0,6.4)), eqO=E.inExpo(seg(t,6.82,7.05));
+  show('eq',t>5.95&&t<7.1); op($('eq'),eq*(1-eqO)); tf($('eq'),`translateY(${(30*(1-eq)).toFixed(2)}px)`);
+  tf($('eqIn').querySelector('.strike'),`scaleX(${E.outExpo(seg(t,6.42,6.70)).toFixed(4)})`);
+  $('eqIn').style.color=rgba(mix([200,200,208],[110,110,120],seg(t,6.45,6.65)));
+  const rs=clamp(spring(t-6.55,8,1.7),0,1.2); show('res',t>6.5&&t<7.1); op($('res'),clamp((t-6.55)/.08)*(1-eqO)); tf($('res'),`scale(${(0.5+0.5*rs).toFixed(4)})`);
+  // end card
+  const lk=t>7.02; show('lock',lk); if(lk) renderLockup(L,t,7.05,1.6);
+  // environment
+  const [gx,gy,go]=keyed([[0,540,920,.5],[2.4,540,1200,.6],[3.8,540,920,.5],[5.6,540,1000,.45],[6.6,540,1100,.55],[7.1,540,740,.6],[8.9,540,760,.72]],t);
+  envGlow(gx,gy,go*(1+0.05*Math.sin(2*Math.PI*0.9*t)));
+  envStreak('streak1',740,t,7.45,7.75,.7);
+  ENV.dust.draw(t);
+}
+boot({init,render});
+</script>
+</body></html>

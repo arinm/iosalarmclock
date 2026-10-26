@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Punctual — 02 forgot to turn it back on</title>
+<link rel="stylesheet" href="../lib/base.css">
+<style>
+.tx{position:absolute;left:0;top:0;width:1080px;transform-origin:50% 50%}
+.tx .line{font-size:104px;font-weight:800;letter-spacing:-.045em;line-height:1.06}
+#tx4 .line{font-size:132px}
+.red{color:#FF6B5E}
+#card{left:100px;top:760px;width:880px;transform-origin:50% 50%}
+#state{position:relative;height:92px;margin-top:26px}
+#state>*{position:absolute;left:0;top:0}
+#skipBtn{width:100%}
+#cold{opacity:0;background:linear-gradient(to top,rgba(40,70,140,.34),rgba(20,30,60,.2) 50%,rgba(10,12,24,0) 85%)}
+#sky{opacity:0;background:linear-gradient(to top,rgba(120,150,205,.34),rgba(60,80,120,.16) 45%,rgba(10,12,24,0) 80%)}
+#sunDot{position:absolute;left:0;top:0;width:300px;height:300px;margin:-150px 0 0 -150px;border-radius:50%;background:radial-gradient(closest-side,rgba(255,244,220,.95),rgba(255,214,160,.45) 30%,rgba(255,200,150,0) 70%);opacity:0}
+#flip{position:absolute;left:0;top:636px;width:1080px;height:84px;overflow:hidden;text-align:center;font-size:66px;font-weight:800;letter-spacing:.16em;color:#9aa0b4;opacity:0}
+#flip span{display:block;height:84px;line-height:84px}
+#clkWrap{position:absolute;left:0;top:744px;width:1080px;height:250px;opacity:0;transform-origin:50% 50%}
+.cl{position:absolute;left:0;top:0;width:1080px;text-align:center;font-size:236px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1;white-space:nowrap}
+.cl small{font-size:.32em;font-weight:700;letter-spacing:.02em;margin-left:.12em}
+#clkR{color:#ff3b3b;mix-blend-mode:screen}#clkB{color:#3bd5ff;mix-blend-mode:screen}#clkW{color:#f4f4f7}
+.tear{position:absolute;left:0;top:0;height:7px;background:rgba(255,255,255,.75);mix-blend-mode:screen;opacity:0}
+#scan{opacity:0;background:repeating-linear-gradient(to bottom,rgba(255,255,255,.075) 0 2px,rgba(0,0,0,0) 2px 6px)}
+#osd{position:absolute;left:80px;top:236px;font:700 54px/1 ui-monospace,Menlo,monospace;color:#fff;letter-spacing:.06em;opacity:0;text-shadow:0 0 18px rgba(255,255,255,.55)}
+#bigMark{position:absolute;left:220px;top:412.5px;width:640px;height:640px;overflow:visible;filter:drop-shadow(0 0 26px rgba(255,140,100,.55));opacity:0;transform-origin:320px 347.5px}
+</style></head>
+<body><div id="stage"><div id="world" class="layer">
+  <div id="cold" class="layer"></div><div id="sky" class="layer"></div><div id="sunDot"></div>
+  <div id="flip"><div id="flipS"><span>TUESDAY</span><span>WEDNESDAY</span><span>THURSDAY</span></div></div>
+  <div id="clkWrap"><div class="cl" id="clkB"></div><div class="cl" id="clkR"></div><div class="cl" id="clkW"></div><div id="tears"></div></div>
+  <div class="acardL" id="card">
+    <div id="cardBody"><div class="at">6:30 AM</div><div class="al">Wake up</div>
+      <div class="ddL"><span>S</span><span class="a">M</span><span class="a">T</span><span class="a">W</span><span class="a">T</span><span class="a">F</span><span>S</span></div></div>
+    <div class="togL" id="tog"><i id="knob"></i></div>
+    <div id="state"><div class="pillL off" id="offPill">Off - won't ring</div><div class="skipBtnL" id="skipBtn"></div><div class="pillL s" id="skPill"></div></div>
+  </div>
+  <div id="weekHost" class="layer"></div>
+  <svg id="bigMark" viewBox="0 0 1024 1024"></svg>
+  <div id="lock" class="layer"></div>
+  <div class="tx" id="tx1"><div class="line"></div><div class="line"></div></div>
+  <div class="tx" id="tx2"><div class="line"></div><div class="line"></div></div>
+  <div class="tx" id="tx3"><div class="line"></div><div class="line"></div></div>
+  <div class="tx" id="tx4"><div class="line"></div></div>
+  <div class="tx" id="tx5"><div class="line"></div><div class="line"></div></div>
+  <div class="tx" id="tx6"><div class="line"></div><div class="line"></div></div>
+  <div class="ripple" id="ripple"></div><div class="touch" id="touch"></div>
+  <div class="lbl a" id="lblArm">THURSDAY 6:30 · ARMED</div>
+  <div id="scan" class="layer"></div><div id="osd">◀◀ REWIND</div>
+</div></div>
+<script>window.CLIP={w:1080,h:1920,fps:60,dur:12,sub:[[0,0.5,6],[4.25,4.6,6],[5.85,6.8,6],[10.05,10.5,6]]};</script>
+<script src="../lib/engine.js"></script>
+<script>
+const TXT={
+  tx1:[['Day','off'],['<span class="a">tomorrow?</span>']],
+  tx2:[['So','you'],['switch','it','off.']],
+  tx3:[['…and','forget','to'],['switch','it','back','on.']],
+  tx4:[['You’re','<span class="red">late.</span>']],
+  tx5:[['Or','skip'],['just','<span class="s">one day.</span>']],
+  tx6:[['Thursday,','6:30.'],['Right','on','<span class="a">time.</span>']]};
+const WIN={tx1:[0.0,1.22],tx2:[1.36,2.55],tx3:[2.68,4.24],tx4:[4.34,5.86],tx5:[6.84,9.06],tx6:[9.22,10.12]};
+let W={},G={},DAYS,MB,L,TEARS=[];
+const hash=n=>{const x=Math.sin(n*127.1+311.7)*43758.5453;return x-Math.floor(x);};
+
+function init(){
+  for(const id in TXT){const lines=$(id).querySelectorAll('.line');W[id]=TXT[id].flatMap((ws,i)=>setWords(lines[i],ws));G[id+'h']=$(id).offsetHeight;}
+  $('skipBtn').innerHTML=ICON.skip+'Skip tomorrow'; $('skPill').innerHTML=ICON.tick(30)+'Skipped tomorrow - still active';
+  G.cardH=$('card').offsetHeight; G.tog=centreOf($('tog')); G.skip=centreOf($('skipBtn'));
+  DAYS=buildWeek($('weekHost'),{top:760+G.cardH+56,size:96,gap:22,font:36});
+  G.d4=centreOf(DAYS[4]); G.lbl=[$('lblArm').offsetWidth,$('lblArm').offsetHeight];
+  for(let i=0;i<5;i++) TEARS.push(el('div','tear',null,$('tears')));
+  MB=buildMark($('bigMark')); drawMark(MB,99);
+  L=buildLockup($('lock'),{cy:760});
+  op($('lock'),0);
+}
+const fmt=m=>`${Math.floor(m/60)}:${String(m%60).padStart(2,'0')}<small>AM</small>`;
+
+function texts(t){
+  for(const id in WIN){const [a,b]=WIN[id], on=t>a-0.05&&t<(id==='tx3'?4.28:b+0.5);show(id,on);if(!on)continue;
+    wordsInOut(W[id],t,a,id==='tx3'?99:b,{stg:0.07,odur:id==='tx4'?0.24:0.36});
+    const yC=430; let s=1;
+    if(id==='tx1'||id==='tx4') s=1+0.32*(1-E.outBack(seg(t,a,a+0.42),2.2));
+    tf($(id),`translateY(${(yC-G[id+'h']/2).toFixed(2)}px) scale(${s.toFixed(4)})`);}
+}
+
+function glitchAmt(t){
+  let g=0; if(t>4.30&&t<5.86) g=Math.max(0.35,1-E.outCubic(seg(t,4.32,5.1)))+0.7*pulse(t,5.02,5.16)+0.6*pulse(t,5.42,5.52);
+  if(t>=5.86&&t<6.72) g=0.6; return g;
+}
+
+function render(t){
+  texts(t);
+  const g=glitchAmt(t), step=Math.floor(t*30);
+  // ---- card ----
+  const cin=E.outExpo(seg(t,0.30,0.85)), tl=E.outExpo(seg(t,2.80,3.25)), late=E.outExpo(seg(t,4.28,4.48)), back=E.inOutCubic(seg(t,5.90,6.62)), out=E.inExpo(seg(t,9.02,9.36));
+  let cs=1-0.2*tl, cy=170*tl; cs=lerp(cs,0.72,late); cy=lerp(cy,370,late); cs=lerp(cs,1,back); cy=lerp(cy,0,back);
+  const jx=(t>5.86&&t<6.72)?(hash(step)-.5)*14:0;
+  show('card',t<9.4); op($('card'),seg(t,0.3,0.42)*(1-out));
+  tf($('card'),`translate(${jx.toFixed(2)}px,${(700*(1-cin)+cy-1500*out).toFixed(2)}px) scale(${cs.toFixed(4)})`);
+  let on=1; if(t>=1.90&&t<6.70) on=1-clamp(spring(t-1.90,9,1.8),0,1.15); if(t>=6.70) on=clamp(spring(t-6.70,9,1.8),0,1.15);
+  tf($('knob'),`translateX(${(52*on).toFixed(2)}px)`); $('tog').style.background=rgba(mix(COL.off,COL.peach,clamp(on)));
+  const de=E.inOutCubic(seg(t,1.95,2.35))*(1-seg(t,6.62,6.72));
+  $('cardBody').style.filter=de>0.01?`grayscale(${de.toFixed(3)}) brightness(${(1-0.32*de).toFixed(3)})`:'none';
+  const offp=seg(t,2.0,2.25)*(1-seg(t,6.55,6.68)); op($('offPill'),offp); tf($('offPill'),`translateY(${(18*(1-offp)).toFixed(2)}px)`);
+  const sb=E.outExpo(seg(t,6.86,7.20)), sbo=1-seg(t,7.74,7.86);
+  op($('skipBtn'),sb*sbo); tf($('skipBtn'),`translateY(${(36*(1-sb)).toFixed(2)}px) scale(${((1-0.06*pulse(t,7.56,7.72))*(1-0.04*seg(t,7.74,7.86))).toFixed(4)})`);
+  const kp=clamp(spring(t-7.80,8,1.8),0,1.2); op($('skPill'),clamp((t-7.80)/0.08)); tf($('skPill'),`scale(${(0.6+0.4*kp).toFixed(4)})`);
+  // ---- taps ----
+  if(t<5) tapFX($('touch'),$('ripple'),t,{x:G.tog[0],y:G.tog[1],t0:1.60,from:[-170,200],maxR:260});
+  else tapFX($('touch'),$('ripple'),t,{x:G.skip[0],y:G.skip[1],t0:7.28,from:[160,210],maxR:420});
+  // ---- time-lapse: day flips + sun ----
+  let fi=0; fi+=E.outBack(seg(t,3.25,3.52),1.6)+E.outBack(seg(t,3.75,4.02),1.6); fi-=2*E.inOutCubic(seg(t,5.96,6.56));
+  tf($('flipS'),`translateY(${(-84*fi).toFixed(2)}px)`);
+  op($('flip'),seg(t,2.82,2.98)*(1-seg(t,6.60,6.72)));
+  const d1=seg(t,2.92,3.55), d2=seg(t,3.62,4.25), dp=t<3.585?d1:d2, sunOn=(t>2.92&&t<4.25)?Math.sin(Math.PI*dp):0;
+  tf($('sunDot'),`translate(${(540-700*Math.cos(Math.PI*dp)).toFixed(2)}px,${(1500-560*Math.sin(Math.PI*dp)).toFixed(2)}px)`);
+  op($('sunDot'),0.95*sunOn); op($('sky'),0.8*sunOn);
+  op($('cold'),0.95*seg(t,1.95,2.6)*(1-seg(t,6.62,6.74)));
+  // ---- late: glitching clock ----
+  const clkOn=t>4.28&&t<6.72; show('clkWrap',clkOn);
+  if(clkOn){
+    const m=Math.round(lerp(527,390,E.inOutCubic(seg(t,5.94,6.58)))), html=fmt(m);
+    for(const id of ['clkB','clkR','clkW']) $(id).innerHTML=html;
+    const sl=1+0.4*(1-E.outBack(seg(t,4.28,4.62),2)), jit=(hash(step*3.1)-.5)*22*g, sk=(hash(step*7.7)-.5)*7*g;
+    op($('clkWrap'),seg(t,4.28,4.33)*(1-seg(t,6.62,6.72))*(0.86+0.14*hash(step*1.3)));
+    tf($('clkWrap'),`translateX(${jit.toFixed(2)}px) skewX(${sk.toFixed(2)}deg) scale(${sl.toFixed(4)})`);
+    const o=(5+12*hash(step*2.3))*g; tf($('clkR'),`translateX(${o.toFixed(2)}px)`); tf($('clkB'),`translateX(${(-o).toFixed(2)}px)`);
+    op($('clkR'),0.9*g); op($('clkB'),0.9*g);
+    TEARS.forEach((tr,i)=>{const h=hash(step*13+i*7);op(tr,(h>0.55?0.8:0)*g);tr.style.width=(200+500*hash(step*5+i)).toFixed(0)+'px';
+      tf(tr,`translate(${(hash(step*9+i*3)*700).toFixed(1)}px,${(20+210*hash(step*11+i)).toFixed(1)}px)`);});
+  }
+  // VHS rewind overlay + tracking wobble
+  const rw=seg(t,5.86,5.95)*(1-seg(t,6.62,6.74));
+  op($('scan'),Math.min(1,0.85*rw+0.22*g*(t<5.86?1:0)));
+  op($('osd'),rw*(Math.sin(2*Math.PI*3*t)>0?1:0.35));
+  const wob=rw*(4*Math.sin(2*Math.PI*9*t)+(hash(step)-.5)*10);
+  const shake=(t>4.3&&t<4.9)?(1-seg(t,4.3,4.9))*(hash(step*4.4)-.5)*20:0;
+  tf($('world'),`translate(${shake.toFixed(2)}px,${(wob+shake*0.6).toFixed(2)}px)`);
+  // ---- week (the Punctual way) ----
+  const wkOut=E.inExpo(seg(t,9.02,9.36)); show('weekHost',t>8.0&&t<9.4);
+  tf($('weekHost'),`translateY(${(-1500*wkOut).toFixed(2)}px)`); op($('weekHost'),1-wkOut);
+  DAYS.forEach((d,i)=>{ if(i!==4) dayPop(d,t,8.05+i*0.045); });
+  daySkip(DAYS[3],E.inOutCubic(seg(t,8.40,8.68)));
+  dayPop(DAYS[4],t,8.05+4*0.045,1+0.17*pulse(t,8.70,9.0)); dayArm(DAYS[4],E.inOutCubic(seg(t,8.70,8.90)),t,8.72);
+  const lb=seg(t,8.80,9.10),lbe=E.outBack(lb,2); op($('lblArm'),clamp(lb*3)*(1-wkOut));
+  tf($('lblArm'),`translate(${(G.d4[0]-G.lbl[0]/2).toFixed(2)}px,${(G.d4[1]+96-G.lbl[1]/2-18*(1-lbe)-1500*wkOut).toFixed(2)}px) scale(${(0.85+0.15*lbe).toFixed(4)})`);
+  // ---- right on time: the mark rings, then shrinks into the app icon ----
+  const mbOn=t>9.12&&t<10.5; show('bigMark',mbOn);
+  if(mbOn){
+    const sp=clamp(spring(t-9.14,7,1.5),0,1.2), shr=E.inOutCubic(seg(t,10.06,10.42));
+    ringMark(MB,t,9.40,1.0);
+    const k=lerp(0.6+0.4*sp,0.3469,shr), dy=lerp(200,769.5-760,shr);
+    op($('bigMark'),seg(t,9.12,9.22)*(1-seg(t,10.38,10.46))); tf($('bigMark'),`translateY(${dy.toFixed(2)}px) scale(${k.toFixed(4)})`);
+  }
+  // ---- end card ----
+  const lk=t>10.18; show('lock',lk); if(lk){op($('lock'),1); renderLockup(L,t,10.20,1.5,{markReady:true});}
+  // ---- environment ----
+  const warm=1-seg(t,1.9,2.4)*(1-seg(t,6.62,6.72));
+  const [gx,gy,go]=keyed([[0,540,520,.45],[1.2,540,900,.5],[2.2,540,900,.18],[6.6,540,900,.12],[6.8,540,900,.65],[8.5,540,1050,.5],[9.3,540,780,.6],[10.4,540,760,.68],[12.1,540,760,.72]],t);
+  envGlow(gx,gy,go*(1+0.05*Math.sin(2*Math.PI*0.9*t)));
+  const sunR=E.outCubic(seg(t,9.14,10.2))*(1-seg(t,10.3,10.8)); envSun(540,lerp(1750,1180,sunR),0.75*sunR); envTint(0.55*sunR);
+  envFlash(0.85*pulse(t,6.58,6.92)+0.35*pulse(t,4.28,4.42));
+  envStreak('streak1',760,t,10.36,10.66,.7);
+  ENV.dust.draw(t,{color:warm>0.5?[255,214,196]:[190,205,235],boost:-0.3*(1-warm)});
+}
+boot({init,render});
+</script>
+</body></html>

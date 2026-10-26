@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Punctual — 06 skip, pause, off</title>
+<link rel="stylesheet" href="../lib/base.css">
+<style>
+#sglow{position:absolute;left:0;top:0;width:1500px;height:1500px;border-radius:50%;opacity:0}
+.tx{position:absolute;left:0;top:0;width:1080px;transform-origin:50% 50%}
+.big .line{font-size:210px;font-weight:900;letter-spacing:-.055em;line-height:1}
+.mid .line{font-size:76px;font-weight:800;letter-spacing:-.04em;line-height:1.08}
+.sk{color:#8FC7A0}.pa{color:#E2B23E}.of{color:#8e8e98}
+#H .line{transform-origin:50% 60%}
+#pro{position:absolute;left:0;top:0;font-size:30px;font-weight:800;letter-spacing:.14em;color:#1F0E06;background:#E2B23E;border-radius:14px;padding:9px 15px 8px 18px;opacity:0}
+#stripW{position:absolute;left:0;top:0;width:1080px;height:1920px;transform-origin:540px 1032px}
+#cap{position:absolute;left:0;top:0;border-radius:999px;background:rgba(226,178,62,.12);border:2px solid rgba(226,178,62,.38);transform-origin:0 50%;opacity:0}
+#today{position:absolute;left:0;top:0;font-size:22px;font-weight:800;letter-spacing:.2em;color:#A6A6B0;opacity:0;white-space:nowrap}
+#today:after{content:'';position:absolute;left:50%;bottom:-16px;margin-left:-7px;border:7px solid transparent;border-top-color:#A6A6B0}
+#tog{position:absolute;left:0;top:0;width:200px;height:116px;border-radius:99px;opacity:0}
+#tog i{position:absolute;left:9px;top:9px;width:98px;height:98px;border-radius:50%;background:#fff;box-shadow:0 4px 16px rgba(0,0,0,.4)}
+.pill6{position:absolute;left:0;top:0;display:flex;align-items:center;gap:16px;padding:24px 38px;border-radius:999px;font-size:46px;font-weight:600;white-space:nowrap;opacity:0}
+.pill6.s{background:rgba(143,199,160,.17);color:#a3dcb4}
+.pill6.am{background:rgba(226,178,62,.15);color:#E8C46A}
+.pill6.off{background:rgba(255,255,255,.07);color:#9a9aa4}
+#end{position:absolute;left:0;top:0;width:1080px;height:1920px}
+</style></head>
+<body><div id="stage"><div id="world" class="layer">
+  <div id="sglow"></div>
+  <div id="stripW"><div id="cap"></div><div id="today">TODAY</div></div>
+  <div id="tog"><i></i></div>
+  <div id="pills" class="layer"></div>
+  <div id="end" class="layer"></div>
+  <div class="tx big" id="H"><div class="line"></div><div class="line"></div><div class="line"></div></div>
+  <div class="tx mid" id="H2"><div class="line"></div></div>
+  <div class="tx big" id="TP"><div class="line"></div></div>
+  <div class="tx big" id="TO"><div class="line"></div></div>
+  <div id="pro">PRO</div>
+  <div class="tx mid" id="LS"><div class="line"></div><div class="line"></div></div>
+  <div class="tx mid" id="LP"><div class="line"></div><div class="line"></div></div>
+  <div class="tx mid" id="LO"><div class="line"></div><div class="line"></div></div>
+  <div class="tx mid" id="PAY"><div class="line"></div><div class="line"></div></div>
+</div></div>
+<script>window.CLIP={w:1080,h:1920,fps:60,dur:11.3,sub:[[0,0.7,6],[9.5,10.2,6]]};</script>
+<script src="../lib/engine.js"></script>
+<script>
+const TXT={H:[['<span class="sk">Skip.</span>'],['<span class="pa">Pause.</span>'],['<span class="of">Off.</span>']],
+  H2:[['Three','different','things.']],
+  TP:[['<span class="pa">Pause.</span>']], TO:[['<span class="of">Off.</span>']],
+  LS:[['One','day.'],['Tomorrow','stays','<span class="a">armed.</span>']],
+  LP:[['A','date','range.'],['Resumes','on','its','<span class="am">own.</span>']],
+  LO:[['Until','<span class="a">you</span>','turn','it'],['back','on.']],
+  PAY:[['Every','alarm'],['tells','you','<span class="a">which.</span>']]};
+const CY={H:760,H2:1180,TP:550,TO:550,LS:772,LP:772,LO:772,PAY:620};
+const SIZE=104,GAP=18,TOP=980;
+let Wd={},G={},D=[],P=[],L;
+function init(){
+  for(const id in TXT){const lines=$(id).querySelectorAll('.line');Wd[id]=TXT[id].flatMap((ws,i)=>setWords(lines[i],ws));G[id]=$(id).offsetHeight;}
+  // a daily alarm, Monday first so "the next day" always sits to the right
+  const wk=el('div','week',null,$('stripW')); wk.style.top=TOP+'px'; wk.style.gap=GAP+'px';
+  D=[...'MTWTFSS'].map(Lt=>{const d=el('div','day',`<span>${Lt}</span><svg viewBox="0 0 104 104"><line x1="28" y1="78" x2="76" y2="26" stroke="#8FC7A0" stroke-width="7" stroke-linecap="round" pathLength="100" stroke-dasharray="100 200" stroke-dashoffset="100"/></svg><i class="ring2"></i><i class="ring2"></i>`,wk);
+    d.style.width=d.style.height=SIZE+'px'; d.style.fontSize='40px'; return {el:d,line:d.querySelector('line'),rings:[...d.querySelectorAll('.ring2')]};});
+  const x0=(1080-(7*SIZE+6*GAP))/2, dx=i=>x0+i*(SIZE+GAP);
+  const cap=$('cap'); cap.style.left=(dx(2)-12)+'px'; cap.style.top=(TOP-12)+'px'; cap.style.width=(dx(5)+SIZE+12-(dx(2)-12))+'px'; cap.style.height=(SIZE+24)+'px';
+  G.today=[dx(2)+SIZE/2-$('today').offsetWidth/2,TOP-62];
+  const pm=Wd.TP[0].getBoundingClientRect(); G.proX=540+pm.width/2+14; G.proW=$('pro').offsetWidth;
+  // the payoff: the app's own status lines, verbatim
+  [['s',ICON.tick(36)+'Skipped today · still active'],['am',ICON.pause(36)+'Paused until Sun 27 Dec'],['off','Off - won\'t ring']].forEach(([c,h])=>{const p=el('div','pill6 '+c,h,$('pills'));P.push({el:p,w:p.offsetWidth,h:p.offsetHeight});});
+  L=buildLockup($('end'),{cy:740,tag:'Know <span class="a">exactly</span> what will ring.'});
+}
+const BASE=[245,140,107,.22],BASEC=[255,168,133,1],SKB=[143,199,160,.12],SKC=[143,199,160,1],PAB=[226,178,62,.22],PAC=[236,196,90,1],
+  OFB=[255,255,255,.045],OFC=[94,94,104,1],NXB=[255,168,133,1],NXC=[31,14,6,1];
+function drawDay(i,t){
+  const d=D[i], pop=clamp(spring(t-(1.62+i*.05),8,1.8),0,1.3), out=E.inCubic(seg(t,7.95+i*.03,8.2+i*.03));
+  op(d.el,clamp((t-(1.62+i*.05))/.1)*(1-out)); tf(d.el,`scale(${((0.3+0.7*pop)*(1-0.4*out)).toFixed(4)})`);
+  let wS=0,wP=0,wN=0,r0=-9;
+  if(i===2) wS=E.outCubic(seg(t,2.25,2.55))*(1-E.inOutCubic(seg(t,3.85,4.15)));                  // SKIP: today only
+  if(i===3){wN=E.outCubic(seg(t,2.66,2.86))*(1-E.inOutCubic(seg(t,3.62,3.9)));r0=2.72;}           //       tomorrow stays armed
+  if(i>=2&&i<=5) wP=E.outCubic(seg(t,4.42+(i-2)*.1,4.72+(i-2)*.1));                               // PAUSE: a date range
+  if(i===6){wN=E.outCubic(seg(t,5.2,5.4))*(1-E.inOutCubic(seg(t,6.0,6.3)));r0=5.27;}              //        resumes on its own
+  const wO=E.inOutCubic(seg(t,6.62+i*.06,6.92+i*.06));                                             // OFF: everything, until you say so
+  let bg=mix(BASE,SKB,wS), fg=mix(BASEC,SKC,wS);
+  bg=mix(bg,PAB,wP); fg=mix(fg,PAC,wP); bg=mix(bg,NXB,wN); fg=mix(fg,NXC,wN); bg=mix(bg,OFB,wO); fg=mix(fg,OFC,wO);
+  d.el.style.background=rgba(bg); d.el.style.color=rgba(fg);
+  d.el.style.boxShadow=`inset 0 0 0 ${(3*wS).toFixed(2)}px rgba(143,199,160,${(.7*wS).toFixed(3)}), 0 0 ${(70*wN).toFixed(1)}px rgba(255,150,110,${(.6*wN).toFixed(3)})`;
+  d.line.setAttribute('stroke-dashoffset',(100*(1-wS)).toFixed(2));
+  d.rings.forEach((rg,k)=>{const q=seg(t,r0+k*.26,r0+.65+k*.26);op(rg,q>0&&q<1?.85*(1-q):0);tf(rg,`scale(${(1+0.95*E.outCubic(q)).toFixed(4)})`);});
+}
+function place(id,t,st,out,o={}){const on=t>st-0.05&&t<out+0.6;show(id,on);if(!on)return false;
+  wordsInOut(Wd[id],t,st,out,{odur:.26,...o}); tf($(id),`translateY(${(CY[id]-G[id]/2).toFixed(2)}px)`); return true;}
+function render(t){
+  // hook: three words slam in, "Skip." stays as the first title, the other two clear out
+  show('H',t<4.4);
+  if(t<4.4){const [w0,w1,w2]=Wd.H; wordsInOut([w0],t,0.0,3.80,{dur:.5,odur:.26}); wordsInOut([w1,w2],t,0.2,1.38,{stg:.2,dur:.5,ostg:.05,odur:.3});
+    const ls=$('H').querySelectorAll('.line');
+    ls.forEach((ln,i)=>{const s=1+0.28*(1-E.outBack(seg(t,.2*i,.2*i+.36),2.2)); tf(ln,`scale(${s.toFixed(4)})`);});
+    tf($('H'),`translateY(${(CY.H-G.H/2).toFixed(2)}px)`);}       // line 1 of the stack IS the title slot: "Skip." just stays
+  place('H2',t,0.72,1.38,{stg:.06});
+  place('TP',t,3.86,6.12); place('TO',t,6.18,7.80);
+  place('LS',t,1.66,3.72); place('LP',t,4.0,6.06); place('LO',t,6.32,7.74); place('PAY',t,8.08,9.36);
+  // the PRO tag rides next to "Pause." — vacation pause is a Pro feature, say so
+  const pp=clamp(spring(t-4.05,8,1.8),0,1.2), po=E.inExpo(seg(t,6.0,6.16));
+  op($('pro'),clamp((t-4.05)/.08)*(1-po)); tf($('pro'),`translate(${G.proX.toFixed(2)}px,${(CY.TP-112).toFixed(2)}px) scale(${(0.5+0.5*pp).toFixed(4)})`);
+  // the week
+  show('stripW',t>1.55&&t<8.4);
+  if(t>1.55&&t<8.4){D.forEach((_,i)=>drawDay(i,t));
+    const tp=E.outCubic(seg(t,1.95,2.25)), to=1-seg(t,7.9,8.1);
+    op($('today'),tp*to); tf($('today'),`translate(${G.today[0].toFixed(2)}px,${(G.today[1]+12*(1-tp)).toFixed(2)}px)`);
+    const cg=E.inOutCubic(seg(t,4.36,4.86)), cf=1-seg(t,6.55,6.85);
+    op($('cap'),clamp(cg*4)*cf); tf($('cap'),`scaleX(${Math.max(.001,cg).toFixed(4)})`);}
+  // OFF: one switch, and everything goes grey
+  const tg=clamp(spring(t-6.22,8,1.7),0,1.2), tOff=E.inOutCubic(seg(t,6.5,6.7)), tgo=E.inCubic(seg(t,7.9,8.12));
+  show('tog',t>6.15&&t<8.2); op($('tog'),clamp((t-6.22)/.1)*(1-tgo));
+  tf($('tog'),`translate(${540-100}px,${(1226+30*(1-tg)).toFixed(2)}px) scale(${((0.7+0.3*tg)*(1-0.3*tgo)).toFixed(4)})`);
+  $('tog').style.background=rgba(mix([255,168,133,1],[58,58,66,1],tOff)); tf($('tog').firstChild,`translateX(${(84*(1-tOff)).toFixed(2)}px)`);
+  // payoff: every card says which one it is
+  P.forEach((p,i)=>{const st=8.26+i*.12, s=clamp(spring(t-st,8,1.7),0,1.2), o=E.inExpo(seg(t,9.28+i*.04,9.48+i*.04));
+    op(p.el,clamp((t-st)/.08)*(1-o)); tf(p.el,`translate(${(540-p.w/2).toFixed(2)}px,${(880+i*150+24*(1-s)).toFixed(2)}px) scale(${(0.7+0.3*s).toFixed(4)})`);});
+  // end card
+  show('end',t>9.45); if(t>9.45) renderLockup(L,t,9.5,1.6);
+  // light follows the state: sage, amber, grey, then peach
+  const [r,g,b,a,y]=keyed([[0,255,168,133,.10,760],[1.5,143,199,160,.30,820],[3.7,143,199,160,.30,880],[4.1,226,178,62,.32,920],[6.0,226,178,62,.32,920],[6.5,150,160,190,.16,980],[7.9,150,160,190,.14,980],[8.3,255,168,133,.16,980],[9.4,255,168,133,.12,900]],t);
+  $('sglow').style.background=`radial-gradient(closest-side,rgba(${r|0},${g|0},${b|0},${a.toFixed(3)}),rgba(${r|0},${g|0},${b|0},${(a*.3).toFixed(3)}) 45%,rgba(${r|0},${g|0},${b|0},0) 72%)`;
+  op($('sglow'),1-seg(t,9.4,9.8)); tf($('sglow'),`translate(${540-750}px,${(y-750).toFixed(2)}px)`);
+  ENV.dust.draw(t);
+  const [gx,gy,go]=keyed([[0,540,700,0],[9.3,540,740,0],[9.6,540,740,.6],[11.3,540,760,.72]],t);
+  envGlow(gx,gy,go);
+  envStreak('streak1',740,t,9.9,10.2,.7);
+}
+boot({init,render});
+</script>
+</body></html>
