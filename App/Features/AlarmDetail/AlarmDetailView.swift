@@ -19,6 +19,7 @@ struct AlarmDetailView: View {
             List {
                 headerSection
                 skipSection
+                if alarm.autoSkipOnCalendarEvents { calendarSection }
                 pauseSection
                 snoozeSection
                 proSection
@@ -81,13 +82,70 @@ struct AlarmDetailView: View {
                     }
                 }
             }
-            // Calendar-derived days off (read-only; managed by the calendar, not Undo-able here).
-            if !alarm.autoSkippedDates.isEmpty {
-                ForEach(alarm.autoSkippedDates.sorted(), id: \.self) { day in
-                    Label("\(StatusPresenter.dayLabel(day)) · from calendar", systemImage: "calendar")
-                        .foregroundStyle(.secondary)
+        }
+    }
+
+    /// Rings the calendar takes away in the next 60 days, each with Ring anyway,
+    /// plus the days the user already chose to ring (with a way back).
+    @ViewBuilder
+    private var calendarSection: some View {
+        let cal = Calendar.current
+        let now = Date.now
+        let today = DateOnly(date: now, calendar: cal)
+        let until = cal.date(byAdding: .day, value: 60, to: now) ?? now
+        let skipped = CalendarSkipPlanner.suppressedOccurrences(
+            schedule: alarm.scheduleIgnoringCalendar, calendarSkips: Set(alarm.autoSkippedDates),
+            after: now, until: until, calendar: cal)
+        let ringing = CalendarSkipPlanner.suppressedOccurrences(
+            schedule: alarm.scheduleIgnoringCalendar,
+            calendarSkips: Set(alarm.calendarSkipOverrides.filter { $0 >= today && store.calendarDayTitles[$0] != nil }),
+            after: now, until: until, calendar: cal)
+        Section {
+            // A real skip is never hidden: the days stay listed, with Ring anyway,
+            // even if the calendars behind them are gone until the next refresh.
+            if store.autoSkipCalendarIDs.isEmpty && skipped.isEmpty && ringing.isEmpty {
+                NavigationLink { CalendarAutoSkipPicker() } label: {
+                    Label("Choose your days-off calendars", systemImage: "calendar.badge.exclamationmark")
+                        .foregroundStyle(.orange)
                 }
+            } else {
+                if skipped.isEmpty && ringing.isEmpty {
+                    Text("No skipped alarms in the next 60 days.").foregroundStyle(.secondary)
+                }
+                ForEach(skipped, id: \.self) { ring in
+                    let day = DateOnly(date: ring, calendar: cal)
+                    HStack {
+                        calendarDayLabel(day, note: reasons(day))
+                        Spacer()
+                        Button("Ring anyway") { Task { await store.ringAnyway(alarm, day: day) } }
+                            .buttonStyle(.bordered).font(.subheadline)
+                    }
+                }
+                ForEach(ringing, id: \.self) { ring in
+                    let day = DateOnly(date: ring, calendar: cal)
+                    HStack {
+                        calendarDayLabel(day, note: "Rings anyway · \(reasons(day))")
+                        Spacer()
+                        Button("Skip") { Task { await store.skipForCalendarAgain(alarm, day: day) } }
+                            .buttonStyle(.bordered).font(.subheadline)
+                    }
+                }
+                NavigationLink("Days-off calendars") { CalendarAutoSkipPicker() }
             }
+        } header: {
+            Text("Calendar days off")
+        }
+    }
+
+    private func reasons(_ day: DateOnly) -> String {
+        let titles = store.calendarDayTitles[day] ?? []
+        return titles.isEmpty ? "All-day event" : titles.joined(separator: ", ")
+    }
+
+    private func calendarDayLabel(_ day: DateOnly, note: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Label(StatusPresenter.dayLabel(day), systemImage: "calendar")
+            Text(note).font(.caption).foregroundStyle(.secondary)
         }
     }
 

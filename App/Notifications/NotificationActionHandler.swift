@@ -24,12 +24,13 @@ final class NotificationActionHandler: NSObject, @preconcurrency UNUserNotificat
         self.calendar = calendar
     }
 
-    // Show pre-alert banners even while the app is in the foreground.
+    // Show pre-alert banners even while the app is in the foreground. A quiet
+    // correction of a calendar notice (passive) goes only to the list.
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification
     ) async -> UNNotificationPresentationOptions {
-        [.banner, .sound, .list]
+        notification.request.content.interruptionLevel == .passive ? [.list] : [.banner, .sound, .list]
     }
 
     func userNotificationCenter(
@@ -37,6 +38,12 @@ final class NotificationActionHandler: NSObject, @preconcurrency UNUserNotificat
         didReceive response: UNNotificationResponse
     ) async {
         let info = response.notification.request.content.userInfo
+        // A calendar-skip notice can cover several alarms, so it carries a list
+        // of ids rather than the single one the heads-up uses.
+        if response.actionIdentifier == CalendarSkipNotifier.ringAnywayActionID {
+            await applyRingAnyway(info: info)
+            return
+        }
         guard
             let idString = info[PreAlertNotificationManager.alarmIDKey] as? String,
             let id = UUID(uuidString: idString),
@@ -75,6 +82,29 @@ final class NotificationActionHandler: NSObject, @preconcurrency UNUserNotificat
                      alarmID: alarm.id,
                      undo: { [store] in await store.unskip(alarm, day: day) })
     }
+
+    /// "Ring anyway" on a calendar-skip notice: the calendar said day off, the
+    /// user says they need the alarm. Re-arms that ring right away.
+    /// It applies to every alarm the notice listed ("Tomorrow, 2 alarms won't ring").
+    private func applyRingAnyway(info: [AnyHashable: Any]) async {
+        guard let day = CalendarSkipNotifier.day(from: info) else { return }
+        let alarms = CalendarSkipNotifier.alarmIDs(from: info).compactMap { store.alarm(with: $0) }
+        guard !alarms.isEmpty else { return }
+        for alarm in alarms { await store.ringAnyway(alarm, day: day) }
+        let phrase = Self.dayPhrase(day, calendar: calendar)
+        banners.show(.neutral,
+                     title: alarms.count == 1 ? "Will ring \(phrase)" : "\(alarms.count) alarms will ring \(phrase)",
+                     subtitle: alarms.count == 1
+                        ? Self.describe(day.date(hour: alarms[0].hour, minute: alarms[0].minute, in: calendar), calendar: calendar)
+                        : nil,
+                     alarmID: alarms.count == 1 ? alarms[0].id : nil,
+                     undo: { [store] in for alarm in alarms { await store.skipForCalendarAgain(alarm, day: day) } })
+    }
+
+    #if DEBUG
+    /// QA: run the same code the notification's Ring anyway button runs.
+    func qaRingAnyway(info: [AnyHashable: Any]) async { await applyRingAnyway(info: info) }
+    #endif
 
     /// "today" / "tomorrow" / weekday name for friendly, accurate copy.
     static func dayPhrase(_ day: DateOnly, calendar: Calendar) -> String {

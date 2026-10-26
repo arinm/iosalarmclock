@@ -37,7 +37,9 @@ final class PreAlertNotificationManager {
             intentIdentifiers: [],
             options: []
         )
-        center.setNotificationCategories([category])
+        // setNotificationCategories REPLACES the whole set, so every category
+        // the app uses must be registered in this one call.
+        center.setNotificationCategories(Set([category] + CalendarSkipNotifier.categories))
     }
 
     /// Arm pre-alerts for the whole look-ahead window, so occurrences reached

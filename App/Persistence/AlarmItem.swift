@@ -45,6 +45,10 @@ final class AlarmItem {
     /// skips: recomputed/reconciled each refresh so removed events stop skipping,
     /// and never shown as manual skips. Unioned into `schedule` at read time.
     var autoSkippedDates: [DateOnly] = []
+    /// Calendar days off the user chose to RING ANYWAY ("Ring anyway" on the
+    /// evening-before notice or in the alarm's detail). Excluded from
+    /// `autoSkippedDates` on every refresh; pruned once the day has passed.
+    var calendarSkipOverrides: [DateOnly] = []
     var pausedDateRanges: [DateRange]
 
     // Bookkeeping
@@ -151,6 +155,14 @@ extension AlarmItem {
             skippedOccurrenceDates: Set(skippedOccurrenceDates).union(autoSkippedDates),
             pausedDateRanges: pausedDateRanges
         )
+    }
+
+    /// The schedule WITHOUT calendar-derived skips: manual skips and pauses only.
+    /// Used to work out which rings the calendar takes away (the ones to warn about).
+    var scheduleIgnoringCalendar: AlarmSchedule {
+        var s = schedule
+        s.skippedOccurrenceDates = Set(skippedOccurrenceDates)
+        return s
     }
 
     /// Display-ready status for the current moment.

@@ -84,6 +84,30 @@ struct PunctualApp: App {
                         WidgetCenter.shared.reloadAllTimelines()
                         refreshLiveActivity()
                     }
+                    #if DEBUG
+                    // Own task: StoreKit's start() can hang outside Xcode (no
+                    // local StoreKit config when launched by simctl).
+                    let qa = ProcessInfo.processInfo.arguments
+                    if qa.contains("--demo-pro") { pro.isPro = true; pro.entitlementsResolved = true }
+                    Task {
+                        if qa.contains("--seed-calendar-skip") { await CalendarSkipDebugSeed.run(store: store) }
+                        if qa.contains("--calskip-remove-holiday") { await CalendarSkipDebugSeed.removeHoliday(store: store) }
+                        if qa.contains("--calskip-remove-calendar") { await CalendarSkipDebugSeed.removeDaysOffCalendar(store: store) }
+                        if qa.contains("--seed-ring-test") { await CalendarSkipDebugSeed.seedRingTest(store: store) }
+                        if qa.contains("--calskip-notice-now") { await CalendarSkipDebugSeed.deliverNoticesNow() }
+                        if qa.contains("--calskip-qa-ring-anyway") {
+                            // The single-day notice's own userInfo, through the action handler.
+                            for r in await UNUserNotificationCenter.current().pendingNotificationRequests()
+                            where r.content.categoryIdentifier == CalendarSkipNotifier.categoryID {
+                                await actionHandler.qaRingAnyway(info: r.content.userInfo)
+                            }
+                        }
+                        if qa.contains("--calskip-dump") {
+                            try? await Task.sleep(for: .seconds(4)) // let the launch refresh settle
+                            await CalendarSkipDebugSeed.dump(store: store)
+                        }
+                    }
+                    #endif
                     await permissions.refresh()
                     await store_kit.start()
                     // Re-arm the look-ahead window when AlarmKit reports a

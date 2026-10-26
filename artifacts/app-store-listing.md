@@ -55,7 +55,7 @@ PUNCTUAL PRO - WHEN YOU WANT MORE
 • Custom heads-up timing, multiple heads-ups, and your own messages
 • Longer snooze: up to 60 minutes, past the 15-minute system limit
 • Alarm groups: skip or pause a whole set at once
-• Calendar auto-skip: days off in your calendar skip themselves
+• Calendar auto-skip: all-day events in the calendars you choose skip the alarm - with a notice beforehand and a Ring anyway button
 • Themes, accent colors, alternate app icons
 • Custom sounds - import your own audio for the heads-up and the alarm
 
@@ -77,6 +77,11 @@ Privacy Policy: https://punctualalarm.com/privacy.html
 Support & FAQ: https://punctualalarm.com/support.html
 
 Questions? contact@arinitsolutions.com · punctualalarm.com
+
+## What's New (v1.0.2)
+- Calendar auto-skip now uses only the calendars you choose, and shows exactly which days it will skip. Birthdays never count.
+- Before a calendar day off, you get one quiet notice (one per holiday or vacation, not one per alarm) with Ring anyway.
+- Turning auto-skip off now takes effect immediately.
 
 ## What's New (v1.0.1)
 - Set your own snooze duration on any alarm, up to 15 minutes.

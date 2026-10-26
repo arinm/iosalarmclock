@@ -122,13 +122,21 @@ struct AlarmEditorView: View {
                                     }
                                 }
                             }
+                        if autoSkipCalendar {
+                            NavigationLink { CalendarAutoSkipPicker() } label: {
+                                LabeledContent("Days-off calendars") {
+                                    Text(calendarSummary)
+                                        .foregroundStyle(store.autoSkipCalendarIDs.isEmpty ? Color.orange : .secondary)
+                                }
+                            }
+                        }
                     } else {
                         ProLockRow(title: "Auto-skip on holidays", value: "") { showPaywall = true }
                     }
                 } header: {
                     Text("Smart skip")
                 } footer: {
-                    Text("Skips automatically on days that have an all-day event in your calendar (holidays, vacation, OOO).")
+                    Text(smartSkipFooter)
                 }
                 if case .edit(let item) = mode {
                     Section {
@@ -193,6 +201,22 @@ struct AlarmEditorView: View {
             .sheet(isPresented: $showPaywall) { PaywallView() }
             .sheet(isPresented: $showSoundPicker) { SoundPickerView(soundName: $soundName) }
         }
+    }
+
+    private var calendarSummary: String {
+        switch store.autoSkipCalendarIDs.count {
+        case 0: "Choose"
+        case 1: "1 calendar"
+        case let n: "\(n) calendars"
+        }
+    }
+
+    private var smartSkipFooter: String {
+        var text = "Skips days that have an all-day event in the calendars you choose. The evening before, you get one quiet notice (with Ring anyway), not one per alarm."
+        if autoSkipCalendar && permissions.notificationState == .denied {
+            text += " Notifications are off for Punctual, so you won't get those notices."
+        }
+        return text
     }
 
     // MARK: Sections
@@ -384,7 +408,8 @@ struct AlarmEditorView: View {
         // primary ask, but if the app died between steps the state stays
         // .notDetermined FOREVER (nothing else ever asks) and the heads-up
         // silently never fires. Saving an alarm with the heads-up ON is the
-        // natural, explained moment to recover.
+        // natural, explained moment to recover. Calendar auto-skip needs it too:
+        // its notices are what keep a calendar skip from being silent.
         func ensureHeadsUpPermission(_ enabled: Bool) async {
             if enabled, permissions.notificationState == .notDetermined {
                 await permissions.requestNotifications()
@@ -418,10 +443,12 @@ struct AlarmEditorView: View {
             item.soundName = finalSound
             Task {
                 await store.create(item)
-                await ensureHeadsUpPermission(finalPreAlert.isEnabled)
+                if finalAutoSkip { await store.refreshAllSchedules() }
+                await ensureHeadsUpPermission(finalPreAlert.isEnabled || finalAutoSkip)
                 confirm(item, verb: "Alarm set")
             }
         case .edit(let item):
+            let wasAutoSkip = item.autoSkipOnCalendarEvents
             Task {
                 let snoozeStopped = await store.update(item) {
                     $0.hour = h; $0.minute = m; $0.label = label
@@ -430,9 +457,15 @@ struct AlarmEditorView: View {
                     $0.preAlertMessage = finalMessage; $0.additionalPreAlertMinutes = finalExtra
                     $0.groupName = finalGroup
                     $0.autoSkipOnCalendarEvents = finalAutoSkip
+                    // Switched off: the calendar days must stop skipping NOW. The
+                    // derived set is otherwise only rebuilt on the next refresh,
+                    // i.e. the next time the app opens - after tomorrow's alarm.
+                    if !finalAutoSkip { $0.autoSkippedDates = []; $0.calendarSkipOverrides = [] }
                     $0.soundName = finalSound
                 }
-                await ensureHeadsUpPermission(finalPreAlert.isEnabled)
+                // Switched on: work out the calendar days (and their notices) now.
+                if finalAutoSkip && !wasAutoSkip { await store.refreshAllSchedules() }
+                await ensureHeadsUpPermission(finalPreAlert.isEnabled || finalAutoSkip)
                 confirm(item, verb: "Saved", snoozeStopped: snoozeStopped)
             }
         }

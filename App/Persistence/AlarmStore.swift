@@ -10,10 +10,27 @@ final class AlarmStore {
     private let context: ModelContext
     private let scheduler: AlarmScheduler
     let calendarAutoSkip = CalendarAutoSkip()
+    let calendarNotices = CalendarSkipNotifier()
+    /// The chosen calendars' all-day events per day, from the last refresh.
+    /// In memory only: it feeds the copy (detail rows, notices), never the
+    /// schedule, and every refresh rebuilds it.
+    private(set) var calendarDayTitles: [DateOnly: [String]] = [:]
+    /// The calendars that mean "day off" (shared by every alarm), observable so
+    /// the editor and detail screens update when the picker changes them. Only
+    /// the ones still on this iPhone, as of the last refresh: a deleted
+    /// calendar no longer counts as "1 calendar".
+    private(set) var autoSkipCalendarIDs: Set<String> = []
+    /// Overlapping refreshes (a picker tap starts one while another's EventKit
+    /// query still runs): only the one started LAST saw the current choice.
+    private var calendarQueriesStarted = 0
+    private var calendarQueryApplied = 0
+    /// The calendar choice `calendarDayTitles` was read for.
+    private var calendarDayTitlesChoice: Set<String>?
 
     init(context: ModelContext, scheduler: AlarmScheduler) {
         self.context = context
         self.scheduler = scheduler
+        self.autoSkipCalendarIDs = calendarAutoSkip.selectedCalendarIDs
     }
 
     // MARK: - Reads
@@ -80,6 +97,8 @@ final class AlarmStore {
         await serialized {
             await self.scheduler.reschedule(item, force: true, depth: self.currentArmDepth())
             self.save()
+            // A copy brings its calendar skips along (`duplicate`): announce them too.
+            if item.autoSkipOnCalendarEvents { await self.calendarNotices.sync(items: self.allAlarms(), titles: self.calendarDayTitles) }
         }
     }
 
@@ -94,6 +113,7 @@ final class AlarmStore {
         // Snooze ON→OFF is the ONLY safe trigger for cancelling past-dated
         // occurrences (a running snooze). See AlarmScheduler.reschedule.
         let snoozeWasEnabled = item.snooze.isEnabled
+        let hadCalendarSkip = item.autoSkipOnCalendarEvents
 
         // Apply the semantic change (skip mark, new label, isEnabled…) and commit
         // it SYNCHRONOUSLY: the UI (e.g. a toggle bound to isEnabled) reflects it
@@ -132,6 +152,11 @@ final class AlarmStore {
             await self.scheduler.reschedule(item, force: true, depth: self.currentArmDepth(),
                                             snoozeJustDisabled: snoozeWasEnabled && !item.snooze.isEnabled)
             self.save()
+            // A new time, a Ring anyway, auto-skip switched off: the notices
+            // must say what will actually happen.
+            if hadCalendarSkip || item.autoSkipOnCalendarEvents {
+                await self.calendarNotices.sync(items: self.allAlarms(), titles: self.calendarDayTitles)
+            }
             return wasSnoozing && snoozeStopped
         }
     }
@@ -142,8 +167,11 @@ final class AlarmStore {
         await scheduler.eagerSilence(item)
         await serialized {
             await self.scheduler.cancel(item)
+            let hadCalendarSkip = item.autoSkipOnCalendarEvents
             self.context.delete(item)
             self.save()
+            // A shared notice may have listed this alarm: rebuild them without it.
+            if hadCalendarSkip { await self.calendarNotices.sync(items: self.allAlarms(), titles: self.calendarDayTitles) }
         }
     }
 
@@ -164,6 +192,7 @@ final class AlarmStore {
         await serialized {
             await self.scheduler.reschedule(item, force: true, depth: self.currentArmDepth())
             self.save()
+            if item.autoSkipOnCalendarEvents { await self.calendarNotices.sync(items: self.allAlarms(), titles: self.calendarDayTitles) }
         }
     }
 
@@ -186,6 +215,10 @@ final class AlarmStore {
         copy.additionalPreAlertMinutes = item.additionalPreAlertMinutes
         copy.groupName = item.groupName
         copy.autoSkipOnCalendarEvents = item.autoSkipOnCalendarEvents
+        // The derived calendar skips too: without them the copy would ring on
+        // every calendar day off until the next refresh.
+        copy.autoSkippedDates = item.autoSkippedDates
+        copy.calendarSkipOverrides = item.calendarSkipOverrides
         await create(copy)
     }
 
@@ -224,6 +257,46 @@ final class AlarmStore {
     /// Remove one specific pause range (used by the pause-confirmation Undo).
     func unpause(_ item: AlarmItem, range: DateRange) async {
         await update(item) { $0.pausedDateRanges.removeAll { $0 == range } }
+    }
+
+    // MARK: - Calendar auto-skip (Pro)
+
+    /// Ring on a calendar day off after all ("Ring anyway" on the notice or in
+    /// the detail screen). Takes effect now, not at the next refresh.
+    func ringAnyway(_ item: AlarmItem, day: DateOnly) async {
+        await update(item) {
+            if !$0.calendarSkipOverrides.contains(day) { $0.calendarSkipOverrides.append(day) }
+            $0.autoSkippedDates.removeAll { $0 == day }
+        }
+    }
+
+    /// Undo "Ring anyway": the calendar skips that day again (if it still has a
+    /// day-off event in a chosen calendar).
+    func skipForCalendarAgain(_ item: AlarmItem, day: DateOnly) async {
+        let stillOff = calendarDayTitles[day] != nil
+        await update(item) {
+            $0.calendarSkipOverrides.removeAll { $0 == day }
+            if $0.autoSkipOnCalendarEvents, stillOff, !$0.autoSkippedDates.contains(day) {
+                $0.autoSkippedDates.append(day)
+            }
+        }
+    }
+
+    /// Change which calendars mean "day off" (shared by every alarm) and apply
+    /// the new selection to all alarms right away.
+    func setAutoSkipCalendars(_ ids: Set<String>) async {
+        selectAutoSkipCalendars(ids)
+        await refreshAllSchedules()
+    }
+
+    /// Save the choice without applying it. Synchronous, so with rapid taps in
+    /// the picker the last tap is the one saved; `refreshAllSchedules` applies it.
+    /// `offered`: the calendars the picker lists. A chosen one it doesn't list
+    /// (an iCloud calendar not synced yet) stays chosen: the user never unticked it.
+    func selectAutoSkipCalendars(_ ids: Set<String>, offered: Set<String>? = nil) {
+        let hidden = offered.map { calendarAutoSkip.selectedCalendarIDs.subtracting($0) } ?? []
+        calendarAutoSkip.selectedCalendarIDs = ids.union(hidden)
+        autoSkipCalendarIDs = ids
     }
 
     // MARK: - Groups (Pro bulk actions)
@@ -317,18 +390,35 @@ final class AlarmStore {
         // refresh would make a user's disable/skip (queued behind this pass) wait
         // it out — long enough that a just-disabled alarm could still fire. The
         // result is a plain value set; only APPLYING it needs the lock.
+        calendarQueriesStarted += 1
+        let query = calendarQueriesStarted
+        let choice = calendarAutoSkip.selectedCalendarIDs      // what the query below reads
         let calendarDays = await calendarSkipDaysIfNeeded()
+        // An older query that finishes later must not bring back a calendar
+        // the user has since unticked.
+        if query > calendarQueryApplied {
+            calendarQueryApplied = query
+            calendarDayTitles = calendarDays
+            calendarDayTitlesChoice = choice
+        }
+        let chosen = await calendarAutoSkip.existingSelectedCalendarIDs()
+        if chosen != autoSkipCalendarIDs { autoSkipCalendarIDs = chosen }
 
         await serialized {
+            // Days read for a choice the user has since changed (a picker tap
+            // while the query ran) aren't applied, not even for a moment: the
+            // refresh that tap started applies the new choice. Until then every
+            // alarm keeps its calendar skips, and the notices stay as they are.
+            let current = self.calendarDayTitlesChoice == self.calendarAutoSkip.selectedCalendarIDs
             await self.refreshPass(liveAlarmIDs: liveAlarmIDs ?? self.scheduler.currentLiveAlarmIDs(),
-                                   calendarDays: calendarDays)
+                                   calendarDays: current ? self.calendarDayTitles : nil)
         }
     }
 
     /// The EventKit-derived skip days, or empty when no alarm opts in (so we never
     /// pay for the query needlessly). Read-only; safe to run outside the lock.
-    private func calendarSkipDaysIfNeeded() async -> Set<DateOnly> {
-        guard allAlarms().contains(where: { $0.autoSkipOnCalendarEvents }) else { return [] }
+    private func calendarSkipDaysIfNeeded() async -> [DateOnly: [String]] {
+        guard allAlarms().contains(where: { $0.autoSkipOnCalendarEvents }) else { return [:] }
         return await calendarAutoSkip.skipDays(within: 60, calendar: .current)
     }
 
@@ -425,7 +515,9 @@ final class AlarmStore {
         orphanDefaults?.set(raw, forKey: orphanSeenKey)
     }
 
-    private func refreshPass(liveAlarmIDs: Set<UUID>?, calendarDays: Set<DateOnly>) async {
+    /// `calendarDays` nil: they were read for an older calendar choice, so the
+    /// calendar skips and their notices are left as they are.
+    private func refreshPass(liveAlarmIDs: Set<UUID>?, calendarDays: [DateOnly: [String]]?) async {
         let items = allAlarms()
 
         // Calendar auto-skip (Pro): REPLACE each opted-in alarm's derived
@@ -433,17 +525,27 @@ final class AlarmStore {
         // set never grows unbounded). Disabled alarms get it cleared. `calendarDays`
         // was resolved by the caller OUTSIDE the lock (EventKit query) — here we
         // only apply it.
+        // Days the user chose to "Ring anyway" are kept out; once past they're pruned.
         let today = DateOnly(date: .now, calendar: .current)
-        for item in items {
-            let desired = item.autoSkipOnCalendarEvents
-                ? Array(calendarDays.filter { $0 >= today })
-                : []
-            if Set(item.autoSkippedDates) != Set(desired) { item.autoSkippedDates = desired }
+        if let calendarDays {
+            for item in items {
+                let ringAnyway = Set(item.calendarSkipOverrides.filter { $0 >= today })
+                if ringAnyway.count != item.calendarSkipOverrides.count { item.calendarSkipOverrides = ringAnyway.sorted() }
+                let desired = item.autoSkipOnCalendarEvents
+                    ? CalendarSkipPlanner.skipDays(calendarDays: Set(calendarDays.keys), ringAnyway: ringAnyway, today: today)
+                    : []
+                if Set(item.autoSkippedDates) != desired { item.autoSkippedDates = desired.sorted() }
+            }
         }
 
         let depth = currentArmDepth(items)
         for item in items { await scheduler.reschedule(item, liveAlarmIDs: liveAlarmIDs, depth: depth) }
         save()
+
+        // No calendar skip is silent: announce each one ahead of the ring, with
+        // Ring anyway. Local notifications only, so it never feeds the AlarmKit
+        // observer loop.
+        if let calendarDays { await calendarNotices.sync(items: items, titles: calendarDays) }
 
         // Second direction of reconciliation: cancel alarms the SYSTEM still holds
         // that no alarm legitimately wants. Runs AFTER the re-arm loop so the just-
