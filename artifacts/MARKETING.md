@@ -186,6 +186,36 @@ Posting captions:
 
 Hashtags: `#iphone #alarmclock #iosapps #productivity #morningroutine`
 
+### App Store header and search-results banners (since iOS 27, Oct 2026)
+
+Sources live in `artifacts/motion/banners/`: `header.html`, `search.html`, plus
+the shared `common.js` and `common.css`. Render them with:
+
+```sh
+cd artifacts/motion/banners
+python3 banner.py header.html out/header-21x9-3840x1646.png 2      # @2x, opaque RGB (no alpha allowed)
+python3 banner.py search.html out/search-3x2-3840x2560.png 2
+python3 banner.py header.html /tmp/qa.png 1 99 safe                 # QA: draws the safe box
+```
+
+| Slot | Size | Template safe box (centred) |
+|---|---|---|
+| Header | 21:9, 3840×1646 (JPEG/PNG) | 1646×661 |
+| Search results | 3:2, 1920×1280 to 3840×2560 | 2168×1030 |
+| Universal, both slots | 16:9, 5244×2950 (PNG only) | 1402×962, 334px above centre |
+
+The safe boxes are a third party's measurement of Apple's templates, not a
+published spec. Verify every upload with the **Preview** button in App Store
+Connect.
+
+- The message goes inside the safe box: the tagline, and for search the real
+  alarm card. Everything outside it is decoration that wide screens show and
+  iPhone crops away.
+- Apple's rules: one clear idea per asset; text only as a short phrase,
+  localized; no price, URL or © sign; no other platform's logo; 4+ content.
+- Both slots also accept a looping, muted 5–30s video at the same ratios.
+- These banners appear on iOS 27 and later.
+
 ### Banners and static images
 
 Use the same engine. Write a one-frame scene (or reuse a reel scene) and

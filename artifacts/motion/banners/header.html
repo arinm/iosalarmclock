@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Punctual — App Store header 21:9</title>
+<link rel="stylesheet" href="../reels/lib/base.css"><link rel="stylesheet" href="common.css">
+<style>
+#head{position:absolute;left:0;top:0;width:1920px}
+#head .l{font-size:108px}
+</style></head>
+<body><div id="stage"><div id="world" class="layer">
+  <div id="deco" class="layer"></div>
+  <div id="head" class="head"><div class="l">Skip <span class="s">today.</span></div><div class="l">Keep <span class="a">tomorrow.</span></div></div>
+</div></div>
+<script>window.CLIP={w:1920,h:823,fps:60,dur:1};</script>
+<script src="../reels/lib/engine.js"></script><script src="common.js"></script>
+<script>
+/* 3840x1646 @2x. Apple's template keeps key content in a centred 1646x661 px box
+   (= 823x330.5 CSS px): the headline lives there, the app UI frames it on wide screens. */
+let G={};
+function init(){
+  G.N=buildNotif($('deco'),{width:560,title:'Alarm in 15 minutes',body:'Wake up · 6:30 AM'});
+  G.c1=alarmCard($('deco'),{time:'6:30 AM',label:'Wake up',days:[1,2,3,4,5],foot:SKIPPED(),w:600});
+  G.h=$('head').offsetHeight; safeBox(960-411.5,411.5-165.25,823,330.5);
+}
+function render(t){
+  tf($('head'),`translateY(${(411.5-G.h/2).toFixed(1)}px)`);
+  drawNotif(G.N,t,{cx:300,cy:400,drop:1,rot:-6,morph:0,fade:1});
+  place(G.c1,1400,250,{rot:5});
+  envGlow(960,430,.8,1.2); ENV.dust.draw(4);
+}
+boot({init,render});
+</script>
+</body></html>
