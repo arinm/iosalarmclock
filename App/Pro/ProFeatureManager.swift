@@ -30,36 +30,36 @@ final class ProFeatureManager {
 
         var title: String {
             switch self {
-            case .vacationPause: "Vacation pause (date ranges)"
-            case .customPreAlertTiming: "Custom heads-up timing"
-            case .multiplePreAlerts: "Multiple heads-ups"
-            case .preAlertMessages: "Custom heads-up messages"
-            case .advancedSnooze: "Longer snooze"
-            case .alarmGroups: "Alarm groups"
-            case .calendarAwareSkip: "Holiday & calendar auto-skip"
-            case .themes: "Themes & accents"
-            case .widgetCustomization: "Widget customization"
-            case .appIcons: "Alternate app icons"
-            case .customSounds: "Custom alarm sound"
+            case .vacationPause: String(localized: "Vacation pause (date ranges)")
+            case .customPreAlertTiming: String(localized: "Custom heads-up timing")
+            case .multiplePreAlerts: String(localized: "Multiple heads-ups")
+            case .preAlertMessages: String(localized: "Custom heads-up messages")
+            case .advancedSnooze: String(localized: "Longer snooze")
+            case .alarmGroups: String(localized: "Alarm groups")
+            case .calendarAwareSkip: String(localized: "Holiday & calendar auto-skip")
+            case .themes: String(localized: "Themes & accents")
+            case .widgetCustomization: String(localized: "Widget customization")
+            case .appIcons: String(localized: "Alternate app icons")
+            case .customSounds: String(localized: "Custom alarm sound")
             }
         }
 
         /// One-line benefit shown under the title in the paywall.
         var benefit: String {
             switch self {
-            case .vacationPause: "Pause for trips & holidays"
-            case .customPreAlertTiming: "Any lead time, not just 15 min"
-            case .multiplePreAlerts: "Stack 60 + 15 + 5 min heads-ups"
-            case .preAlertMessages: "Your own reminder text"
+            case .vacationPause: String(localized: "Pause for trips & holidays")
+            case .customPreAlertTiming: String(localized: "Any lead time, not just 15 min")
+            case .multiplePreAlerts: String(localized: "Stack 60 + 15 + 5 min heads-ups")
+            case .preAlertMessages: String(localized: "Your own reminder text")
             // iOS 26's Clock added custom snooze capped at 15 min, so the
             // duration itself is no longer sellable — only the range past it is.
-            case .advancedSnooze: "Snooze up to 60 min, past the system's 15"
-            case .alarmGroups: "Bulk skip / pause a whole set"
-            case .calendarAwareSkip: "Skip on calendar days off"
-            case .themes: "Accents & light/dark"
-            case .widgetCustomization: "Dedicated Pro widget styles (coming soon)"
-            case .appIcons: "Match your Home Screen"
-            case .customSounds: "Your own audio for the heads-up and the alarm"
+            case .advancedSnooze: String(localized: "Snooze up to 60 min, past the system's 15")
+            case .alarmGroups: String(localized: "Bulk skip / pause a whole set")
+            case .calendarAwareSkip: String(localized: "Skip on calendar days off")
+            case .themes: String(localized: "Accents & light/dark")
+            case .widgetCustomization: String(localized: "Dedicated Pro widget styles (coming soon)")
+            case .appIcons: String(localized: "Match your Home Screen")
+            case .customSounds: String(localized: "Your own audio for the heads-up and the alarm")
             }
         }
 
@@ -89,9 +89,9 @@ final class ProFeatureManager {
 
         var title: String {
             switch self {
-            case .iCloudSync: "iCloud sync across devices"
-            case .seasonalPacks: "New seasonal theme & sound packs"
-            case .earlyAccess: "Early access to new features"
+            case .iCloudSync: String(localized: "iCloud sync across devices")
+            case .seasonalPacks: String(localized: "New seasonal theme & sound packs")
+            case .earlyAccess: String(localized: "Early access to new features")
             }
         }
     }

@@ -4,10 +4,11 @@ import AlarmCore
 
 private let schedulerLog = Logger(subsystem: "com.punctual.app", category: "Scheduler")
 
-/// Coordinates the three sides of scheduling for one alarm:
+/// Coordinates scheduling for one alarm:
 ///   1. recompute next occurrence(s) via the pure engine,
-///   2. arm the real alarm(s) through `AlarmKitManager`,
-///   3. arm the pre-alert local notification through `PreAlertNotificationManager`.
+///   2. arm the real alarm(s) through `AlarmKitManager`.
+/// The heads-up notifications are planned for all alarms at once
+/// (`syncHeadsUps`), since they share iOS's 64-notification cap.
 ///
 /// Because AlarmKit has no "skip one occurrence" primitive, we arm a small
 /// look-ahead window of concrete one-time alarms and re-arm on every mutation,
@@ -102,13 +103,6 @@ final class AlarmScheduler {
         // failed arm — e.g. permission denied — can never satisfy this check.)
         if !force, item.isEnabled, desired == item.armedOccurrences, item.nextOccurrence == desired.first,
            systemStillHolds(desired, for: item, liveAlarmIDs: liveAlarmIDs) {
-            // Keep the pre-alert in sync — touches only local notifications, never
-            // AlarmKit, so it can't feed the observer loop.
-            if item.preAlert.isEnabled {
-                await preAlerts.schedulePreAlerts(for: item, fireDates: desired, calendar: calendar)
-            } else {
-                await preAlerts.cancelPreAlert(for: item)
-            }
             return
         }
 
@@ -161,7 +155,6 @@ final class AlarmScheduler {
             ? item.armedOccurrences.filter { $0 > now }
             : item.armedOccurrences + item.recentlyFiredOccurrences
         await alarmKit.cancelOccurrences(toCancel, for: item)
-        await preAlerts.cancelPreAlert(for: item)
 
         guard item.isEnabled, let first = desired.first else {
             item.armedOccurrences = []
@@ -200,13 +193,22 @@ final class AlarmScheduler {
         if item.armedOccurrences.count < desired.count {
             schedulerLog.error("Armed \(item.armedOccurrences.count, privacy: .public)/\(desired.count, privacy: .public) occurrence(s) for '\(item.label, privacy: .public)'")
         }
-
-        // 4. Pre-alert heads-ups for the whole armed window, so occurrences the
-        //    user hits without reopening the app still get their warning.
-        if item.preAlert.isEnabled {
-            await preAlerts.schedulePreAlerts(for: item, fireDates: desired, calendar: calendar)
-        }
     }
+
+    /// Plan every alarm's heads-ups under iOS's 64-notification cap (see
+    /// `PreAlertNotificationManager.sync`). Local notifications only, never
+    /// AlarmKit, so it can't feed the observer loop. Returns when the first
+    /// heads-up that didn't fit would have shown (nil when all fit).
+    func syncHeadsUps(_ items: [AlarmItem]) async -> Date? {
+        await preAlerts.sync(items: items, calendar: calendar)
+    }
+
+    /// Arm a one-off alarm that belongs to no `AlarmItem` (see `TransientAlarms`).
+    func armTransient(id: UUID, at date: Date, label: String, soundName: String?) async -> Bool {
+        await alarmKit.scheduleTransient(id: id, at: date, label: label, soundName: soundName)
+    }
+
+    func cancelTransient(id: UUID) async { await alarmKit.cancelRawIDs([id]) }
 
     /// Authoritative read of the system's current alarm ids (nil = unreadable).
     func currentLiveAlarmIDs() -> Set<UUID>? { alarmKit.liveAlarmIDs() }

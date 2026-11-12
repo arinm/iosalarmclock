@@ -35,7 +35,7 @@ struct RepeatDayPicker: View {
         }
     }
 
-    private func presetButton(_ title: String, _ set: Set<Weekday>) -> some View {
+    private func presetButton(_ title: LocalizedStringKey, _ set: Set<Weekday>) -> some View {
         Button(title) { selection = set }
             .font(.caption.weight(.medium))
             .buttonStyle(.bordered)
@@ -88,8 +88,8 @@ struct PauseRangeSheet: View {
                             await store.pause(alarm, range: range)
                             if showsBanner {
                                 banners.show(.paused,
-                                             title: "Paused until \(Self.dateFmt.string(from: e))",
-                                             subtitle: "From \(Self.dateFmt.string(from: s)) - then resumes automatically",
+                                             title: String(localized: "Paused until \(Self.dateFmt.string(from: e))"),
+                                             subtitle: String(localized: "From \(Self.dateFmt.string(from: s)) - then resumes automatically"),
                                              alarmID: alarm.id,
                                              undo: { [store] in await store.unpause(alarm, range: range) })
                             }

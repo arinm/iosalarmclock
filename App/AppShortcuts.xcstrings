@@ -1,0 +1,31 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Skip my next alarm in ${applicationName}" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringSet" : {
+            "state" : "new",
+            "values" : [
+              "Skip my next alarm in ${applicationName}",
+              "Skip today's alarm in ${applicationName}",
+              "${applicationName} skip today"
+            ]
+          }
+        },
+        "ja" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "${applicationName}で次のアラームをスキップ",
+              "${applicationName}で今日のアラームをスキップ",
+              "${applicationName}で今日をスキップ"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

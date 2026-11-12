@@ -37,11 +37,8 @@ struct SkipNextAlarmIntent: AppIntent {
     }
 
     private static func dayPhrase(_ day: DateOnly?) -> String {
-        guard let day, let date = day.startOfDay(in: .current) else { return "the next alarm" }
-        if Calendar.current.isDateInToday(date) { return "today" }
-        if Calendar.current.isDateInTomorrow(date) { return "tomorrow" }
-        let f = DateFormatter(); f.dateFormat = "EEEE"  // e.g. "Monday"
-        return f.string(from: date)
+        guard let day, let date = day.startOfDay(in: .current) else { return String(localized: "the next alarm") }
+        return DayText.phrase(date)
     }
 }
 

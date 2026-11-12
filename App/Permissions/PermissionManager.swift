@@ -41,14 +41,27 @@ final class PermissionManager {
         case .notDetermined: alarmKitState = .notDetermined
         }
 
-        let settings = await UNUserNotificationCenter.current().notificationSettings()
-        switch settings.authorizationStatus {
+        // No answer in time: keep the last known state; the next foreground
+        // refresh asks again.
+        switch await Self.notificationStatus(within: 3) {
         case .authorized, .provisional, .ephemeral: notificationState = .authorized
         case .denied: notificationState = .denied
-        default: notificationState = .notDetermined
+        case .notDetermined: notificationState = .notDetermined
+        default: break
         }
 
         hasResolved = true
+    }
+
+    /// The notification status, or nil if the system doesn't answer within
+    /// `seconds`. On the iOS 27 simulator the call never returned, which held
+    /// the launch splash forever.
+    private static func notificationStatus(within seconds: Double) async -> UNAuthorizationStatus? {
+        await withCheckedContinuation { continuation in
+            let once = ResumeOnce(continuation)
+            Task { once.resume(await UNUserNotificationCenter.current().notificationSettings().authorizationStatus) }
+            Task { try? await Task.sleep(for: .seconds(seconds)); once.resume(nil) }
+        }
     }
 
     @discardableResult
@@ -64,5 +77,21 @@ final class PermissionManager {
             .requestAuthorization(options: [.alert, .sound, .badge])) ?? false
         notificationState = granted ? .authorized : .denied
         return granted
+    }
+}
+
+/// Resumes a continuation only the first time (whichever racing task wins).
+private final class ResumeOnce<T: Sendable>: @unchecked Sendable {
+    private let lock = NSLock()
+    private var continuation: CheckedContinuation<T, Never>?
+
+    init(_ continuation: CheckedContinuation<T, Never>) { self.continuation = continuation }
+
+    func resume(_ value: T) {
+        lock.lock()
+        let c = continuation
+        continuation = nil
+        lock.unlock()
+        c?.resume(returning: value)
     }
 }

@@ -22,9 +22,17 @@ struct NextAlarmSummaryView: View {
                     timeView(upcoming.fireDate)
                     HStack(spacing: 4) {
                         Image(systemName: "timer").font(.caption)
-                        Text("Rings in").foregroundStyle(.secondary)
-                        Text(CountdownFormatter.string(until: upcoming.fireDate, from: now))
-                            .foregroundStyle(theme.accentColor).fontWeight(.semibold)
+                        // Under a minute the countdown word can't follow "Rings in"
+                        // in every language (ja: 鳴るまであと + まもなく), so show
+                        // the whole sentence instead.
+                        if upcoming.fireDate.timeIntervalSince(now) < 60 {
+                            Text(CountdownText.ringsIn(upcoming.fireDate, from: now))
+                                .foregroundStyle(theme.accentColor).fontWeight(.semibold)
+                        } else {
+                            Text("Rings in").foregroundStyle(.secondary)
+                            Text(CountdownText.string(until: upcoming.fireDate, from: now))
+                                .foregroundStyle(theme.accentColor).fontWeight(.semibold)
+                        }
                     }
                     .font(.subheadline)
                 } else {
@@ -70,18 +78,19 @@ struct NextAlarmSummaryView: View {
         .shadow(color: theme.accentColor.opacity(0.18), radius: 18, y: 8)
     }
 
-    /// Big "6:30" with a smaller AM/PM suffix (24h locales show just the time).
+    /// Big "6:30" with a smaller AM/PM marker, after the time or before it
+    /// where the language puts it first ("午前 6:30"). 24h shows just the time.
     private func timeView(_ date: Date) -> some View {
-        let f = DateFormatter(); f.setLocalizedDateFormatFromTemplate("jmm")
-        let s = f.string(from: date)
-        // Split trailing AM/PM if present.
-        let parts = s.components(separatedBy: " ")
+        let parts = TimeText.parts(date)
         return HStack(alignment: .firstTextBaseline, spacing: 4) {
-            Text(parts.first ?? s)
+            if let period = parts.period, parts.periodFirst {
+                Text(period).font(.title3.weight(.bold)).foregroundStyle(.secondary)
+            }
+            Text(parts.time)
                 .font(.system(size: min(heroTimeSize, 76), weight: .bold, design: .rounded)).monospacedDigit()
                 .lineLimit(1).minimumScaleFactor(0.6)
-            if parts.count > 1 {
-                Text(parts[1]).font(.title3.weight(.bold)).foregroundStyle(.secondary)
+            if let period = parts.period, !parts.periodFirst {
+                Text(period).font(.title3.weight(.bold)).foregroundStyle(.secondary)
             }
         }
         .lineLimit(1).minimumScaleFactor(0.7)

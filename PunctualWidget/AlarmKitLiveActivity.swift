@@ -61,7 +61,7 @@ struct AlarmKitLiveActivity: Widget {
 /// The alarm's label, from the metadata we attach when scheduling.
 private func alarmKitTitle(_ context: ActivityViewContext<AlarmAttributes<PunctualMetadata>>) -> String {
     let label = context.attributes.metadata?.label ?? ""
-    return label.isEmpty ? "Alarm" : label
+    return label.isEmpty ? String(localized: "Alarm") : label
 }
 
 /// Live state text. `.countdown` is the snooze timer (fireDate = the re-ring),

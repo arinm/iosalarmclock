@@ -18,31 +18,5 @@ public enum Weekday: Int, CaseIterable, Codable, Sendable, Comparable {
     public static let weekdays: Set<Weekday> = [.monday, .tuesday, .wednesday, .thursday, .friday]
     /// Sat–Sun.
     public static let weekend: Set<Weekday> = [.saturday, .sunday]
-
-    /// Short label used on day pills, e.g. "Mon".
-    public var shortLabel: String {
-        switch self {
-        case .sunday: "Sun"; case .monday: "Mon"; case .tuesday: "Tue"
-        case .wednesday: "Wed"; case .thursday: "Thu"; case .friday: "Fri"
-        case .saturday: "Sat"
-        }
-    }
-
-    /// Single-letter label, e.g. "M".
-    public var minimalLabel: String { String(shortLabel.prefix(1)) }
 }
 
-public extension Set where Element == Weekday {
-    /// Human summary for a set of repeat days: "Every day" (all seven **or**
-    /// empty — the engine treats an empty set as daily), "Weekdays",
-    /// "Weekends", or "Mon Wed Fri".
-    var humanSummary: String {
-        // No weekdays selected == the engine fires every day (see
-        // NextOccurrenceCalculator.nextRecurring), so say so honestly.
-        if isEmpty { return "Every day" }
-        if count == 7 { return "Every day" }
-        if self == Weekday.weekdays { return "Weekdays" }
-        if self == Weekday.weekend { return "Weekends" }
-        return Weekday.allCases.filter { contains($0) }.map(\.shortLabel).joined(separator: " ")
-    }
-}

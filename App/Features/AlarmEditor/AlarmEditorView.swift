@@ -205,18 +205,17 @@ struct AlarmEditorView: View {
 
     private var calendarSummary: String {
         switch store.autoSkipCalendarIDs.count {
-        case 0: "Choose"
-        case 1: "1 calendar"
-        case let n: "\(n) calendars"
+        case 0: String(localized: "Choose")
+        case 1: String(localized: "1 calendar")
+        case let n: String(localized: "\(n) calendars")
         }
     }
 
     private var smartSkipFooter: String {
-        var text = "Skips days that have an all-day event in the calendars you choose. The evening before, you get one quiet notice (with Ring anyway), not one per alarm."
-        if autoSkipCalendar && permissions.notificationState == .denied {
-            text += " Notifications are off for Punctual, so you won't get those notices."
-        }
-        return text
+        let text = String(localized: "Skips days that have an all-day event in the calendars you choose. The evening before, you get one quiet notice (with Ring anyway), not one per alarm.")
+        guard autoSkipCalendar && permissions.notificationState == .denied else { return text }
+        return text + String(localized: " Notifications are off for Punctual, so you won't get those notices.",
+                             comment: "Appended to the Smart skip footer; keep the leading space if your language uses one")
     }
 
     // MARK: Sections
@@ -229,7 +228,7 @@ struct AlarmEditorView: View {
                 .frame(maxWidth: .infinity)
             // Live countdown — the signature feature.
             TimelineView(.periodic(from: .now, by: 30)) { ctx in
-                Text(CountdownFormatter.ringsIn(previewFireDate(now: ctx.date), from: ctx.date))
+                Text(CountdownText.ringsIn(previewFireDate(now: ctx.date), from: ctx.date))
                     .font(.headline)
                     .foregroundStyle(Theme.accent)
                     .frame(maxWidth: .infinity)
@@ -355,7 +354,7 @@ struct AlarmEditorView: View {
     }
 
     private var soundDisplay: String {
-        guard let soundName else { return "Default" }
+        guard let soundName else { return String(localized: "Default") }
         return (soundName as NSString).deletingPathExtension
     }
 
@@ -419,13 +418,16 @@ struct AlarmEditorView: View {
         // Confirmation banner ("Alarm set — rings in 7h 59m") shown inline under
         // the card once the editor sheet dismisses. Reads the engine-computed
         // nextOccurrence AFTER the store reschedules, so the countdown is truth.
-        func confirm(_ item: AlarmItem, verb: String, snoozeStopped: Bool = false) {
+        func confirm(_ item: AlarmItem, created: Bool, snoozeStopped: Bool = false) {
             guard item.isEnabled, let next = item.nextOccurrence else { return }
             let when = NotificationActionHandler.describe(next, calendar: .current)
+            let countdown = CountdownText.string(until: next, from: .now)
             banners.show(.neutral,
-                         title: "\(verb) - rings in \(CountdownFormatter.string(until: next, from: .now))",
+                         title: created
+                            ? String(localized: "Alarm set - rings in \(countdown)")
+                            : String(localized: "Saved - rings in \(countdown)"),
                          // Tell the user the running snooze was stopped by this edit.
-                         subtitle: snoozeStopped ? "Snooze stopped · \(when)" : when,
+                         subtitle: snoozeStopped ? String(localized: "Snooze stopped · \(when)") : when,
                          alarmID: item.id)
         }
 
@@ -445,7 +447,7 @@ struct AlarmEditorView: View {
                 await store.create(item)
                 if finalAutoSkip { await store.refreshAllSchedules() }
                 await ensureHeadsUpPermission(finalPreAlert.isEnabled || finalAutoSkip)
-                confirm(item, verb: "Alarm set")
+                confirm(item, created: true)
             }
         case .edit(let item):
             let wasAutoSkip = item.autoSkipOnCalendarEvents
@@ -466,7 +468,7 @@ struct AlarmEditorView: View {
                 // Switched on: work out the calendar days (and their notices) now.
                 if finalAutoSkip && !wasAutoSkip { await store.refreshAllSchedules() }
                 await ensureHeadsUpPermission(finalPreAlert.isEnabled || finalAutoSkip)
-                confirm(item, verb: "Saved", snoozeStopped: snoozeStopped)
+                confirm(item, created: false, snoozeStopped: snoozeStopped)
             }
         }
         UINotificationFeedbackGenerator().notificationOccurred(.success)
@@ -507,8 +509,8 @@ struct ProPill: View {
 /// A locked settings row: shows the free value and a tappable "PRO" pill that
 /// opens the paywall — the contextual upgrade trigger at the moment of intent.
 struct ProLockRow: View {
-    let title: String
-    let value: String
+    let title: LocalizedStringKey
+    let value: LocalizedStringKey
     let action: () -> Void
 
     var body: some View {
@@ -519,6 +521,7 @@ struct ProLockRow: View {
                 Text(value).foregroundStyle(.secondary)
                 ProPill()
             }
+            .contentShape(Rectangle()) // the whole row, not just its text
         }
         .buttonStyle(.plain)
     }

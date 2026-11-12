@@ -1,0 +1,3416 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "" : {
+
+    },
+    " Notifications are off for Punctual, so you won't get those notices." : {
+      "comment" : "Appended to the Smart skip footer; keep the leading space if your language uses one",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Punctualの通知がオフのため、このお知らせは届きません。"
+          }
+        }
+      }
+    },
+    "%@" : {
+      "comment" : "An alarm's own label, shown verbatim",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@"
+          }
+        }
+      }
+    },
+    "%@ - snoozed for %lld min. It'll ring again." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ - snoozed for %2$lld min. It'll ring again."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@・%2$lld分スヌーズ中です。また鳴ります。"
+          }
+        }
+      }
+    },
+    "%@ · Pro" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · Pro"
+          }
+        }
+      }
+    },
+    "%@ · skipped for %@, from your calendar. Need it? Tap Ring anyway." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ · skipped for %2$@, from your calendar. Need it? Tap Ring anyway."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@・カレンダーの「%2$@」によりスキップされます。必要なら「それでも鳴らす」をタップしてください。"
+          }
+        }
+      }
+    },
+    "%@ · skipped for %@, from your calendar. Need them? Tap Ring anyway." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ · skipped for %2$@, from your calendar. Need them? Tap Ring anyway."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@・カレンダーの「%2$@」によりスキップされます。必要なら「それでも鳴らす」をタップしてください。"
+          }
+        }
+      }
+    },
+    "%@ · skipped for %@, from your calendar. Open Punctual to ring on any of these days." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ · skipped for %2$@, from your calendar. Open Punctual to ring on any of these days."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@・カレンダーの「%2$@」によりスキップされます。この期間に鳴らしたい日があれば、Punctualを開いてください。"
+          }
+        }
+      }
+    },
+    "%@ → %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ → %2$@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ → %2$@"
+          }
+        }
+      }
+    },
+    "%@ copy" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@のコピー"
+          }
+        }
+      }
+    },
+    "%@ rings at %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ rings at %2$@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@は%2$@に鳴ります"
+          }
+        }
+      }
+    },
+    "%@, %lld alarms won't ring" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$lld alarms won't ring"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@は%2$lld件のアラームが鳴りません"
+          }
+        }
+      }
+    },
+    "%@'s %@ alarm won't ring" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@'s %2$@ alarm won't ring"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@の%2$@のアラームは鳴りません"
+          }
+        }
+      }
+    },
+    "%lld alarms are off %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld alarms are off %2$@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%2$@は%1$lld件のアラームがオフです"
+          }
+        }
+      }
+    },
+    "%lld alarms will ring %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld alarms will ring %2$@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%2$@は%1$lld件のアラームが鳴ります"
+          }
+        }
+      }
+    },
+    "%lld calendars" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld件を選択中"
+          }
+        }
+      }
+    },
+    "%lld min" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld分"
+          }
+        }
+      }
+    },
+    "%lld min before" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld分前"
+          }
+        }
+      }
+    },
+    "%lld more" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ほか%lld件"
+          }
+        }
+      }
+    },
+    "%lldd %lldh" : {
+      "comment" : "Countdown: days and hours",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lldd %2$lldh"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld日%2$lld時間"
+          }
+        }
+      }
+    },
+    "%lldh %lldm" : {
+      "comment" : "Countdown: hours and minutes",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lldh %2$lldm"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld時間%2$lld分"
+          }
+        }
+      }
+    },
+    "%lldm" : {
+      "comment" : "Minutes, short",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld分"
+          }
+        }
+      }
+    },
+    "1 calendar" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1件を選択中"
+          }
+        }
+      }
+    },
+    "1 month · auto-renews · cancel anytime" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1か月・自動更新・いつでも解約できます"
+          }
+        }
+      }
+    },
+    "12 months · auto-renews · cancel anytime" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "12か月・自動更新・いつでも解約できます"
+          }
+        }
+      }
+    },
+    "15 min" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "15分"
+          }
+        }
+      }
+    },
+    "A friendly notification before each alarm, with a Skip today button right on it. This is what makes Punctual smart - and it needs notification permission." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アラームの前にお知らせが届き、そこから「今日をスキップ」できます。Punctualのいちばん便利な機能で、通知の許可が必要です。"
+          }
+        }
+      }
+    },
+    "A friendly notification before the alarm rings, with a Skip today button. The alarm still rings on its own." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アラームが鳴る前に届くお知らせで、「今日をスキップ」ボタンが付いています。アラームはこれとは別に鳴ります。"
+          }
+        }
+      }
+    },
+    "A friendly nudge before the alarm goes off." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アラームが鳴る前にそっとお知らせします。"
+          }
+        }
+      }
+    },
+    "Accents & light/dark" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アクセントカラーとライト/ダーク"
+          }
+        }
+      }
+    },
+    "Add alarm" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アラームを追加"
+          }
+        }
+      }
+    },
+    "Add one and see exactly when it'll ring." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "追加すると、いつ鳴るかがひと目でわかります。"
+          }
+        }
+      }
+    },
+    "Add pause" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一時停止を追加"
+          }
+        }
+      }
+    },
+    "Alarm" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アラーム"
+          }
+        }
+      }
+    },
+    "Alarm (leave empty for the next one)" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アラーム（空欄なら次のアラーム）"
+          }
+        }
+      }
+    },
+    "Alarm access is off. Tap to turn it on in Settings." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アラームへのアクセスがオフです。タップして設定でオンにしてください。"
+          }
+        }
+      }
+    },
+    "Alarm groups" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アラームのグループ"
+          }
+        }
+      }
+    },
+    "Alarm in %lld minutes" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Alarm in %lld minute"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Alarm in %lld minutes"
+                }
+              }
+            }
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "あと%lld分でアラーム"
+          }
+        }
+      }
+    },
+    "Alarm name" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アラーム名"
+          }
+        }
+      }
+    },
+    "Alarm off" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アラームをオフにしました"
+          }
+        }
+      }
+    },
+    "Alarm off - won't ring" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アラームをオフにしました・鳴りません"
+          }
+        }
+      }
+    },
+    "Alarm on" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アラームをオンにしました"
+          }
+        }
+      }
+    },
+    "Alarm on - rings in %@" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アラームをオンにしました・鳴るまであと%@"
+          }
+        }
+      }
+    },
+    "Alarm set - rings in %@" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アラームを設定しました・鳴るまであと%@"
+          }
+        }
+      }
+    },
+    "Alarms" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アラーム"
+          }
+        }
+      }
+    },
+    "Alarms (AlarmKit)" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アラーム（AlarmKit）"
+          }
+        }
+      }
+    },
+    "Alarms can't ring" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アラームが鳴りません"
+          }
+        }
+      }
+    },
+    "Alarms can't ring until you allow this in Settings." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定で許可するまで、アラームは鳴りません。"
+          }
+        }
+      }
+    },
+    "All alarms are off" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "すべてのアラームがオフです"
+          }
+        }
+      }
+    },
+    "All-day event" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "終日の予定"
+          }
+        }
+      }
+    },
+    "Allow calendar access in Settings" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定でカレンダーへのアクセスを許可"
+          }
+        }
+      }
+    },
+    "Also alert me" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "追加の事前通知"
+          }
+        }
+      }
+    },
+    "Alternate app icons" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "別のアプリアイコン"
+          }
+        }
+      }
+    },
+    "Always know how long until it rings." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "鳴るまでの残り時間がいつでもわかります。"
+          }
+        }
+      }
+    },
+    "an all-day event" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "終日の予定"
+          }
+        }
+      }
+    },
+    "An all-day event in a calendar you tick skips your alarms that day. Tick only calendars that mean a day off - a holidays calendar, or one you keep for time off. Birthdays never count." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "チェックを付けたカレンダーに終日の予定がある日は、アラームをスキップします。チェックするのは、休みを表すカレンダー（祝日のカレンダーや休暇用のカレンダー）だけにしてください。誕生日は対象外です。"
+          }
+        }
+      }
+    },
+    "Any lead time, not just 15 min" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "15分前に限らず、好きなタイミングで"
+          }
+        }
+      }
+    },
+    "App icon" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アプリアイコン"
+          }
+        }
+      }
+    },
+    "Appearance" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "外観"
+          }
+        }
+      }
+    },
+    "Asking…" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "確認中…"
+          }
+        }
+      }
+    },
+    "Auto-skip on calendar days off" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "カレンダーの休日に自動スキップ"
+          }
+        }
+      }
+    },
+    "Auto-skip on holidays" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "祝日に自動スキップ"
+          }
+        }
+      }
+    },
+    "Best value" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "いちばんお得"
+          }
+        }
+      }
+    },
+    "Bulk skip / pause a whole set" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "まとめてスキップ・一時停止"
+          }
+        }
+      }
+    },
+    "Calendar days off" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "カレンダーの休日"
+          }
+        }
+      }
+    },
+    "Cancel" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "キャンセル"
+          }
+        }
+      }
+    },
+    "Check your connection and try again." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接続を確認して、もう一度お試しください。"
+          }
+        }
+      }
+    },
+    "Choose" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選択"
+          }
+        }
+      }
+    },
+    "Choose Alarm" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アラームを選択"
+          }
+        }
+      }
+    },
+    "Choose your days-off calendars" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "休日カレンダーを選択"
+          }
+        }
+      }
+    },
+    "Clear all pauses" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "すべての一時停止を解除"
+          }
+        }
+      }
+    },
+    "Clear pauses" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一時停止を解除"
+          }
+        }
+      }
+    },
+    "Close" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "閉じる"
+          }
+        }
+      }
+    },
+    "Coming soon (%lld)" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今後追加予定（%lld）"
+          }
+        }
+      }
+    },
+    "Completed" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "完了"
+          }
+        }
+      }
+    },
+    "Continue" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "続ける"
+          }
+        }
+      }
+    },
+    "Continue anyway" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このまま続ける"
+          }
+        }
+      }
+    },
+    "Couldn't import that sound" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サウンドを読み込めませんでした"
+          }
+        }
+      }
+    },
+    "Couldn't open the refund screen." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "返金の画面を開けませんでした。"
+          }
+        }
+      }
+    },
+    "Couldn't reach the App Store - check your sign-in and try again." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Storeに接続できませんでした。サインインを確認して、もう一度お試しください。"
+          }
+        }
+      }
+    },
+    "Couldn't reach the App Store. Please try again later." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Storeに接続できませんでした。しばらくしてから、もう一度お試しください。"
+          }
+        }
+      }
+    },
+    "Couldn't schedule this alarm - it won't ring. Check alarm permission." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このアラームを設定できませんでした。鳴りません。アラームの許可を確認してください。"
+          }
+        }
+      }
+    },
+    "Couldn't set the test ring. Try again in a moment." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "テストアラームを設定できませんでした。しばらくしてからもう一度お試しください。"
+          }
+        }
+      }
+    },
+    "Couldn't stop the snooze" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スヌーズを停止できませんでした"
+          }
+        }
+      }
+    },
+    "Custom" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "カスタム"
+          }
+        }
+      }
+    },
+    "Custom alarm sound" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "カスタムアラーム音"
+          }
+        }
+      }
+    },
+    "Custom color" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "カスタムカラー"
+          }
+        }
+      }
+    },
+    "Custom heads-up messages" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "事前通知のメッセージ"
+          }
+        }
+      }
+    },
+    "Custom heads-up timing" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "事前通知のタイミング"
+          }
+        }
+      }
+    },
+    "Custom message (optional)" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "カスタムメッセージ（任意）"
+          }
+        }
+      }
+    },
+    "Custom timing, multiple & message" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タイミング・複数・メッセージ"
+          }
+        }
+      }
+    },
+    "Dark" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ダーク"
+          }
+        }
+      }
+    },
+    "Date" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "日付"
+          }
+        }
+      }
+    },
+    "Days off in the next 60 days" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今後60日間の休日"
+          }
+        }
+      }
+    },
+    "Days-off calendars" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "休日カレンダー"
+          }
+        }
+      }
+    },
+    "Dedicated Pro widget styles (coming soon)" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pro専用のウィジェットスタイル（今後追加予定）"
+          }
+        }
+      }
+    },
+    "Default" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "デフォルト"
+          }
+        }
+      }
+    },
+    "Defaults for new alarms" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新しいアラームの初期設定"
+          }
+        }
+      }
+    },
+    "Delete" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "削除"
+          }
+        }
+      }
+    },
+    "Delete alarm" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アラームを削除"
+          }
+        }
+      }
+    },
+    "Details" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "詳細"
+          }
+        }
+      }
+    },
+    "Done" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "完了"
+          }
+        }
+      }
+    },
+    "Duplicate" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "複製"
+          }
+        }
+      }
+    },
+    "Duration" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "長さ"
+          }
+        }
+      }
+    },
+    "Duration: %lld min" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "長さ：%lld分"
+          }
+        }
+      }
+    },
+    "Early access to new features" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新機能をいち早く利用"
+          }
+        }
+      }
+    },
+    "Edit" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "編集"
+          }
+        }
+      }
+    },
+    "Edit Alarm" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アラームを編集"
+          }
+        }
+      }
+    },
+    "Edits this alarm" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このアラームを編集します"
+          }
+        }
+      }
+    },
+    "Every alarm in the group - then resumes automatically" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "グループ内のすべてのアラーム。終了後は自動で再開します"
+          }
+        }
+      }
+    },
+    "Every day" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "毎日"
+          }
+        }
+      }
+    },
+    "For anything you can't afford to miss, set a second alarm - ideally in another app or on another device." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "絶対に遅れられない予定には、別のアラームも設定してください。できれば別のアプリや別の端末で。"
+          }
+        }
+      }
+    },
+    "Forest" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "フォレスト"
+          }
+        }
+      }
+    },
+    "Free alarms get a 15-minute heads-up with a Skip today button. Custom & multiple heads-ups are part of Pro." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無料のアラームには、「今日をスキップ」ボタン付きの事前通知が15分前に届きます。タイミングの変更や複数の事前通知はProの機能です。"
+          }
+        }
+      }
+    },
+    "From" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開始日"
+          }
+        }
+      }
+    },
+    "From %@ - then resumes automatically" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@から。終了後は自動で再開します"
+          }
+        }
+      }
+    },
+    "Get a heads-up" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "事前通知を受け取る"
+          }
+        }
+      }
+    },
+    "Gold" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ゴールド"
+          }
+        }
+      }
+    },
+    "Grape" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "グレープ"
+          }
+        }
+      }
+    },
+    "Graphite" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "グラファイト"
+          }
+        }
+      }
+    },
+    "Group" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "グループ"
+          }
+        }
+      }
+    },
+    "Group (optional)" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "グループ（任意）"
+          }
+        }
+      }
+    },
+    "Group: %@" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "グループ：%@"
+          }
+        }
+      }
+    },
+    "Gym" : {
+      "comment" : "Demo alarm label (screenshots)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ジム"
+          }
+        }
+      }
+    },
+    "Heads-up" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "事前通知"
+          }
+        }
+      }
+    },
+    "Heads-up notifications" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "事前通知"
+          }
+        }
+      }
+    },
+    "Heads-up: %lld min" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "事前通知：%lld分前"
+          }
+        }
+      }
+    },
+    "Holiday & calendar auto-skip" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "祝日・カレンダーの自動スキップ"
+          }
+        }
+      }
+    },
+    "Holiday calendars can include days that aren't days off, like Valentine's Day or Tax Day. The evening before a day off you get one quiet notice, with Ring anyway." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "祝日のカレンダーには、バレンタインデーなど休みではない日が含まれることがあります。休みの前日の夜に、「それでも鳴らす」付きの静かなお知らせが1回届きます。"
+          }
+        }
+      }
+    },
+    "iCloud sync across devices" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iCloudで端末間を同期"
+          }
+        }
+      }
+    },
+    "Import from Files…" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ファイルから読み込む…"
+          }
+        }
+      }
+    },
+    "Import your own audio - the first ~30 seconds are used (trimmed & converted automatically). Apple Music tracks are protected and can't be imported." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "好きな音声を読み込めます。最初の約30秒が使われます（自動でカット・変換されます）。Apple Musicの曲は保護されているため読み込めません。"
+          }
+        }
+      }
+    },
+    "Importing…" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "読み込み中…"
+          }
+        }
+      }
+    },
+    "Indigo" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "インディゴ"
+          }
+        }
+      }
+    },
+    "iPhone holds up to 64 scheduled notifications per app, and your alarms need more. Heads-ups from %@ onward are added when you open Punctual. The alarms themselves aren't affected." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iPhoneで予約できる通知は1つのアプリにつき64件までで、アラームにはそれ以上が必要です。%@以降の事前通知は、Punctualを開いたときに追加されます。アラーム自体には影響しません。"
+          }
+        }
+      }
+    },
+    "Label" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ラベル"
+          }
+        }
+      }
+    },
+    "Legal" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "法的情報"
+          }
+        }
+      }
+    },
+    "Light" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ライト"
+          }
+        }
+      }
+    },
+    "Lock your iPhone and listen: this is how your alarms ring." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iPhoneをロックして聞いてみてください。アラームはこのように鳴ります。"
+          }
+        }
+      }
+    },
+    "Longer snooze" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "長めのスヌーズ"
+          }
+        }
+      }
+    },
+    "Make it yours. Pay how you like." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自分好みに。支払い方法も選べます。"
+          }
+        }
+      }
+    },
+    "Match your Home Screen" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ホーム画面に合わせて"
+          }
+        }
+      }
+    },
+    "Meds" : {
+      "comment" : "Demo alarm label (screenshots)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "薬"
+          }
+        }
+      }
+    },
+    "Mint" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ミント"
+          }
+        }
+      }
+    },
+    "Mode" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "モード"
+          }
+        }
+      }
+    },
+    "more" : {
+      "comment" : "Last item of a list of event names: A, B and more",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ほか"
+          }
+        }
+      }
+    },
+    "Multiple heads-ups" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "複数の事前通知"
+          }
+        }
+      }
+    },
+    "New Alarm" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新規アラーム"
+          }
+        }
+      }
+    },
+    "New alarms start from these values - including the sound." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新しいアラームは、サウンドも含めてこの設定で作成されます。"
+          }
+        }
+      }
+    },
+    "New seasonal theme & sound packs" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "季節のテーマとサウンドパック"
+          }
+        }
+      }
+    },
+    "NEXT ALARM" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "次のアラーム"
+          }
+        }
+      }
+    },
+    "Next alarm: %@" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "次のアラーム：%@"
+          }
+        }
+      }
+    },
+    "No alarm app can guarantee a ring - iOS decides. For anything you can't afford to miss, set a second alarm too." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アラームが必ず鳴ることを保証できるアプリはありません。最終的に決めるのはiOSです。絶対に遅れられない予定には、別のアラームも設定してください。"
+          }
+        }
+      }
+    },
+    "No alarm app can guarantee a ring: alarm delivery ultimately depends on iOS and your device's state, and a phone that's off, out of battery, or in a failed state can't ring at all. Punctual is provided without any warranty - please don't rely on it alone for critical wake-ups." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アラームが必ず鳴ることを保証できるアプリはありません。アラームが鳴るかどうかは最終的にiOSと端末の状態で決まり、電源が切れている、電池が切れている、または正常に動作していない端末では鳴りません。Punctualはいかなる保証もなく提供されます。大切な起床をこのアプリだけに頼らないでください。"
+          }
+        }
+      }
+    },
+    "No alarms yet" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アラームはまだありません"
+          }
+        }
+      }
+    },
+    "No all-day events in the next 60 days." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今後60日間に終日の予定はありません。"
+          }
+        }
+      }
+    },
+    "No calendars on this iPhone." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このiPhoneにカレンダーがありません。"
+          }
+        }
+      }
+    },
+    "No days selected - rings every day at %@." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "曜日が選ばれていません。毎日%@に鳴ります。"
+          }
+        }
+      }
+    },
+    "No further alarms" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "この先のアラームはありません"
+          }
+        }
+      }
+    },
+    "No imported sounds yet" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "読み込んだサウンドはまだありません"
+          }
+        }
+      }
+    },
+    "No previous purchases found." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "以前の購入は見つかりませんでした。"
+          }
+        }
+      }
+    },
+    "No purchase found to refund." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "返金できる購入が見つかりませんでした。"
+          }
+        }
+      }
+    },
+    "No skipped alarms in the next 60 days." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今後60日間にスキップされるアラームはありません。"
+          }
+        }
+      }
+    },
+    "No upcoming alarm" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "予定されているアラームはありません"
+          }
+        }
+      }
+    },
+    "No upcoming alarms" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "予定されているアラームはありません"
+          }
+        }
+      }
+    },
+    "None" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "なし"
+          }
+        }
+      }
+    },
+    "Not available yet. Pro owners get these free as they ship; subscriber perks are for monthly & yearly plans." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "まだ利用できません。Proをお持ちの方は、追加され次第追加料金なしで使えます。サブスクリプション特典は月額・年額プランが対象です。"
+          }
+        }
+      }
+    },
+    "Not now" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今はしない"
+          }
+        }
+      }
+    },
+    "Not set" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未設定"
+          }
+        }
+      }
+    },
+    "Nothing is skipped until you tick a calendar." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "カレンダーにチェックを付けるまで、何もスキップされません。"
+          }
+        }
+      }
+    },
+    "Notifications are off - the heads-up won't show. The alarm still rings." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通知がオフのため、事前通知は表示されません。アラームは鳴ります。"
+          }
+        }
+      }
+    },
+    "now" : {
+      "comment" : "Countdown once the alarm time is reached",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "まもなく"
+          }
+        }
+      }
+    },
+    "Ocean" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "オーシャン"
+          }
+        }
+      }
+    },
+    "Off" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "オフ"
+          }
+        }
+      }
+    },
+    "Off - won't ring" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "オフ・鳴りません"
+          }
+        }
+      }
+    },
+    "OK" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OK"
+          }
+        }
+      }
+    },
+    "On" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "オン"
+          }
+        }
+      }
+    },
+    "Once" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1回のみ"
+          }
+        }
+      }
+    },
+    "Once on a date" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "日付を指定して1回"
+          }
+        }
+      }
+    },
+    "One more thing -\nthe heads-up" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "もうひとつ、\n事前通知について"
+          }
+        }
+      }
+    },
+    "One tap - tomorrow stays armed." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ワンタップで。明日のアラームはそのままです。"
+          }
+        }
+      }
+    },
+    "One-time purchase · does not renew" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1回限りの購入・更新なし"
+          }
+        }
+      }
+    },
+    "Open" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開く"
+          }
+        }
+      }
+    },
+    "Open iOS Settings" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iOSの設定を開く"
+          }
+        }
+      }
+    },
+    "Open Settings" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定を開く"
+          }
+        }
+      }
+    },
+    "Opens Settings to enable alarm permission" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定を開いてアラームを許可します"
+          }
+        }
+      }
+    },
+    "Pause" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一時停止"
+          }
+        }
+      }
+    },
+    "Pause %@" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@を一時停止"
+          }
+        }
+      }
+    },
+    "Pause Alarm" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アラームを一時停止"
+          }
+        }
+      }
+    },
+    "Pause all…" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "すべて一時停止…"
+          }
+        }
+      }
+    },
+    "Pause for a date range" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "期間を指定して一時停止"
+          }
+        }
+      }
+    },
+    "Pause for trips & holidays" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "旅行や休暇のあいだ一時停止"
+          }
+        }
+      }
+    },
+    "Pause…" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一時停止…"
+          }
+        }
+      }
+    },
+    "Pause… (Pro)" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一時停止…（Pro）"
+          }
+        }
+      }
+    },
+    "Paused “%@” until %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Paused “%1$@” until %2$@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「%1$@」を%2$@まで一時停止しました"
+          }
+        }
+      }
+    },
+    "Paused %@ → %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Paused %1$@ → %2$@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一時停止 %1$@ → %2$@"
+          }
+        }
+      }
+    },
+    "Paused until %@" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@まで一時停止"
+          }
+        }
+      }
+    },
+    "Paused until %@ - next %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Paused until %1$@ - next %2$@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@まで一時停止・次は%2$@"
+          }
+        }
+      }
+    },
+    "Pauses" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一時停止"
+          }
+        }
+      }
+    },
+    "Pauses every alarm in “%@” for this range." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「%@」のすべてのアラームを、この期間一時停止します。"
+          }
+        }
+      }
+    },
+    "Peach" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ピーチ"
+          }
+        }
+      }
+    },
+    "Peach (default)" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ピーチ（デフォルト）"
+          }
+        }
+      }
+    },
+    "Permissions" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アクセス許可"
+          }
+        }
+      }
+    },
+    "Prices couldn't load right now." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "現在、価格を読み込めません。"
+          }
+        }
+      }
+    },
+    "Privacy Policy" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "プライバシーポリシー"
+          }
+        }
+      }
+    },
+    "PRO" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PRO"
+          }
+        }
+      }
+    },
+    "Punctual can't read your calendars, so nothing is skipped." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Punctualがカレンダーを読み取れないため、何もスキップされません。"
+          }
+        }
+      }
+    },
+    "Punctual Pro" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Punctual Pro"
+          }
+        }
+      }
+    },
+    "Punctual Pro - Lifetime" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Punctual Pro・買い切り"
+          }
+        }
+      }
+    },
+    "Punctual Pro - Monthly" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Punctual Pro・月額"
+          }
+        }
+      }
+    },
+    "Punctual Pro - Yearly" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Punctual Pro・年額"
+          }
+        }
+      }
+    },
+    "Punctual uses Apple's AlarmKit for real alarms that ring through silent mode and Focus. Because skip-today and vacation pause are managed by the app, the next alarm is re-armed whenever you open Punctual. Open the app at least occasionally so far-future alarms stay armed." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PunctualはAppleのAlarmKitを使い、消音モードや集中モード中でも鳴る本物のアラームを設定します。今日だけスキップや休暇中の一時停止はアプリが管理しているため、次のアラームはPunctualを開くたびに設定し直されます。先の日付のアラームを有効に保つため、ときどきアプリを開いてください。"
+          }
+        }
+      }
+    },
+    "Purchase couldn't be verified. Please try Restore Purchases." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "購入を確認できませんでした。「購入を復元」をお試しください。"
+          }
+        }
+      }
+    },
+    "Purchase is pending approval. Pro unlocks automatically once it's approved." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "購入は承認待ちです。承認されると、Proが自動的に使えるようになります。"
+          }
+        }
+      }
+    },
+    "Purchases restored - you're Pro!" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "購入を復元しました。Proをご利用いただけます！"
+          }
+        }
+      }
+    },
+    "Refund requested - Apple will email you about it." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "返金をリクエストしました。Appleからメールでお知らせが届きます。"
+          }
+        }
+      }
+    },
+    "Reliability" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "信頼性"
+          }
+        }
+      }
+    },
+    "Repeat" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "繰り返し"
+          }
+        }
+      }
+    },
+    "Repeats %@" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "繰り返し：%@"
+          }
+        }
+      }
+    },
+    "Request a refund" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "返金をリクエスト"
+          }
+        }
+      }
+    },
+    "Required - this is how Punctual rings, even in silent mode." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "必須です。これにより、消音モードでもPunctualのアラームが鳴ります。"
+          }
+        }
+      }
+    },
+    "Restore Purchases" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "購入を復元"
+          }
+        }
+      }
+    },
+    "Retry" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "再試行"
+          }
+        }
+      }
+    },
+    "Ring anyway" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "それでも鳴らす"
+          }
+        }
+      }
+    },
+    "Rings a real alarm with your default sound, so you can check the volume and whether it plays on the speaker or your headphones." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "デフォルトのサウンドで本物のアラームを鳴らします。音量や、スピーカーとヘッドフォンのどちらで鳴るかを確認できます。"
+          }
+        }
+      }
+    },
+    "Rings anyway · %@" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "鳴らします・%@"
+          }
+        }
+      }
+    },
+    "Rings in" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "鳴るまであと"
+          }
+        }
+      }
+    },
+    "Rings in %@" : {
+      "comment" : "Argument is a countdown such as 7h 42m",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "鳴るまであと%@"
+          }
+        }
+      }
+    },
+    "Rings in now" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "まもなく鳴ります"
+          }
+        }
+      }
+    },
+    "Rings in under a minute" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1分以内に鳴ります"
+          }
+        }
+      }
+    },
+    "Rose" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ローズ"
+          }
+        }
+      }
+    },
+    "Save" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存"
+          }
+        }
+      }
+    },
+    "Save %lld%%" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld%%お得"
+          }
+        }
+      }
+    },
+    "Saved - rings in %@" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存しました・鳴るまであと%@"
+          }
+        }
+      }
+    },
+    "See the countdown" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "残り時間がわかる"
+          }
+        }
+      }
+    },
+    "Settings" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定"
+          }
+        }
+      }
+    },
+    "Show a specific alarm, or the next one across all alarms." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "特定のアラーム、またはすべてのアラームのうち次に鳴るものを表示します。"
+          }
+        }
+      }
+    },
+    "Skip" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スキップ"
+          }
+        }
+      }
+    },
+    "Skip %@" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@をスキップ"
+          }
+        }
+      }
+    },
+    "Skip just today" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今日だけスキップ"
+          }
+        }
+      }
+    },
+    "Skip my next alarm" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "次のアラームをスキップ"
+          }
+        }
+      }
+    },
+    "Skip next" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "次の1回をスキップ"
+          }
+        }
+      }
+    },
+    "Skip next (all)" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "次の1回をスキップ（すべて）"
+          }
+        }
+      }
+    },
+    "Skip next alarm" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "次のアラームをスキップ"
+          }
+        }
+      }
+    },
+    "Skip on calendar days off" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "カレンダーの休日にスキップ"
+          }
+        }
+      }
+    },
+    "Skip only the next occurrence; the alarm stays active afterwards." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "次の1回だけをスキップします。アラームはその後も有効のままです。"
+          }
+        }
+      }
+    },
+    "Skip only today's occurrence; the alarm stays active for the next day." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今日の1回だけをスキップします。アラームは翌日も有効のままです。"
+          }
+        }
+      }
+    },
+    "Skip today" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今日をスキップ"
+          }
+        }
+      }
+    },
+    "Skip today,\nnever forget tomorrow" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今日だけスキップ。\n明日は忘れない。"
+          }
+        }
+      }
+    },
+    "Skip today's alarm" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今日のアラームをスキップ"
+          }
+        }
+      }
+    },
+    "Skipped %@ - still active" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@はスキップ・有効のまま"
+          }
+        }
+      }
+    },
+    "Skipped %@. Your alarm is still active - next at %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Skipped %1$@. Your alarm is still active - next at %2$@."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@はスキップしました。アラームは有効のままで、次は%2$@です。"
+          }
+        }
+      }
+    },
+    "Skipped days" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スキップした日"
+          }
+        }
+      }
+    },
+    "Skipped today · still active - next %@" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今日はスキップ・有効のまま・次は%@"
+          }
+        }
+      }
+    },
+    "Skips days that have an all-day event in the calendars you choose. The evening before, you get one quiet notice (with Ring anyway), not one per alarm." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選んだカレンダーに終日の予定がある日をスキップします。前日の夜に、静かなお知らせが1回だけ届きます（「それでも鳴らす」付き）。アラームごとには届きません。"
+          }
+        }
+      }
+    },
+    "Smart skip" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スマートスキップ"
+          }
+        }
+      }
+    },
+    "Snooze" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スヌーズ"
+          }
+        }
+      }
+    },
+    "Snooze enabled" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スヌーズを使う"
+          }
+        }
+      }
+    },
+    "Snooze stopped" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スヌーズを停止しました"
+          }
+        }
+      }
+    },
+    "Snooze stopped · %@" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スヌーズを停止しました・%@"
+          }
+        }
+      }
+    },
+    "Snooze stopped. Next alarm: %@" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スヌーズを停止しました。次のアラーム：%@"
+          }
+        }
+      }
+    },
+    "Snooze up to 60 min, past the system's 15" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "システム上限の15分を超えて、最大60分までスヌーズ"
+          }
+        }
+      }
+    },
+    "Snooze: %lld min" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スヌーズ：%lld分"
+          }
+        }
+      }
+    },
+    "Snoozed" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スヌーズ中"
+          }
+        }
+      }
+    },
+    "Snoozing - stop for today" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スヌーズ中・今日は停止"
+          }
+        }
+      }
+    },
+    "Some heads-ups wait for your next visit" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一部の事前通知は次にアプリを開いたときに追加されます"
+          }
+        }
+      }
+    },
+    "Sound" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サウンド"
+          }
+        }
+      }
+    },
+    "Stack 60 + 15 + 5 min heads-ups" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "60分前・15分前・5分前に事前通知を重ねる"
+          }
+        }
+      }
+    },
+    "Still active - next alarm: %@" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "有効のまま・次のアラーム：%@"
+          }
+        }
+      }
+    },
+    "Stop" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "停止"
+          }
+        }
+      }
+    },
+    "Stop snooze" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スヌーズを停止"
+          }
+        }
+      }
+    },
+    "Subscriptions renew automatically until cancelled in your App Store settings at least 24 hours before the current period ends. Lifetime is a one-time purchase." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サブスクリプションは、現在の期間が終了する24時間前までにApp Storeの設定で解約しない限り、自動的に更新されます。買い切りは1回限りの購入です。"
+          }
+        }
+      }
+    },
+    "Sunset" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サンセット"
+          }
+        }
+      }
+    },
+    "Support & FAQ" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サポート・よくある質問"
+          }
+        }
+      }
+    },
+    "System" : {
+      "comment" : "Appearance: follow the system light/dark setting",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "システム"
+          }
+        }
+      }
+    },
+    "Teal" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ティール"
+          }
+        }
+      }
+    },
+    "Terms of Use (EULA)" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "利用規約（EULA）"
+          }
+        }
+      }
+    },
+    "Test ring" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "テストアラーム"
+          }
+        }
+      }
+    },
+    "Test ring at %@" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "テストアラーム：%@"
+          }
+        }
+      }
+    },
+    "Test ring in 1 minute" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1分後にテストアラームを鳴らす"
+          }
+        }
+      }
+    },
+    "Test your alarm" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アラームをテスト"
+          }
+        }
+      }
+    },
+    "The alarm won't ring during this range, then resumes automatically. Great for holidays." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "この期間はアラームが鳴らず、終わると自動で再開します。休暇にぴったりです。"
+          }
+        }
+      }
+    },
+    "The core alarm - countdown, heads-up and Skip today - is free forever. No ads." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "残り時間の表示、事前通知、今日をスキップといった基本機能はずっと無料です。広告もありません。"
+          }
+        }
+      }
+    },
+    "the next alarm" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "次のアラーム"
+          }
+        }
+      }
+    },
+    "The smart alarm Apple's Clock should have had." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appleの時計アプリにあってほしかった、スマートなアラーム。"
+          }
+        }
+      }
+    },
+    "Themes & accents" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "テーマとアクセントカラー"
+          }
+        }
+      }
+    },
+    "Themes & app appearance" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "テーマとアプリの外観"
+          }
+        }
+      }
+    },
+    "They've already rung, or are paused." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "すでに鳴ったか、一時停止中です。"
+          }
+        }
+      }
+    },
+    "To try a test ring, allow alarms in iOS Settings." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "テストアラームを鳴らすには、iOSの設定でアラームを許可してください。"
+          }
+        }
+      }
+    },
+    "today" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今日"
+          }
+        }
+      }
+    },
+    "Today" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今日"
+          }
+        }
+      }
+    },
+    "tomorrow" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "明日"
+          }
+        }
+      }
+    },
+    "Tomorrow" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "明日"
+          }
+        }
+      }
+    },
+    "Try a different audio file. Apple Music tracks are protected and can't be used." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "別の音声ファイルをお試しください。Apple Musicの曲は保護されているため使えません。"
+          }
+        }
+      }
+    },
+    "Turn all off" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "すべてオフ"
+          }
+        }
+      }
+    },
+    "Turn all on" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "すべてオン"
+          }
+        }
+      }
+    },
+    "Turn off" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "オフにする"
+          }
+        }
+      }
+    },
+    "Turn on" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "オンにする"
+          }
+        }
+      }
+    },
+    "Turn one on to see it here." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "オンにすると、ここに表示されます。"
+          }
+        }
+      }
+    },
+    "Turn the alarm off to silence it" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "止めるには、アラームをオフにしてください"
+          }
+        }
+      }
+    },
+    "under a minute" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1分未満"
+          }
+        }
+      }
+    },
+    "Undo" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取り消す"
+          }
+        }
+      }
+    },
+    "Unlock in Pro" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Proで使える機能"
+          }
+        }
+      }
+    },
+    "Unlock Pro - pause, themes, groups & more" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Proを入手：一時停止、テーマ、グループなど"
+          }
+        }
+      }
+    },
+    "Until" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "終了日"
+          }
+        }
+      }
+    },
+    "Until you turn it back on" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "もう一度オンにするまで"
+          }
+        }
+      }
+    },
+    "up to %lld min" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最大%lld分"
+          }
+        }
+      }
+    },
+    "Upgrade" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アップグレード"
+          }
+        }
+      }
+    },
+    "Upgrade to Pro" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Proにアップグレード"
+          }
+        }
+      }
+    },
+    "Used for the heads-up notification and the alarm ring." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "事前通知とアラームの音に使われます。"
+          }
+        }
+      }
+    },
+    "Using your custom color" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "カスタムカラーを使用中"
+          }
+        }
+      }
+    },
+    "Vacation pause (date ranges)" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "休暇中の一時停止（期間指定）"
+          }
+        }
+      }
+    },
+    "Wake up" : {
+      "comment" : "Demo alarm label (screenshots)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "起床"
+          }
+        }
+      }
+    },
+    "Warning: this alarm could not be scheduled and will not ring" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "警告：このアラームは設定できなかったため、鳴りません"
+          }
+        }
+      }
+    },
+    "Weekdays" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "平日"
+          }
+        }
+      }
+    },
+    "Weekends" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "週末"
+          }
+        }
+      }
+    },
+    "Weekly" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "毎週"
+          }
+        }
+      }
+    },
+    "Widget customization" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ウィジェットのカスタマイズ"
+          }
+        }
+      }
+    },
+    "Will ring %@" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@は鳴ります"
+          }
+        }
+      }
+    },
+    "Wind down" : {
+      "comment" : "Demo alarm label (screenshots)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "おやすみ準備"
+          }
+        }
+      }
+    },
+    "You have no upcoming alarms." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "予定されているアラームはありません。"
+          }
+        }
+      }
+    },
+    "You have Pro Lifetime - thank you!" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pro（買い切り）をご利用中です。ありがとうございます！"
+          }
+        }
+      }
+    },
+    "You're a Pro subscriber - thank you!" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Proのサブスクリプションをご利用中です。ありがとうございます！"
+          }
+        }
+      }
+    },
+    "You're on Pro" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Proをご利用中"
+          }
+        }
+      }
+    },
+    "Your %@ alarm is off %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your %1$@ alarm is off %2$@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%2$@は%1$@のアラームがオフです"
+          }
+        }
+      }
+    },
+    "Your own audio for the heads-up and the alarm" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "事前通知とアラームに好きな音声を"
+          }
+        }
+      }
+    },
+    "Your own reminder text" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "事前通知のメッセージを自分で決める"
+          }
+        }
+      }
+    },
+    "Your sounds" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "マイサウンド"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

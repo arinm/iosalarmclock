@@ -51,9 +51,61 @@ protocol AlarmKitManaging {
     /// passes system-held ids it has already proven belong to no tracked
     /// occurrence. Cancelling an unknown/stopped id is a harmless no-op.
     func cancelRawIDs(_ ids: Set<UUID>) async
+    /// Arm one alarm that belongs to no `AlarmItem` (see `TransientAlarms`):
+    /// Stop only, no snooze. Returns whether the system took it. The caller
+    /// records it in `TransientAlarms` FIRST, or the orphan sweep cancels it.
+    func scheduleTransient(id: UUID, at date: Date, label: String, soundName: String?) async -> Bool
 }
 
 enum AlarmAuthState: Sendable { case notDetermined, authorized, denied }
+
+/// One-off alarms that belong to no `AlarmItem`: the Test ring now, the
+/// "Are you up?" check later. Kept in the app group so the orphan sweep in
+/// every process (app, widget, intents) counts them as ours; without the
+/// record, an alarm no item tracks is cancelled ~30 s after it's armed.
+enum TransientAlarms {
+    enum Kind: String { case testRing }
+
+    struct Record: Codable, Equatable {
+        let id: UUID
+        let fireDate: Date
+        /// Raw, so a kind a later build adds still decodes here.
+        let kindRaw: String
+        var kind: Kind? { Kind(rawValue: kindRaw) }
+
+        init(id: UUID = UUID(), fireDate: Date, kind: Kind) {
+            self.id = id
+            self.fireDate = fireDate
+            self.kindRaw = kind.rawValue
+        }
+    }
+
+    private static let key = "transientAlarms.v1"
+    /// A record outlives its fire time by this much. While it rings the sweep
+    /// spares it anyway (it's active); the margin covers a slow Stop.
+    private static let keepAfterFire: TimeInterval = 3600
+    private static var defaults: UserDefaults? { UserDefaults(suiteName: SharedModelContainer.appGroupID) }
+
+    /// The records still current; older ones drop out on the next write.
+    static func records(now: Date = .now) -> [Record] {
+        guard let data = defaults?.data(forKey: key),
+              let all = try? JSONDecoder().decode([Record].self, from: data) else { return [] }
+        return all.filter { $0.fireDate > now.addingTimeInterval(-keepAfterFire) }
+    }
+
+    static func add(_ record: Record, now: Date = .now) {
+        save(records(now: now).filter { $0.id != record.id } + [record])
+    }
+
+    static func remove(id: UUID, now: Date = .now) {
+        save(records(now: now).filter { $0.id != id })
+    }
+
+    private static func save(_ records: [Record]) {
+        guard let data = try? JSONEncoder().encode(records) else { return }
+        defaults?.set(data, forKey: key)
+    }
+}
 
 /// Metadata we attach to every AlarmKit alarm so the Live Activity / Lock Screen
 /// presentation can show the label and our app can correlate fired alarms back
@@ -269,6 +321,37 @@ final class AlarmKitManager: AlarmKitManaging {
         #endif
     }
 
+    func scheduleTransient(id: UUID, at date: Date, label: String, soundName: String?) async -> Bool {
+        #if canImport(AlarmKit)
+        // Already translated by the caller, so shown verbatim (see makeConfiguration).
+        let title = LocalizedStringResource("\(label)", comment: "An alarm's own label, shown verbatim")
+        let stop = AlarmButton(text: "Stop", textColor: .white, systemImageName: "stop.fill")
+        let attributes = AlarmAttributes(
+            presentation: AlarmPresentation(alert: AlarmPresentation.Alert(
+                title: title, stopButton: stop, secondaryButton: nil, secondaryButtonBehavior: nil)),
+            metadata: PunctualMetadata(alarmItemID: id, label: label, occurrence: date),
+            tintColor: BrandColor.currentAccent()
+        )
+        let config = AlarmManager.AlarmConfiguration(
+            countdownDuration: nil,
+            schedule: Alarm.Schedule.fixed(date),
+            attributes: attributes,
+            sound: alarmSound(named: soundName)
+        )
+        do {
+            try await AlarmManager.shared.schedule(id: id, configuration: config)
+            alarmLog.notice("Scheduled one-off '\(label, privacy: .public)' id \(id, privacy: .public) @ \(date, privacy: .public)")
+            return true
+        } catch {
+            alarmLog.error("Schedule FAILED one-off '\(label, privacy: .public)' @ \(date, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            return false
+        }
+        #else
+        alarmLog.notice("[AlarmKit unavailable] would schedule one-off '\(label)'")
+        return false
+        #endif
+    }
+
     /// IDs of alarms currently in the countdown state. NOTE: with
     /// `CountdownDuration.preAlert` set, `.countdown` covers BOTH the pre-alert
     /// countdown (occurrence still in the future) and a running snooze
@@ -324,7 +407,12 @@ final class AlarmKitManager: AlarmKitManaging {
 
     #if canImport(AlarmKit)
     private func makeConfiguration(for item: AlarmItem, occurrence: Date) -> AlarmManager.AlarmConfiguration<PunctualMetadata> {
-        let title = item.label.isEmpty ? "Alarm" : item.label
+        // A user's label is shown as typed; only the fallback is translated.
+        // Interpolated, the key is "%@", so a label like "Gym" or "50%" is never
+        // looked up in the catalog or read as a format.
+        let title: LocalizedStringResource = item.label.isEmpty
+            ? "Alarm"
+            : LocalizedStringResource("\(item.label)", comment: "An alarm's own label, shown verbatim")
 
         // Fixed (one-shot) schedule for this concrete occurrence — we manage
         // recurrence/skip/pause ourselves via the engine.
@@ -338,7 +426,7 @@ final class AlarmKitManager: AlarmKitManaging {
             : nil
 
         let alert = AlarmPresentation.Alert(
-            title: LocalizedStringResource(stringLiteral: title),
+            title: title,
             stopButton: stop,
             secondaryButton: secondary,
             secondaryButtonBehavior: item.snooze.isEnabled ? .countdown : nil
@@ -358,9 +446,7 @@ final class AlarmKitManager: AlarmKitManaging {
         // removed — see the countdown-duration note below).
         let presentation: AlarmPresentation
         if item.snooze.isEnabled {
-            let countdownPresentation = AlarmPresentation.Countdown(
-                title: LocalizedStringResource(stringLiteral: title)
-            )
+            let countdownPresentation = AlarmPresentation.Countdown(title: title)
             presentation = AlarmPresentation(alert: alert, countdown: countdownPresentation)
         } else {
             presentation = AlarmPresentation(alert: alert)
@@ -369,7 +455,8 @@ final class AlarmKitManager: AlarmKitManaging {
         let attributes = AlarmAttributes(
             presentation: presentation,
             // Brand-tinted (matches the user's chosen accent) — not the system blue.
-            metadata: PunctualMetadata(alarmItemID: item.id, label: title, occurrence: occurrence),
+            // The raw label: the Live Activity shows its own translated "Alarm" when empty.
+            metadata: PunctualMetadata(alarmItemID: item.id, label: item.label, occurrence: occurrence),
             tintColor: BrandColor.currentAccent()
         )
 
@@ -390,29 +477,30 @@ final class AlarmKitManager: AlarmKitManaging {
             Alarm.CountdownDuration(preAlert: nil, postAlert: $0)
         }
 
-        // Sound: the imported sound (Library/Sounds CAF) for the alarm ring too.
-        // DEVICE-VALIDATED 2026-07-19 (build 11): AlarmKit plays a runtime-
-        // imported `.named` CAF for the alarm. Guarded by a file-existence
-        // check — `.named` has no documented missing-file contract, and a
-        // silent alarm is the one failure this product can never ship, so a
-        // dead reference (deleted sound, stale Settings default) provably
-        // falls back to `.default`.
-        let alarmSound: AlertConfiguration.AlertSound
-        if let name = item.soundName, !name.isEmpty,
-           FileManager.default.fileExists(
-               atPath: FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask)[0]
-                   .appendingPathComponent("Sounds").appendingPathComponent(name).path
-           ) {
-            alarmSound = .named(name)
-        } else {
-            alarmSound = .default
-        }
         return AlarmManager.AlarmConfiguration(
             countdownDuration: countdown,
             schedule: schedule,
             attributes: attributes,
-            sound: alarmSound
+            sound: alarmSound(named: item.soundName)
         )
+    }
+
+    // Sound: the imported sound (Library/Sounds CAF) for the alarm ring too.
+    // DEVICE-VALIDATED 2026-07-19 (build 11): AlarmKit plays a runtime-
+    // imported `.named` CAF for the alarm. Guarded by a file-existence
+    // check — `.named` has no documented missing-file contract, and a
+    // silent alarm is the one failure this product can never ship, so a
+    // dead reference (deleted sound, stale Settings default) provably
+    // falls back to `.default`.
+    private func alarmSound(named name: String?) -> AlertConfiguration.AlertSound {
+        if let name, !name.isEmpty,
+           FileManager.default.fileExists(
+               atPath: FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask)[0]
+                   .appendingPathComponent("Sounds").appendingPathComponent(name).path
+           ) {
+            return .named(name)
+        }
+        return .default
     }
     #endif
 }

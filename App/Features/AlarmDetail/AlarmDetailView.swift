@@ -25,7 +25,7 @@ struct AlarmDetailView: View {
                 proSection
             }
             .punctualBackground()
-            .navigationTitle(alarm.label.isEmpty ? "Alarm" : alarm.label)
+            .navigationTitle(alarm.label.isEmpty ? String(localized: "Alarm") : alarm.label)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) { Button("Edit") { editing = true } }
@@ -50,8 +50,8 @@ struct AlarmDetailView: View {
                             guard let day = await store.skipNextOccurrence(alarm) else { return }
                             let next = NotificationActionHandler.describe(alarm.nextOccurrence, calendar: .current)
                             banners.show(.skip,
-                                         title: "Skipped \(NotificationActionHandler.dayPhrase(day, calendar: .current)) - still active",
-                                         subtitle: "Next alarm: \(next)",
+                                         title: NotificationActionHandler.skippedTitle(day),
+                                         subtitle: String(localized: "Next alarm: \(next)"),
                                          alarmID: alarm.id,
                                          undo: { [store] in await store.unskip(alarm, day: day) })
                             UINotificationFeedbackGenerator().notificationOccurred(.success)
@@ -124,7 +124,7 @@ struct AlarmDetailView: View {
                 ForEach(ringing, id: \.self) { ring in
                     let day = DateOnly(date: ring, calendar: cal)
                     HStack {
-                        calendarDayLabel(day, note: "Rings anyway · \(reasons(day))")
+                        calendarDayLabel(day, note: String(localized: "Rings anyway · \(reasons(day))"))
                         Spacer()
                         Button("Skip") { Task { await store.skipForCalendarAgain(alarm, day: day) } }
                             .buttonStyle(.bordered).font(.subheadline)
@@ -139,7 +139,7 @@ struct AlarmDetailView: View {
 
     private func reasons(_ day: DateOnly) -> String {
         let titles = store.calendarDayTitles[day] ?? []
-        return titles.isEmpty ? "All-day event" : titles.joined(separator: ", ")
+        return titles.isEmpty ? String(localized: "All-day event") : ListFormatter.localizedString(byJoining: titles)
     }
 
     private func calendarDayLabel(_ day: DateOnly, note: String) -> some View {
@@ -174,7 +174,7 @@ struct AlarmDetailView: View {
     private var snoozeSection: some View {
         Section("Snooze") {
             if alarm.snooze.isEnabled {
-                LabeledContent("Duration", value: "\(alarm.snooze.durationMinutes) min")
+                LabeledContent("Duration") { Text("\(alarm.snooze.durationMinutes) min") }
             } else {
                 Text("Off").foregroundStyle(.secondary)
             }

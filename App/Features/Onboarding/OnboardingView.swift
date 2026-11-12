@@ -159,7 +159,7 @@ struct OnboardingView: View {
 }
 
 struct FeatureRow: View {
-    let icon: String, title: String, detail: String
+    let icon: String, title: LocalizedStringKey, detail: LocalizedStringKey
     var body: some View {
         HStack(spacing: 14) {
             Image(systemName: icon)
@@ -174,7 +174,7 @@ struct FeatureRow: View {
 }
 
 struct PermissionDeniedNote: View {
-    let text: String
+    let text: LocalizedStringKey
     var showsSettingsLink: Bool = false
     var body: some View {
         VStack(spacing: 6) {

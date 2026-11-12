@@ -29,7 +29,7 @@ AlarmCore/                 ← pure Swift package (Foundation only), unit-tested
   Sources/AlarmCore/
     Weekday / DateOnly / DateRange / Settings / AlarmSchedule
     NextOccurrenceCalculator    ← the scheduling engine (heart of the app)
-    CountdownFormatter
+    CalendarSkipPlanner
   Tests/AlarmCoreTests/         ← 18 tests, run with `swift test`
 
 App/                       ← the iOS 26 SwiftUI app
@@ -41,6 +41,7 @@ App/                       ← the iOS 26 SwiftUI app
   Permissions/   PermissionManager
   Pro/           ProFeatureManager, StoreManager (StoreKit 2)
   Shared/        SharedModelContainer, SkipTodayIntent, SkipNextAlarmIntent,
+                 LocalizedText (countdown, day and weekday words, en + ja),
                  PunctualActivityAttributes  (compiled into app + widget)
   Design/        Theme, StatusPresenter
   Features/      AlarmList, AlarmEditor, AlarmDetail, Onboarding, Settings, Paywall

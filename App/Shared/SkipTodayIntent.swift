@@ -74,7 +74,7 @@ struct SkipTodayIntent: LiveActivityIntent {
             )
             if let next {
                 state.fireDate = next
-                state.dayPhrase = Self.dayPhrase(next)
+                state.dayPhrase = DayText.phrase(next)
                 await activity.end(ActivityContent(state: state, staleDate: nil),
                                    dismissalPolicy: .after(.now.addingTimeInterval(180)))
             } else {
@@ -82,14 +82,5 @@ struct SkipTodayIntent: LiveActivityIntent {
                                    dismissalPolicy: .immediate)
             }
         }
-    }
-
-    /// Minimal local dayPhrase (NotificationActionHandler is app-target-only,
-    /// and this file compiles into the widget target too).
-    private static func dayPhrase(_ date: Date, calendar: Calendar = .current) -> String {
-        if calendar.isDateInToday(date) { return "today" }
-        if calendar.isDateInTomorrow(date) { return "tomorrow" }
-        let f = DateFormatter(); f.calendar = calendar; f.dateFormat = "EEEE"
-        return f.string(from: date)
     }
 }

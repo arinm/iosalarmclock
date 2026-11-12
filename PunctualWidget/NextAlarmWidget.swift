@@ -60,9 +60,8 @@ struct NextAlarmProvider: AppIntentTimelineProvider {
         }
 
         guard let (item, fire) = chosen else { return NextAlarmEntry(date: .now, info: nil) }
-        let f = DateFormatter(); f.timeStyle = .short
         return NextAlarmEntry(date: .now, info: .init(
-            timeText: f.string(from: fire),
+            timeText: TimeText.string(fire),
             label: item.label,
             fireDate: fire,
             weekdays: Weekday.allCases.filter { item.repeatWeekdays.contains($0) },
@@ -93,13 +92,12 @@ struct NextAlarmWidgetView: View {
         .containerBackground(.fill.tertiary, for: .widget)
     }
 
-    /// "Today" / "Tomorrow" / "Mon 24 Jun".
+    /// "Today" / "Tomorrow" / "Mon, Jun 24".
     static func dayText(_ date: Date) -> String {
         let cal = Calendar.current
-        if cal.isDateInToday(date) { return "Today" }
-        if cal.isDateInTomorrow(date) { return "Tomorrow" }
-        let f = DateFormatter(); f.dateFormat = "EEE d MMM"
-        return f.string(from: date)
+        if cal.isDateInToday(date) { return String(localized: "Today") }
+        if cal.isDateInTomorrow(date) { return String(localized: "Tomorrow") }
+        return DayText.short(date)
     }
 }
 
@@ -119,7 +117,7 @@ private struct MediumView: View {
                 }
             }
 
-            Text("\(CountdownFormatter.ringsIn(info.fireDate, from: now)) · \(NextAlarmWidgetView.dayText(info.fireDate))")
+            Text(verbatim: "\(CountdownText.ringsIn(info.fireDate, from: now)) · \(NextAlarmWidgetView.dayText(info.fireDate))")
                 .font(.caption.weight(.medium)).foregroundStyle(BrandColor.currentAccent()).lineLimit(1)
 
             Spacer(minLength: 0)
@@ -149,11 +147,11 @@ private struct SmallView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             // Label gives context ("Work"); falls back to the eyebrow.
-            Text(info.label.isEmpty ? "NEXT ALARM" : info.label.uppercased())
+            Text(info.label.isEmpty ? String(localized: "NEXT ALARM") : info.label.uppercased())
                 .font(.caption2.weight(.semibold)).foregroundStyle(.secondary).lineLimit(1)
             Text(info.timeText)
                 .font(.system(size: 30, weight: .semibold, design: .rounded)).monospacedDigit()
-            Text(CountdownFormatter.ringsIn(info.fireDate, from: now))
+            Text(CountdownText.ringsIn(info.fireDate, from: now))
                 .font(.caption.weight(.medium)).foregroundStyle(BrandColor.currentAccent()).lineLimit(1)
             Spacer(minLength: 0)
             // Repeat days (or the date for a one-time) — info the countdown lacks.
@@ -177,9 +175,9 @@ private struct AccessoryView: View {
             HStack(spacing: 4) {
                 Image(systemName: "alarm.fill")
                 Text(info.timeText).fontWeight(.semibold)
-                if !info.label.isEmpty { Text("· \(info.label)").foregroundStyle(.secondary).lineLimit(1) }
+                if !info.label.isEmpty { Text(verbatim: "· \(info.label)").foregroundStyle(.secondary).lineLimit(1) }
             }
-            Text(CountdownFormatter.ringsIn(info.fireDate, from: now)).foregroundStyle(.secondary)
+            Text(CountdownText.ringsIn(info.fireDate, from: now)).foregroundStyle(.secondary)
         }
         .widgetAccentable()
     }

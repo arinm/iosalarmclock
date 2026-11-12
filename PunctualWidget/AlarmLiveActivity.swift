@@ -21,7 +21,7 @@ struct AlarmLiveActivity: Widget {
                     countdown(context).font(.system(.title3, design: .rounded).weight(.bold)).monospacedDigit()
                 }
                 DynamicIslandExpandedRegion(.center) {
-                    Text(context.state.label.isEmpty ? "Alarm" : context.state.label)
+                    Text(context.state.label.isEmpty ? String(localized: "Alarm") : context.state.label)
                         .font(.caption).foregroundStyle(.secondary).lineLimit(1)
                 }
                 DynamicIslandExpandedRegion(.bottom) {
@@ -88,7 +88,7 @@ private struct LockScreenLiveActivityView: View {
         HStack(spacing: 14) {
             Image(systemName: "alarm.fill").font(.title2).foregroundStyle(BrandColor.accent)
             VStack(alignment: .leading, spacing: 2) {
-                Text(context.state.label.isEmpty ? "Next alarm" : context.state.label)
+                Text(context.state.label.isEmpty ? String(localized: "Next alarm") : context.state.label)
                     .font(.headline).lineLimit(1)
                 if isPast(context) {
                     // Fire time passed while the app wasn't running to end this

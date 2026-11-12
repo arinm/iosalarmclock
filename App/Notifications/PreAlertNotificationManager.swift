@@ -1,6 +1,9 @@
 import Foundation
+import OSLog
 import UserNotifications
 import AlarmCore
+
+private let notificationLog = Logger(subsystem: "com.punctual.app", category: "HeadsUp")
 
 /// Schedules the pre-alert ("heads-up") local notification that fires N minutes
 /// before an alarm and carries the **Skip today** / **Open** actions.
@@ -23,12 +26,12 @@ final class PreAlertNotificationManager {
     func registerCategories() {
         let skip = UNNotificationAction(
             identifier: Self.skipActionID,
-            title: "Skip today",
+            title: String(localized: "Skip today"),
             options: [] // handled in background; no need to unlock
         )
         let open = UNNotificationAction(
             identifier: Self.openActionID,
-            title: "Open",
+            title: String(localized: "Open"),
             options: [.foreground]
         )
         let category = UNNotificationCategory(
@@ -42,39 +45,77 @@ final class PreAlertNotificationManager {
         center.setNotificationCategories(Set([category] + CalendarSkipNotifier.categories))
     }
 
-    /// Arm pre-alerts for the whole look-ahead window, so occurrences reached
-    /// without reopening the app still get their heads-up.
+    /// Arm heads-ups for every alarm's armed window at once, so occurrences
+    /// reached without reopening the app still get theirs, and remove every
+    /// other pending heads-up (deleted or disabled alarms, skipped days).
     ///
-    /// Budget: iOS keeps at most 64 pending local notifications app-wide, so we
-    /// spend carefully — every offset (main + Pro extras) for the FIRST
-    /// occurrence, main offset only for the rest. A 7-deep window costs ~7-10
-    /// requests per alarm instead of up to 28.
-    func schedulePreAlerts(for item: AlarmItem, fireDates: [Date], calendar: Calendar) async {
-        await cancelPreAlert(for: item) // fully await cancel so it can't remove the new requests
-        guard item.preAlert.isEnabled, let first = fireDates.first else { return }
+    /// Budget: iOS keeps at most 64 pending local notifications app-wide, so
+    /// all alarms share one allowance with the calendar notices (see
+    /// `HeadsUpPlanner`): the soonest heads-ups are set, the rest wait for a
+    /// later sync. Only ARMED occurrences get one, so a heads-up never
+    /// announces a ring the system doesn't hold. Run it after the calendar
+    /// notices are synced, so their count is current.
+    ///
+    /// Returns when the first heads-up that didn't fit would have shown, or
+    /// nil when they all fit (or notifications are off, so none is set).
+    func sync(items: [AlarmItem], now: Date = .now, calendar: Calendar) async -> Date? {
+        let byID = Dictionary(items.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        let alarms = items.filter { $0.isEnabled && $0.preAlert.isEnabled }.map {
+            HeadsUpPlanner.Alarm(id: $0.id, occurrences: $0.armedOccurrences,
+                                 minutesBefore: $0.preAlert.minutesBefore,
+                                 extraMinutesBefore: $0.additionalPreAlertMinutes)
+        }
 
-        // Main offset + any Pro "additional" offsets, de-duplicated & sorted.
-        let offsets = Set([item.preAlert.minutesBefore] + item.additionalPreAlertMinutes).sorted(by: >)
-        for minutes in offsets {
-            scheduleOne(for: item, fireDate: first, minutesBefore: minutes, calendar: calendar)
+        let pending = await center.pendingNotificationRequests()
+        let ours = pending.filter { $0.identifier.hasPrefix(Self.prefix) }
+        let calendarNotices = pending.filter { $0.identifier.hasPrefix(CalendarSkipNotifier.prefix) }.count
+        let limit = HeadsUpPlanner.limit(calendarNotices: calendarNotices,
+                                         others: pending.count - ours.count - calendarNotices,
+                                         calendarInUse: items.contains(where: \.autoSkipOnCalendarEvents))
+        let plan = HeadsUpPlanner.plan(alarms, now: now, limit: limit)
+
+        let keep = Set(plan.scheduled.map { requestID(alarmID: $0.alarmID, minutes: $0.minutesBefore, occurrence: $0.occurrence) })
+        let stale = ours.map(\.identifier).filter { !keep.contains($0) }
+        if !stale.isEmpty { center.removePendingNotificationRequests(withIdentifiers: stale) }
+        // Only new or changed heads-ups are sent. Re-adding a pending id
+        // replaces it, so an edited label or message still reaches the ones
+        // already set; the unchanged rest (most of them, on every sync) cost
+        // no round trip, and a skip or a toggle doesn't wait on them.
+        let stamps = Dictionary(ours.compactMap { request in
+            (request.content.userInfo[Self.stampKey] as? String).map { (request.identifier, $0) }
+        }, uniquingKeysWith: { first, _ in first })
+        for headsUp in plan.scheduled {
+            guard let item = byID[headsUp.alarmID],
+                  let request = makeRequest(for: item, fireDate: headsUp.occurrence,
+                                            minutesBefore: headsUp.minutesBefore, calendar: calendar) else { continue }
+            if let stamp = stamps[request.identifier], stamp == request.content.userInfo[Self.stampKey] as? String { continue }
+            // Awaited, so the next sync counts what is really pending.
+            do { try await center.add(request) } catch let error as UNError where error.code == .notificationsNotAllowed {
+                // Notifications are off: nothing is set, so nothing waits either.
+                return nil
+            } catch {
+                notificationLog.error("Heads-up add failed: \(error.localizedDescription, privacy: .public)")
+            }
         }
-        for fireDate in fireDates.dropFirst() {
-            scheduleOne(for: item, fireDate: fireDate, minutesBefore: item.preAlert.minutesBefore, calendar: calendar)
+        if let first = plan.waiting.first {
+            notificationLog.notice("Heads-ups: \(plan.scheduled.count, privacy: .public) set, \(plan.waiting.count, privacy: .public) waiting from \(first.fireDate, privacy: .public) (limit \(limit, privacy: .public))")
         }
+        return plan.waiting.first?.fireDate
     }
 
-    private func scheduleOne(for item: AlarmItem, fireDate: Date, minutesBefore: Int, calendar: Calendar) {
+    /// The request for one heads-up, or nil when its time has passed.
+    private func makeRequest(for item: AlarmItem, fireDate: Date, minutesBefore: Int, calendar: Calendar) -> UNNotificationRequest? {
         let preAlertDate = fireDate.addingTimeInterval(-TimeInterval(minutesBefore * 60))
-        guard preAlertDate > .now else { return } // skip if already in the past
+        guard preAlertDate > .now else { return nil } // skip if already in the past
 
-        let timeString = Self.timeFormatter.string(from: fireDate)
-        let label = item.label.isEmpty ? "Alarm" : item.label
+        let timeString = TimeText.string(fireDate)
+        let label = item.label.isEmpty ? String(localized: "Alarm") : item.label
 
         let content = UNMutableNotificationContent()
-        content.title = "Alarm in \(minutesBefore) minutes"
+        content.title = String(localized: "Alarm in \(minutesBefore) minutes")
         // Pro custom message overrides the default body when set.
         content.body = item.preAlertMessage.isEmpty
-            ? "\(label) rings at \(timeString)"
+            ? String(localized: "\(label) rings at \(timeString)")
             : item.preAlertMessage
         content.categoryIdentifier = Self.categoryID
         // Custom sound (Pro) lives in Library/Sounds; falls back to default.
@@ -83,18 +124,23 @@ final class PreAlertNotificationManager {
         } else {
             content.sound = .default
         }
+        let comps = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: preAlertDate)
+        // Everything the user would see or hear, and when (wall-clock, so a
+        // new time zone re-sends it): `sync` re-sends a pending heads-up only
+        // when this differs.
+        let when = [comps.year, comps.month, comps.day, comps.hour, comps.minute, comps.second].map { String($0 ?? 0) }
+        let stamp = ([content.title, content.body, item.soundName ?? ""] + when).joined(separator: "\u{1F}")
         content.userInfo = [
             Self.alarmIDKey: item.id.uuidString,
-            Self.occurrenceKey: fireDate.timeIntervalSince1970
+            Self.occurrenceKey: fireDate.timeIntervalSince1970,
+            Self.stampKey: stamp
         ]
 
-        let comps = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: preAlertDate)
         let trigger = UNCalendarNotificationTrigger(dateMatching: comps, repeats: false)
-        let request = UNNotificationRequest(
-            identifier: requestID(for: item, minutes: minutesBefore, occurrence: fireDate),
+        return UNNotificationRequest(
+            identifier: requestID(alarmID: item.id, minutes: minutesBefore, occurrence: fireDate),
             content: content, trigger: trigger
         )
-        center.add(request)
     }
 
     /// Immediate "Snoozed" confirmation so the user knows the snooze registered
@@ -104,36 +150,33 @@ final class PreAlertNotificationManager {
     /// (always true) rather than a live countdown (we can't know the exact
     /// re-ring time from outside AlarmKit).
     func announceSnooze(for item: AlarmItem) {
-        let label = item.label.isEmpty ? "Alarm" : item.label
+        let label = item.label.isEmpty ? String(localized: "Alarm") : item.label
         let content = UNMutableNotificationContent()
-        content.title = "Snoozed"
-        content.body = "\(label) - snoozed for \(item.snooze.durationMinutes) min. It'll ring again."
+        content.title = String(localized: "Snoozed")
+        content.body = String(localized: "\(label) - snoozed for \(item.snooze.durationMinutes) min. It'll ring again.")
         content.sound = nil
         // Same id per alarm → a repeat snooze replaces the old note, no pile-up.
         center.add(UNNotificationRequest(identifier: "snoozed-\(item.id.uuidString)",
                                          content: content, trigger: nil))
     }
 
+    /// Remove this alarm's heads-ups right away (disable, delete), ahead of
+    /// the sync that follows.
     func cancelPreAlert(for item: AlarmItem) async {
         // Remove every pending pre-alert for this alarm regardless of offset.
-        // Awaited so it fully completes before any re-schedule adds new requests.
-        let prefix = "prealert-\(item.id.uuidString)"
+        let prefix = "\(Self.prefix)\(item.id.uuidString)"
         let pending = await center.pendingNotificationRequests()
         let ids = pending.map(\.identifier).filter { $0.hasPrefix(prefix) }
         if !ids.isEmpty { center.removePendingNotificationRequests(withIdentifiers: ids) }
     }
 
+    private static let prefix = "prealert-"
+    private static let stampKey = "stamp"
+
     /// Unique per (alarm, offset, occurrence) — the window arms several dates at
     /// the same offset, and identical ids would silently replace one another.
     /// Keeps the `prealert-<uuid>` prefix that `cancelPreAlert` matches on.
-    private func requestID(for item: AlarmItem, minutes: Int, occurrence: Date) -> String {
-        "prealert-\(item.id.uuidString)-\(minutes)-\(Int(occurrence.timeIntervalSince1970))"
+    private func requestID(alarmID: UUID, minutes: Int, occurrence: Date) -> String {
+        "\(Self.prefix)\(alarmID.uuidString)-\(minutes)-\(Int(occurrence.timeIntervalSince1970))"
     }
-
-    private static let timeFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.timeStyle = .short
-        f.dateStyle = .none
-        return f
-    }()
 }

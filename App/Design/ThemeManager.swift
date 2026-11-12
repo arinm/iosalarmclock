@@ -18,10 +18,12 @@ final class ThemeManager {
         static var presets: [Accent] { allCases.filter { $0 != .custom } }
         var title: String {
             switch self {
-            case .peach: "Peach"; case .ocean: "Ocean"; case .teal: "Teal"
-            case .mint: "Mint"; case .forest: "Forest"; case .gold: "Gold"
-            case .sunset: "Sunset"; case .rose: "Rose"; case .grape: "Grape"
-            case .indigo: "Indigo"; case .graphite: "Graphite"; case .custom: "Custom"
+            case .peach: String(localized: "Peach"); case .ocean: String(localized: "Ocean")
+            case .teal: String(localized: "Teal"); case .mint: String(localized: "Mint")
+            case .forest: String(localized: "Forest"); case .gold: String(localized: "Gold")
+            case .sunset: String(localized: "Sunset"); case .rose: String(localized: "Rose")
+            case .grape: String(localized: "Grape"); case .indigo: String(localized: "Indigo")
+            case .graphite: String(localized: "Graphite"); case .custom: String(localized: "Custom")
             }
         }
         /// Light/dark adaptive accent color (single source of truth in BrandColor,
@@ -32,7 +34,13 @@ final class ThemeManager {
     enum Appearance: String, CaseIterable, Identifiable {
         case system, light, dark
         var id: String { rawValue }
-        var title: String { rawValue.capitalized }
+        var title: String {
+            switch self {
+            case .system: String(localized: "System", comment: "Appearance: follow the system light/dark setting")
+            case .light: String(localized: "Light")
+            case .dark: String(localized: "Dark")
+            }
+        }
         var colorScheme: ColorScheme? {
             switch self { case .system: nil; case .light: .light; case .dark: .dark }
         }

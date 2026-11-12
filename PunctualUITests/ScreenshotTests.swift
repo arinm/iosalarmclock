@@ -3,29 +3,43 @@ import XCTest
 /// Drives the app through its screens and attaches a screenshot of each, for
 /// App Store marketing shots. Run via `xcodebuild test`; extract the attachments
 /// from the .xcresult bundle.
+///
+/// Language: English by default. For Japanese, run with
+/// `TEST_RUNNER_SCREENSHOT_LANG=ja xcodebuild test ...` (xcodebuild hands
+/// TEST_RUNNER_-prefixed variables to the test process without the prefix).
 final class ScreenshotTests: XCTestCase {
+
+    private static let lang = ProcessInfo.processInfo.environment["SCREENSHOT_LANG"] ?? "en"
+
+    /// Button labels the test taps, per language (they must match the catalog).
+    private static let labels: [String: [String: String]] = [
+        "ja": ["Add alarm": "アラームを追加", "Cancel": "キャンセル", "Settings": "設定",
+               "Upgrade to Pro": "Proにアップグレード", "Close": "閉じる", "Done": "完了", "Details": "詳細"],
+    ]
+
+    private func t(_ english: String) -> String { Self.labels[Self.lang]?[english] ?? english }
 
     func testCaptureScreens() {
         let app = XCUIApplication()
-        app.launchArguments += [
-            "-AppleLocale", "en_US",
-            "--seed-demo", "--demo-free", "--skip-onboarding", "--app-store-screenshots"
-        ]
+        app.launchArguments += Self.lang == "ja"
+            ? ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
+            : ["-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
+        app.launchArguments += ["--seed-demo", "--demo-free", "--skip-onboarding", "--app-store-screenshots"]
         app.launch()
 
         // 01 — Home (hero + alarm cards)
         snap("01-Home", wait: 5)
 
         // 02 — Create / edit alarm
-        let add = app.buttons["Add alarm"]
+        let add = app.buttons[t("Add alarm")]
         if add.waitForExistence(timeout: 8) {
             add.tap()
             snap("02-Editor", wait: 2)
-            tapIfExists(app.buttons["Cancel"])
+            tapIfExists(app.buttons[t("Cancel")])
         }
 
         // 03 — Settings, 04 — Paywall
-        let settings = app.buttons["Settings"]
+        let settings = app.buttons[t("Settings")]
         if settings.waitForExistence(timeout: 5) {
             settings.tap()
             snap("03-Settings", wait: 2)
@@ -36,13 +50,13 @@ final class ScreenshotTests: XCTestCase {
             // exactly this image. It IS the right image for the App Review
             // screenshot each In-App Purchase requires, which is internal to
             // review and never shown to users. Hence the filename.
-            let upgrade = app.buttons["Upgrade to Pro"]
+            let upgrade = app.buttons[t("Upgrade to Pro")]
             if upgrade.waitForExistence(timeout: 3) {
                 upgrade.tap()
                 snap("NOT-FOR-STORE-iap-review-Paywall", wait: 3)
-                tapIfExists(app.buttons["Close"])
+                tapIfExists(app.buttons[t("Close")])
             }
-            tapIfExists(app.buttons["Done"])
+            tapIfExists(app.buttons[t("Done")])
         }
 
         // List rows surface as cells: row 0 is the hero summary, alarm cards
@@ -55,11 +69,11 @@ final class ScreenshotTests: XCTestCase {
             card.press(forDuration: 1.5)
             // Context-menu items surface as buttons or menuItems depending on
             // the host container — try both.
-            let details = menuElement(app, "Details")
+            let details = menuElement(app, t("Details"))
             if details.waitForExistence(timeout: 3) {
                 details.tap()
                 snap("05-Detail", wait: 2)
-                tapIfExists(app.buttons["Done"])
+                tapIfExists(app.buttons[t("Done")])
             } else {
                 app.swipeDown() // dismiss any partial menu state
             }
@@ -87,7 +101,11 @@ final class ScreenshotTests: XCTestCase {
 
     private func findInlineSkipButton(_ app: XCUIApplication) -> XCUIElement? {
         for _ in 0..<6 {
-            let skip = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Skip")).firstMatch
+            // "Skip today" / "今日をスキップ": the verb leads in English, trails in Japanese.
+            let predicate = Self.lang == "ja"
+                ? NSPredicate(format: "label ENDSWITH %@", "をスキップ")
+                : NSPredicate(format: "label BEGINSWITH %@", "Skip")
+            let skip = app.buttons.matching(predicate).firstMatch
             if skip.waitForExistence(timeout: 1), skip.isHittable {
                 return skip
             }

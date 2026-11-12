@@ -37,7 +37,7 @@ final class CalendarSkipNotifier {
     /// on longer is followed to its end (`CalendarSkipPlanner.lookaheadEnd`).
     private static let lookaheadDays = 60
 
-    private static let prefix = "calskip-"
+    static let prefix = "calskip-"
     /// What each notice listed and when it shows, so a refresh tells the user
     /// only what they haven't been told (`CalendarSkipPlanner.noticeAction`).
     private static let shownKey = "calendarSkipNoticesShown"
@@ -56,10 +56,10 @@ final class CalendarSkipNotifier {
     private let center = UNUserNotificationCenter.current()
 
     static var categories: [UNNotificationCategory] {
-        let ring = UNNotificationAction(identifier: ringAnywayActionID, title: "Ring anyway",
+        let ring = UNNotificationAction(identifier: ringAnywayActionID, title: String(localized: "Ring anyway"),
                                         options: []) // handled in background, like Skip today
         let open = UNNotificationAction(identifier: PreAlertNotificationManager.openActionID,
-                                        title: "Open", options: [.foreground])
+                                        title: String(localized: "Open"), options: [.foreground])
         return [UNNotificationCategory(identifier: categoryID, actions: [ring, open], intentIdentifiers: [], options: []),
                 UNNotificationCategory(identifier: rangeCategoryID, actions: [open], intentIdentifiers: [], options: [])]
     }
@@ -198,31 +198,32 @@ final class CalendarSkipNotifier {
             guard let next = d.startOfDay(in: calendar).flatMap({ calendar.date(byAdding: .day, value: 1, to: $0) }) else { break }
             d = DateOnly(date: next, calendar: calendar)
         }
-        let reason = reasons.isEmpty ? "an all-day event"
-            : ListFormatter.localizedString(byJoining: Array(reasons.prefix(2)) + (reasons.count > 2 ? ["more"] : []))
+        let reason = reasons.isEmpty ? String(localized: "an all-day event")
+            : ListFormatter.localizedString(byJoining: Array(reasons.prefix(2))
+                + (reasons.count > 2 ? [String(localized: "more", comment: "Last item of a list of event names: A, B and more")] : []))
 
         let content = UNMutableNotificationContent()
         content.sound = nil // seen, not heard: no chime in the evening
         if quiet { content.interruptionLevel = .passive }
         if block.spansSeveralDays(calendar) {
             // A vacation or long weekend: one notice before it starts.
-            let range = "\(Self.dayFormatter.string(from: block.firstRing.date)) – \(Self.dayFormatter.string(from: block.lastRing.date))"
+            let range = Self.rangeFormatter.string(from: block.firstRing.date, to: block.lastRing.date)
             if ids.count == 1, let item = alarms[ids[0]] {
-                content.title = "Your \(Self.time(item)) alarm is off \(range)"
-                content.body = "\(Self.name(item)) · skipped for \(reason), from your calendar. Open Punctual to ring on any of these days."
+                content.title = String(localized: "Your \(Self.time(item)) alarm is off \(range)")
+                content.body = String(localized: "\(Self.name(item)) · skipped for \(reason), from your calendar. Open Punctual to ring on any of these days.")
             } else {
-                content.title = "\(ids.count) alarms are off \(range)"
-                content.body = "\(Self.list(ids, alarms)) · skipped for \(reason), from your calendar. Open Punctual to ring on any of these days."
+                content.title = String(localized: "\(ids.count) alarms are off \(range)")
+                content.body = String(localized: "\(Self.list(ids, alarms)) · skipped for \(reason), from your calendar. Open Punctual to ring on any of these days.")
             }
             content.categoryIdentifier = Self.rangeCategoryID
         } else {
             let when = Self.relativeDay(block.firstRing.date, seenAt: seenAt, calendar: calendar)
             if ids.count == 1, let item = alarms[ids[0]] {
-                content.title = "\(when)'s \(Self.time(item)) alarm won't ring"
-                content.body = "\(Self.name(item)) · skipped for \(reason), from your calendar. Need it? Tap Ring anyway."
+                content.title = String(localized: "\(when)'s \(Self.time(item)) alarm won't ring")
+                content.body = String(localized: "\(Self.name(item)) · skipped for \(reason), from your calendar. Need it? Tap Ring anyway.")
             } else {
-                content.title = "\(when), \(ids.count) alarms won't ring"
-                content.body = "\(Self.list(ids, alarms)) · skipped for \(reason), from your calendar. Need them? Tap Ring anyway."
+                content.title = String(localized: "\(when), \(ids.count) alarms won't ring")
+                content.body = String(localized: "\(Self.list(ids, alarms)) · skipped for \(reason), from your calendar. Need them? Tap Ring anyway.")
             }
             content.categoryIdentifier = Self.categoryID
         }
@@ -240,17 +241,16 @@ final class CalendarSkipNotifier {
 
     // MARK: Copy helpers
 
-    private static func name(_ item: AlarmItem) -> String { item.label.isEmpty ? "Alarm" : item.label }
+    private static func name(_ item: AlarmItem) -> String { item.label.isEmpty ? String(localized: "Alarm") : item.label }
 
     private static func time(_ item: AlarmItem) -> String {
-        let date = Calendar.current.date(from: DateComponents(hour: item.hour, minute: item.minute)) ?? .now
-        return timeFormatter.string(from: date)
+        TimeText.string(hour: item.hour, minute: item.minute)
     }
 
     /// "6:30 AM Wake up, 8:00 AM Meds" (three at most, then "and N more").
     private static func list(_ ids: [UUID], _ alarms: [UUID: AlarmItem]) -> String {
         let named = ids.compactMap { alarms[$0] }.map { "\(time($0)) \(name($0))" }
-        let shown = Array(named.prefix(3)) + (named.count > 3 ? ["\(named.count - 3) more"] : [])
+        let shown = Array(named.prefix(3)) + (named.count > 3 ? [String(localized: "\(named.count - 3) more")] : [])
         return ListFormatter.localizedString(byJoining: shown)
     }
 
@@ -259,19 +259,14 @@ final class CalendarSkipNotifier {
         let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: seenAt),
                                            to: calendar.startOfDay(for: ring)).day ?? 0
         switch days {
-        case 0: return "Today"
-        case 1: return "Tomorrow"
-        default:
-            let f = DateFormatter(); f.calendar = calendar; f.dateFormat = "EEEE"
-            return f.string(from: ring)
+        case 0: return String(localized: "Today")
+        case 1: return String(localized: "Tomorrow")
+        default: return DayText.weekdayName(ring, calendar: calendar)
         }
     }
 
-    private static let timeFormatter: DateFormatter = {
-        let f = DateFormatter(); f.timeStyle = .short; f.dateStyle = .none; return f
-    }()
-
-    private static let dayFormatter: DateFormatter = {
-        let f = DateFormatter(); f.setLocalizedDateFormatFromTemplate("EEE d MMM"); return f
+    /// "Mon, Dec 22 – Fri, Dec 26" / "12月22日(月)～26日(金)", in the region's order.
+    private static let rangeFormatter: DateIntervalFormatter = {
+        let f = DateIntervalFormatter(); f.dateTemplate = "EEEdMMM"; return f
     }()
 }

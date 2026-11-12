@@ -89,19 +89,20 @@ enum StatusPresenter {
         case .off:
             // OFF is the most consequential state — give it a clear, distinct chip
             // (not an empty pill) so it can't be mistaken for "skipped".
-            return ("Off - won't ring", Color.secondary.opacity(0.14), Theme.offFg)
+            return (String(localized: "Off - won't ring"), Color.secondary.opacity(0.14), Theme.offFg)
         case .completed:
-            return ("Completed", Color.secondary.opacity(0.10), Theme.offFg)
+            return (String(localized: "Completed"), Color.secondary.opacity(0.10), Theme.offFg)
         case .noUpcoming:
-            return ("No upcoming alarm", Color.secondary.opacity(0.10), Theme.offFg)
+            return (String(localized: "No upcoming alarm"), Color.secondary.opacity(0.10), Theme.offFg)
         case .scheduled(let next):
             // Subtle neutral fill so every card's status line shares one shape.
-            return (CountdownFormatter.ringsIn(next, from: now), Color.primary.opacity(0.05), .primary)
+            return (CountdownText.ringsIn(next, from: now), Color.primary.opacity(0.05), .primary)
         case .skippedToday(let next):
-            return ("Skipped today · still active - next \(Self.shortNext(next))", Theme.skipTint, Theme.skipFg)
+            return (String(localized: "Skipped today · still active - next \(Self.shortNext(next))"), Theme.skipTint, Theme.skipFg)
         case .paused(let until, let next):
-            let tail = next.map { " - next \(Self.shortNext($0))" } ?? ""
-            return ("Paused until \(Self.dayLabel(until))\(tail)", Theme.pauseTint, Theme.pauseFg)
+            let text = next.map { String(localized: "Paused until \(Self.dayLabel(until)) - next \(Self.shortNext($0))") }
+                ?? String(localized: "Paused until \(Self.dayLabel(until))")
+            return (text, Theme.pauseTint, Theme.pauseFg)
         }
     }
 
@@ -113,10 +114,5 @@ enum StatusPresenter {
         return f.string(from: date)
     }
 
-    static func dayLabel(_ day: DateOnly) -> String {
-        guard let date = day.startOfDay(in: .current) else { return day.description }
-        let f = DateFormatter()
-        f.dateFormat = "EEE d MMM"
-        return f.string(from: date)
-    }
+    static func dayLabel(_ day: DateOnly) -> String { DayText.short(day) }
 }

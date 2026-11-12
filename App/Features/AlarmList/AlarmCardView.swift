@@ -41,14 +41,14 @@ struct AlarmCardView: View {
                                 // symmetric with the "Alarm set" banner.
                                 if let next = alarm.nextOccurrence {
                                     banners.show(.neutral,
-                                                 title: "Alarm on - rings in \(CountdownFormatter.string(until: next, from: .now))",
+                                                 title: String(localized: "Alarm on - rings in \(CountdownText.string(until: next, from: .now))"),
                                                  subtitle: NotificationActionHandler.describe(next, calendar: .current),
                                                  alarmID: alarm.id)
                                 }
                             } else {
                                 banners.show(.disabled,
-                                             title: "Alarm off - won't ring",
-                                             subtitle: "Until you turn it back on",
+                                             title: String(localized: "Alarm off - won't ring"),
+                                             subtitle: String(localized: "Until you turn it back on"),
                                              alarmID: alarm.id,
                                              undo: { [store] in await store.setEnabled(alarm, true) })
                             }
@@ -57,7 +57,7 @@ struct AlarmCardView: View {
                     }
                 ))
                 .labelsHidden()
-                .accessibilityLabel(alarm.label.isEmpty ? "Alarm" : alarm.label)
+                .accessibilityLabel(alarm.label.isEmpty ? String(localized: "Alarm") : alarm.label)
                 .accessibilityValue(alarm.isEnabled ? "On" : "Off")
             }
 
@@ -69,7 +69,9 @@ struct AlarmCardView: View {
             // SHOULD ring, but if the last scheduling pass couldn't hand it to
             // the system there is nothing to ring. Say so instead of letting the
             // card imply an alarm that doesn't exist.
-            if alarm.isEnabled, alarm.lastArmFailed {
+            // (The simulator can't arm AlarmKit alarms, so screenshot mode hides it.)
+            if alarm.isEnabled, alarm.lastArmFailed,
+               !ProcessInfo.processInfo.arguments.contains("--app-store-screenshots") {
                 Label("Couldn't schedule this alarm - it won't ring. Check alarm permission.",
                       systemImage: "exclamationmark.triangle.fill")
                     .font(.caption.weight(.semibold))
@@ -91,14 +93,14 @@ struct AlarmCardView: View {
                         if await store.stopSnooze(alarm) {
                             let next = NotificationActionHandler.describe(alarm.nextOccurrence, calendar: .current)
                             banners.show(.neutral,
-                                         title: "Snooze stopped",
-                                         subtitle: "Still active - next alarm: \(next)",
+                                         title: String(localized: "Snooze stopped"),
+                                         subtitle: String(localized: "Still active - next alarm: \(next)"),
                                          alarmID: alarm.id)
                             UINotificationFeedbackGenerator().notificationOccurred(.success)
                         } else {
                             banners.show(.disabled,
-                                         title: "Couldn't stop the snooze",
-                                         subtitle: "Turn the alarm off to silence it",
+                                         title: String(localized: "Couldn't stop the snooze"),
+                                         subtitle: String(localized: "Turn the alarm off to silence it"),
                                          alarmID: alarm.id)
                             UINotificationFeedbackGenerator().notificationOccurred(.warning)
                         }
@@ -119,8 +121,8 @@ struct AlarmCardView: View {
                         if let day = await store.skipNextOccurrence(alarm) {
                             let next = NotificationActionHandler.describe(alarm.nextOccurrence, calendar: .current)
                             banners.show(.skip,
-                                         title: "Skipped \(NotificationActionHandler.dayPhrase(day, calendar: .current)) - still active",
-                                         subtitle: "Next alarm: \(next)",
+                                         title: NotificationActionHandler.skippedTitle(day),
+                                         subtitle: String(localized: "Next alarm: \(next)"),
                                          alarmID: alarm.id,
                                          undo: { [store] in await store.unskip(alarm, day: day) })
                         }
@@ -183,18 +185,12 @@ struct AlarmCardView: View {
     /// "Skip today" / "Skip tomorrow" — routed through dayPhrase so a weekday
     /// name is correct by construction if the window ever widens.
     private var skipButtonTitle: String {
-        guard case .scheduled(let next) = status else { return "Skip today" }
+        guard case .scheduled(let next) = status else { return String(localized: "Skip today") }
         let day = DateOnly(date: next, calendar: .current)
-        return "Skip \(NotificationActionHandler.dayPhrase(day, calendar: .current))"
+        return String(localized: "Skip \(NotificationActionHandler.dayPhrase(day, calendar: .current))")
     }
 
-    private var timeString: String {
-        let f = DateFormatter()
-        f.dateFormat = Calendar.current.locale?.is24Hour == true ? "HH:mm" : "h:mm a"
-        var comps = DateComponents(); comps.hour = alarm.hour; comps.minute = alarm.minute
-        let date = Calendar.current.date(from: comps) ?? .now
-        return f.string(from: date)
-    }
+    private var timeString: String { TimeText.string(hour: alarm.hour, minute: alarm.minute) }
 }
 
 /// Mon–Sun pills, or the date for a one-time alarm.
@@ -206,7 +202,7 @@ struct RepeatPillsRow: View {
 
     /// VoiceOver: seven single letters ("M, T, W…") are noise — one label.
     private var pillsAccessibilityLabel: String {
-        mode == .oneTimeDate ? oneTimeLabel : "Repeats \(weekdays.humanSummary)"
+        mode == .oneTimeDate ? oneTimeLabel : String(localized: "Repeats \(weekdays.humanSummary)")
     }
 
     var body: some View {
@@ -237,15 +233,7 @@ struct RepeatPillsRow: View {
     }
 
     private var oneTimeLabel: String {
-        guard let day = oneTimeDate, let date = day.startOfDay(in: .current) else { return "Once" }
-        let f = DateFormatter(); f.dateFormat = "EEE d MMM"
-        return f.string(from: date)
-    }
-}
-
-private extension Locale {
-    var is24Hour: Bool {
-        guard let fmt = DateFormatter.dateFormat(fromTemplate: "j", options: 0, locale: self) else { return false }
-        return !fmt.contains("a")
+        guard let day = oneTimeDate else { return String(localized: "Once") }
+        return DayText.short(day)
     }
 }

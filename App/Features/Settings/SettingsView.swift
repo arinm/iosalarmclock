@@ -73,7 +73,7 @@ struct SettingsView: View {
                             HStack {
                                 Text("Sound")
                                 Spacer()
-                                Text(defaultSoundName.isEmpty ? "Default" : sounds.displayName(defaultSoundName))
+                                Text(defaultSoundName.isEmpty ? String(localized: "Default") : sounds.displayName(defaultSoundName))
                                     .foregroundStyle(.secondary)
                             }
                         }
@@ -85,6 +85,11 @@ struct SettingsView: View {
                     Text("Defaults for new alarms")
                 } footer: {
                     Text("New alarms start from these values - including the sound.")
+                }
+
+                // Right under the sound, where people look, not at the bottom.
+                Section("Test your alarm") {
+                    TestRingRow(soundName: defaultSoundName.isEmpty ? nil : defaultSoundName)
                 }
 
                 Section("Permissions") {
@@ -244,7 +249,7 @@ struct SettingsView: View {
         }
     }
 
-    private func permissionRow(_ title: String, state: PermissionManager.State) -> some View {
+    private func permissionRow(_ title: LocalizedStringKey, state: PermissionManager.State) -> some View {
         HStack {
             Text(title)
             Spacer()
@@ -284,11 +289,79 @@ struct AppIconOption: Identifiable {
         return BrandColor.accent(named: name)
     }
     static let all: [AppIconOption] = [
-        .init(id: "default", title: "Peach (default)"),
-        .init(id: "AppIcon-Ocean", title: "Ocean"),
-        .init(id: "AppIcon-Forest", title: "Forest"),
-        .init(id: "AppIcon-Grape", title: "Grape"),
-        .init(id: "AppIcon-Sunset", title: "Sunset"),
-        .init(id: "AppIcon-Graphite", title: "Graphite"),
+        .init(id: "default", title: String(localized: "Peach (default)")),
+        .init(id: "AppIcon-Ocean", title: String(localized: "Ocean")),
+        .init(id: "AppIcon-Forest", title: String(localized: "Forest")),
+        .init(id: "AppIcon-Grape", title: String(localized: "Grape")),
+        .init(id: "AppIcon-Sunset", title: String(localized: "Sunset")),
+        .init(id: "AppIcon-Graphite", title: String(localized: "Graphite")),
     ]
+}
+
+/// "Test ring in 1 minute": a real alarm through the same system path as the
+/// user's own, so they hear the actual volume and where it plays (speaker or
+/// AirPods) before trusting it overnight.
+private struct TestRingRow: View {
+    @Environment(AlarmStore.self) private var store
+    @Environment(PermissionManager.self) private var permissions
+    /// The default sound for new alarms (nil = system default).
+    let soundName: String?
+
+    @State private var starting = false
+    @State private var failed = false
+
+    var body: some View {
+        // Ticks so the button comes back once the test has rung.
+        TimelineView(.periodic(from: .now, by: 1)) { ctx in
+            VStack(alignment: .leading, spacing: 6) {
+                if let ring = store.testRing, ring.fireDate > ctx.date {
+                    HStack {
+                        TestRingLabel(systemImage: "alarm.waves.left.and.right") {
+                            Text("Test ring at \(TimeText.string(ring.fireDate))")
+                        }
+                        Spacer()
+                        Button("Cancel") { Task { await store.cancelTestRing() } }
+                    }
+                    Text("Lock your iPhone and listen: this is how your alarms ring.")
+                        .font(.footnote).foregroundStyle(.secondary)
+                } else {
+                    Button {
+                        Task {
+                            starting = true
+                            failed = !(await store.startTestRing(soundName: soundName))
+                            starting = false
+                        }
+                    } label: {
+                        TestRingLabel(systemImage: "alarm") { Text("Test ring in 1 minute") }
+                    }
+                    .disabled(starting || permissions.alarmKitState != .authorized)
+                    Text("Rings a real alarm with your default sound, so you can check the volume and whether it plays on the speaker or your headphones.")
+                        .font(.footnote).foregroundStyle(.secondary)
+                    if permissions.alarmKitState != .authorized {
+                        Text("To try a test ring, allow alarms in iOS Settings.")
+                            .font(.footnote).foregroundStyle(.orange)
+                    } else if failed {
+                        Text("Couldn't set the test ring. Try again in a moment.")
+                            .font(.footnote).foregroundStyle(.orange)
+                    }
+                }
+            }
+            // One control per row; the captions don't trigger it.
+            .buttonStyle(.borderless)
+        }
+    }
+}
+
+/// Icon and text side by side. A `Label` in a Form row puts its title in the
+/// list's icon column, which leaves a wide gap before the text here.
+private struct TestRingLabel<Title: View>: View {
+    let systemImage: String
+    @ViewBuilder let title: Title
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: systemImage).accessibilityHidden(true)
+            title
+        }
+    }
 }

@@ -77,8 +77,8 @@ final class NotificationActionHandler: NSObject, @preconcurrency UNUserNotificat
         // store.update already re-armed via the scheduler; report the new next.
         let next = Self.describe(alarm.nextOccurrence, calendar: calendar)
         banners.show(.skip,
-                     title: "Skipped \(Self.dayPhrase(day, calendar: calendar)) - still active",
-                     subtitle: "Next alarm: \(next)",
+                     title: Self.skippedTitle(day, calendar: calendar),
+                     subtitle: String(localized: "Next alarm: \(next)"),
                      alarmID: alarm.id,
                      undo: { [store] in await store.unskip(alarm, day: day) })
     }
@@ -93,7 +93,9 @@ final class NotificationActionHandler: NSObject, @preconcurrency UNUserNotificat
         for alarm in alarms { await store.ringAnyway(alarm, day: day) }
         let phrase = Self.dayPhrase(day, calendar: calendar)
         banners.show(.neutral,
-                     title: alarms.count == 1 ? "Will ring \(phrase)" : "\(alarms.count) alarms will ring \(phrase)",
+                     title: alarms.count == 1
+                        ? String(localized: "Will ring \(phrase)")
+                        : String(localized: "\(alarms.count) alarms will ring \(phrase)"),
                      subtitle: alarms.count == 1
                         ? Self.describe(day.date(hour: alarms[0].hour, minute: alarms[0].minute, in: calendar), calendar: calendar)
                         : nil,
@@ -108,15 +110,17 @@ final class NotificationActionHandler: NSObject, @preconcurrency UNUserNotificat
 
     /// "today" / "tomorrow" / weekday name for friendly, accurate copy.
     static func dayPhrase(_ day: DateOnly, calendar: Calendar) -> String {
-        guard let date = day.startOfDay(in: calendar) else { return "today" }
-        if calendar.isDateInToday(date) { return "today" }
-        if calendar.isDateInTomorrow(date) { return "tomorrow" }
-        let f = DateFormatter(); f.calendar = calendar; f.dateFormat = "EEEE"
-        return f.string(from: date)
+        guard let date = day.startOfDay(in: calendar) else { return String(localized: "today") }
+        return DayText.phrase(date, calendar: calendar)
+    }
+
+    /// The confirmation every skip surface shows: "Skipped today - still active".
+    static func skippedTitle(_ day: DateOnly, calendar: Calendar = .current) -> String {
+        String(localized: "Skipped \(dayPhrase(day, calendar: calendar)) - still active")
     }
 
     static func describe(_ date: Date?, calendar: Calendar) -> String {
-        guard let date else { return "No further alarms" }
+        guard let date else { return String(localized: "No further alarms") }
         let f = DateFormatter()
         f.calendar = calendar
         f.doesRelativeDateFormatting = true

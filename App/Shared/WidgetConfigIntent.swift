@@ -26,10 +26,8 @@ struct AlarmEntityQuery: EntityQuery {
     static func all() -> [AlarmEntity] {
         let ctx = ModelContext(SharedModelContainer.make())
         let items = (try? ctx.fetch(FetchDescriptor<AlarmItem>())) ?? []
-        let f = DateFormatter(); f.timeStyle = .short
         return items.map { item in
-            var comps = DateComponents(); comps.hour = item.hour; comps.minute = item.minute
-            let timeText = f.string(from: Calendar.current.date(from: comps) ?? .now)
+            let timeText = TimeText.string(hour: item.hour, minute: item.minute)
             return AlarmEntity(id: item.id, title: item.label.isEmpty ? timeText : "\(item.label) · \(timeText)")
         }
     }

@@ -26,11 +26,19 @@ final class AlarmStore {
     private var calendarQueryApplied = 0
     /// The calendar choice `calendarDayTitles` was read for.
     private var calendarDayTitlesChoice: Set<String>?
+    /// When the first heads-up that didn't fit under iOS's 64-notification
+    /// cap would have shown; nil when they all fit, or when it is still far
+    /// off (`HeadsUpPlanner.noteHorizon`). Drives the note in the alarm list,
+    /// so it follows the real count, not a number of alarms.
+    private(set) var headsUpsWaitFrom: Date?
+    /// The pending Test ring, if any (see `startTestRing`).
+    private(set) var testRing: TransientAlarms.Record?
 
     init(context: ModelContext, scheduler: AlarmScheduler) {
         self.context = context
         self.scheduler = scheduler
         self.autoSkipCalendarIDs = calendarAutoSkip.selectedCalendarIDs
+        self.testRing = TransientAlarms.records().first { $0.kind == .testRing && $0.fireDate > .now }
     }
 
     // MARK: - Reads
@@ -98,7 +106,13 @@ final class AlarmStore {
             await self.scheduler.reschedule(item, force: true, depth: self.currentArmDepth())
             self.save()
             // A copy brings its calendar skips along (`duplicate`): announce them too.
-            if item.autoSkipOnCalendarEvents { await self.calendarNotices.sync(items: self.allAlarms(), titles: self.calendarDayTitles) }
+            // Heads-ups first: they may hold every slot until an alarm uses the
+            // calendar, and iOS drops a notice added past its cap.
+            if item.autoSkipOnCalendarEvents {
+                await self.syncHeadsUps()
+                await self.calendarNotices.sync(items: self.allAlarms(), titles: self.calendarDayTitles)
+            }
+            await self.syncHeadsUps()
         }
     }
 
@@ -155,8 +169,11 @@ final class AlarmStore {
             // A new time, a Ring anyway, auto-skip switched off: the notices
             // must say what will actually happen.
             if hadCalendarSkip || item.autoSkipOnCalendarEvents {
+                // Auto-skip just switched on: make room for its notices first (see `create`).
+                if !hadCalendarSkip { await self.syncHeadsUps() }
                 await self.calendarNotices.sync(items: self.allAlarms(), titles: self.calendarDayTitles)
             }
+            await self.syncHeadsUps()
             return wasSnoozing && snoozeStopped
         }
     }
@@ -172,6 +189,8 @@ final class AlarmStore {
             self.save()
             // A shared notice may have listed this alarm: rebuild them without it.
             if hadCalendarSkip { await self.calendarNotices.sync(items: self.allAlarms(), titles: self.calendarDayTitles) }
+            // Its slots go to heads-ups that were waiting.
+            await self.syncHeadsUps()
         }
     }
 
@@ -193,6 +212,7 @@ final class AlarmStore {
             await self.scheduler.reschedule(item, force: true, depth: self.currentArmDepth())
             self.save()
             if item.autoSkipOnCalendarEvents { await self.calendarNotices.sync(items: self.allAlarms(), titles: self.calendarDayTitles) }
+            await self.syncHeadsUps()
         }
     }
 
@@ -200,7 +220,7 @@ final class AlarmStore {
         let copy = AlarmItem(
             hour: item.hour,
             minute: item.minute,
-            label: item.label.isEmpty ? "" : "\(item.label) copy",
+            label: item.label.isEmpty ? "" : String(localized: "\(item.label) copy"),
             isEnabled: item.isEnabled,
             mode: item.mode,
             repeatWeekdays: item.repeatWeekdays,
@@ -324,6 +344,36 @@ final class AlarmStore {
 
     func unpauseGroup(_ name: String, range: DateRange) async {
         for item in alarms(inGroup: name) { await unpause(item, range: range) }
+    }
+
+    // MARK: - Test ring
+
+    /// Arm a real alarm a minute from now, so the user hears the actual volume
+    /// and route (speaker or AirPods) before trusting it overnight. It belongs
+    /// to no alarm: the Next-alarm card, the widget and our Live Activity read
+    /// only alarm items, so they never show it. Returns false when the system
+    /// refused it.
+    func startTestRing(soundName: String?, now: Date = .now) async -> Bool {
+        if let pending = testRing, pending.fireDate > now { await cancelTestRing() }
+        let record = TransientAlarms.Record(fireDate: now.addingTimeInterval(60), kind: .testRing)
+        // Recorded before it's armed, so no orphan sweep (in any process) can
+        // see the alarm without its record.
+        TransientAlarms.add(record)
+        testRing = record
+        let armed = await scheduler.armTransient(id: record.id, at: record.fireDate,
+                                                 label: String(localized: "Test ring"), soundName: soundName)
+        if !armed {
+            TransientAlarms.remove(id: record.id)
+            if testRing == record { testRing = nil }
+        }
+        return armed
+    }
+
+    func cancelTestRing() async {
+        guard let record = testRing else { return }
+        testRing = nil
+        await scheduler.cancelTransient(id: record.id)
+        TransientAlarms.remove(id: record.id)
     }
 
     // MARK: - Serialization
@@ -515,6 +565,15 @@ final class AlarmStore {
         orphanDefaults?.set(raw, forKey: orphanSeenKey)
     }
 
+    /// Re-plan every alarm's heads-ups under iOS's 64-notification cap. Runs
+    /// last in a serialized op, after the calendar notices, on the saved items.
+    private func syncHeadsUps(_ items: [AlarmItem]? = nil) async {
+        let firstWaiting = await scheduler.syncHeadsUps(items ?? allAlarms())
+        // One that waits a week out is set by any visit before then: no note.
+        let waitFrom = firstWaiting.flatMap { $0.timeIntervalSinceNow < HeadsUpPlanner.noteHorizon ? $0 : nil }
+        if headsUpsWaitFrom != waitFrom { headsUpsWaitFrom = waitFrom }
+    }
+
     /// `calendarDays` nil: they were read for an older calendar choice, so the
     /// calendar skips and their notices are left as they are.
     private func refreshPass(liveAlarmIDs: Set<UUID>?, calendarDays: [DateOnly: [String]]?) async {
@@ -546,6 +605,8 @@ final class AlarmStore {
         // Ring anyway. Local notifications only, so it never feeds the AlarmKit
         // observer loop.
         if let calendarDays { await calendarNotices.sync(items: items, titles: calendarDays) }
+        // After the calendar notices, so the budget counts them as they are now.
+        await syncHeadsUps(items)
 
         // Second direction of reconciliation: cancel alarms the SYSTEM still holds
         // that no alarm legitimately wants. Runs AFTER the re-arm loop so the just-
@@ -582,6 +643,9 @@ final class AlarmStore {
                 legit.insert(AlarmKitManager.occurrenceID(item: item.id, date: date))
             }
         }
+        // One-off alarms (Test ring) belong to no item; any process may have
+        // armed one, and its record is written before the arm.
+        legit.formUnion(TransientAlarms.records(now: now).map(\.id))
         // Preserve everything we legitimately track PLUS everything alerting /
         // snoozing / paused right now (its occurrence may already have left the
         // tracked dates — this is the sole guard for a live ring).
@@ -658,10 +722,11 @@ final class AlarmStore {
             AlarmItem(hour: h, minute: m, label: label, isEnabled: true, mode: .recurring,
                       repeatWeekdays: days, preAlert: PreAlertSettings(isEnabled: true, minutesBefore: 15))
         }
-        context.insert(make(6, 30, "Wake up", Weekday.weekdays))
-        context.insert(make(7, 15, "Gym", [.monday, .wednesday, .friday]))
-        context.insert(make(8, 0, "Meds", Set(Weekday.allCases)))
-        context.insert(make(22, 30, "Wind down", Weekday.weekdays))
+        // Labels follow the app's language so localized screenshots match.
+        context.insert(make(6, 30, String(localized: "Wake up", comment: "Demo alarm label (screenshots)"), Weekday.weekdays))
+        context.insert(make(7, 15, String(localized: "Gym", comment: "Demo alarm label (screenshots)"), [.monday, .wednesday, .friday]))
+        context.insert(make(8, 0, String(localized: "Meds", comment: "Demo alarm label (screenshots)"), Set(Weekday.allCases)))
+        context.insert(make(22, 30, String(localized: "Wind down", comment: "Demo alarm label (screenshots)"), Weekday.weekdays))
         save()
     }
     #endif

@@ -15,7 +15,7 @@ struct PunctualActivityAttributes: ActivityAttributes {
         /// "Friday") so the Skip button never says "today" for a tomorrow alarm.
         var dayPhrase: String
 
-        init(fireDate: Date, label: String, skippedToday: Bool, dayPhrase: String = "today") {
+        init(fireDate: Date, label: String, skippedToday: Bool, dayPhrase: String = String(localized: "today")) {
             self.fireDate = fireDate
             self.label = label
             self.skippedToday = skippedToday
@@ -31,7 +31,7 @@ struct PunctualActivityAttributes: ActivityAttributes {
             fireDate = try c.decode(Date.self, forKey: .fireDate)
             label = try c.decode(String.self, forKey: .label)
             skippedToday = try c.decode(Bool.self, forKey: .skippedToday)
-            dayPhrase = try c.decodeIfPresent(String.self, forKey: .dayPhrase) ?? "today"
+            dayPhrase = try c.decodeIfPresent(String.self, forKey: .dayPhrase) ?? String(localized: "today")
         }
     }
 

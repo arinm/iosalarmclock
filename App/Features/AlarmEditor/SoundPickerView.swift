@@ -17,7 +17,7 @@ struct SoundPickerView: View {
         NavigationStack {
             List {
                 Section {
-                    row(title: "Default", file: nil, icon: "bell")
+                    row(title: String(localized: "Default"), file: nil, icon: "bell")
                 }
                 Section {
                     if sounds.sounds.isEmpty {
@@ -80,6 +80,9 @@ struct SoundPickerView: View {
                     Image(systemName: "checkmark").foregroundStyle(Theme.accent).fontWeight(.semibold)
                 }
             }
+            // A plain button only takes taps on what it draws; the whole row
+            // should pick the sound, the gap before the checkmark included.
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }

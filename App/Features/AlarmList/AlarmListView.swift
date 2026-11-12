@@ -29,8 +29,8 @@ struct AlarmListView: View {
         guard let day = await store.skipNextOccurrence(alarm) else { return }
         let next = NotificationActionHandler.describe(alarm.nextOccurrence, calendar: .current)
         banners.show(.skip,
-                     title: "Skipped \(NotificationActionHandler.dayPhrase(day, calendar: .current)) - still active",
-                     subtitle: "Next alarm: \(next)",
+                     title: NotificationActionHandler.skippedTitle(day),
+                     subtitle: String(localized: "Next alarm: \(next)"),
                      alarmID: alarm.id,
                      undo: { [store] in await store.unskip(alarm, day: day) })
         UINotificationFeedbackGenerator().notificationOccurred(.success)
@@ -146,7 +146,7 @@ struct AlarmListView: View {
                                     Task {
                                         await store.setEnabled(alarm, !alarm.isEnabled)
                                         UIAccessibility.post(notification: .announcement,
-                                                             argument: alarm.isEnabled ? "Alarm on" : "Alarm off")
+                                                             argument: alarm.isEnabled ? String(localized: "Alarm on") : String(localized: "Alarm off"))
                                     }
                                 }
                                 .accessibilityAction(named: "Details") { detail = alarm }
@@ -167,6 +167,14 @@ struct AlarmListView: View {
                                 Task { await store.delete(alarm) }
                             } label: { Label("Delete", systemImage: "trash") }
                         }
+                    }
+
+                    // Shown on the real count: only when some heads-ups really
+                    // didn't fit under iOS's cap this pass and the first is
+                    // near. With notifications off there are none to wait for.
+                    if let waitFrom = store.headsUpsWaitFrom, permissions.canPreAlert {
+                        HeadsUpBudgetNote(waitFrom: waitFrom)
+                            .listRowStyleClear()
                     }
                 }
                 .listStyle(.plain)
@@ -255,6 +263,40 @@ struct AlarmListView: View {
         }
         Divider()
         Button(role: .destructive) { Task { await store.delete(alarm) } } label: { Label("Delete", systemImage: "trash") }
+    }
+}
+
+/// Why some heads-ups aren't set yet: iOS holds 64 pending notifications per
+/// app, and an install with many alarms wants more. Calm on purpose: nothing
+/// is wrong with the alarms, and opening the app (which the user is doing)
+/// is what adds the rest.
+private struct HeadsUpBudgetNote: View {
+    let waitFrom: Date
+
+    private var day: String {
+        let calendar = Calendar.current
+        if calendar.isDateInToday(waitFrom) || calendar.isDateInTomorrow(waitFrom) { return DayText.phrase(waitFrom) }
+        return DayText.short(waitFrom)
+    }
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: "bell.badge")
+                .foregroundStyle(.secondary)
+                .font(.title3)
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Some heads-ups wait for your next visit").font(.subheadline.weight(.semibold))
+                Text("iPhone holds up to 64 scheduled notifications per app, and your alarms need more. Heads-ups from \(day) onward are added when you open Punctual. The alarms themselves aren't affected.")
+                    .font(.caption).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: Theme.cardRadius, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .padding(.top, 4)
     }
 }
 
@@ -387,7 +429,7 @@ private struct StopSnoozeA11y: ViewModifier {
                     // one-time → "No further alarms" (never claim "still active").
                     let next = NotificationActionHandler.describe(alarm.nextOccurrence, calendar: .current)
                     UIAccessibility.post(notification: .announcement,
-                                         argument: "Snooze stopped. Next alarm: \(next)")
+                                         argument: String(localized: "Snooze stopped. Next alarm: \(next)"))
                 }
             }
         } else {
@@ -445,8 +487,8 @@ struct GroupPauseSheet: View {
                         Task {
                             await store.pauseGroup(groupName, range: range)
                             banners.show(.paused,
-                                         title: "Paused “\(groupName)” until \(PauseRangeSheet.dateFmt.string(from: e))",
-                                         subtitle: "Every alarm in the group - then resumes automatically",
+                                         title: String(localized: "Paused “\(groupName)” until \(PauseRangeSheet.dateFmt.string(from: e))"),
+                                         subtitle: String(localized: "Every alarm in the group - then resumes automatically"),
                                          alarmID: anchor,
                                          undo: { [store] in await store.unpauseGroup(groupName, range: range) })
                         }
