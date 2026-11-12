@@ -64,10 +64,42 @@ inset is 74%.
    ```
    The `NOT-FOR-STORE-iap-review-Paywall` shot is only for the In-App Purchase
    review screenshot in App Store Connect. It never goes in the store set.
+   - **Japanese UI:** prefix the test with `TEST_RUNNER_SCREENSHOT_LANG=ja` (ja/ja_JP)
+     and use `<name>` = `iphone-17-pro-max-ja`. The exported files are UUIDs; rename
+     each one from `suggestedHumanReadableName` in `png/manifest.json`.
+   - The simulator can't arm AlarmKit alarms, so `--app-store-screenshots` hides
+     both the permission banner and the per-card "Couldn't schedule" warning.
+     The capture uses the real clock: in the evening the card button reads
+     "Skip tomorrow" (明日をスキップ).
 2. **Frame.** The designed marketing frames ("Slice N.png") are exported at
    1290×2796, the 6.9" slot. Their captions are in `app-store-listing.md`.
 3. **6.5" slot.** `./to-65-inch.sh ~/Downloads/Slice*.png` resamples them to
    1284×2778 into `artifacts/6.5-inch/`. It never stretches the image.
+
+4. **iPhone Duo slot and other languages.** `motion/duo/duo.py` builds simple
+   frames (caption on top, the real capture in a phone frame, the store colours)
+   from the captures: `iphone-17-pro-max-v2` for en, `iphone-17-pro-max-ja`
+   (Japanese UI, since 1.0.3) for ja:
+   ```sh
+   python3 artifacts/motion/duo/duo.py --lang en --size duo   # 1398x2034 -> app-store-screenshots/iphone-duo/en
+   python3 artifacts/motion/duo/duo.py --lang ja --size 69    # 1320x2868 -> app-store-screenshots/iphone-69/ja
+   python3 artifacts/motion/duo/duo.py --lang ja --only 2     # re-render one frame (as -vN)
+   ```
+   The captions live in the script's `FRAMES` table. The ja texts and the full ja
+   listing are in `app-store-listing-ja.md`. The Settings capture is left out on
+   purpose, because it shows "Alarms (AlarmKit) Off".
+
+5. **Japanese copy of the designed Slices (since 1.0.3).** `motion/ja-slices/` rebuilds the
+   8 English Figma Slices (the live en set, from `~/Downloads/500+ App store screenshot
+   templates ... (10)/(11)/(12)`) in Japanese: `find.py` locates each en capture in the
+   panorama (SIFT), `phones.py` warps the ja captures onto the screens (keeps the island),
+   `text.py` + `erase.py` remove the en captions, `ja_text.py` draws the ja captions
+   (Hiragino W5/W3) and writes `app-store-screenshots/iphone-69/ja-slices/` (1290x2796).
+   The 6.5" copies are in `app-store-screenshots/6.5-inch/ja/`. ASC's current iPhone slot
+   ("iPhone with Dynamic Island (medium display)") takes only 1206x2622 or 1179x2556: upload
+   `app-store-screenshots/iphone-63/ja-slices/` (1206x2622, numbered in the live en order
+   1,2,3,7,8,4,6,5). Run them in that order
+   from one working folder. These are the ja store frames; the `duo.py` ja set is not.
 
 ## App icon and site logo
 

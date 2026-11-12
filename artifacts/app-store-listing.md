@@ -78,6 +78,11 @@ Support & FAQ: https://punctualalarm.com/support.html
 
 Questions? contact@arinitsolutions.com · punctualalarm.com
 
+## What's New (v1.0.3)
+- Punctual is now available in Japanese.
+- Dates follow your region's format.
+- Small fixes and polish.
+
 ## What's New (v1.0.2)
 - Calendar auto-skip now uses only the calendars you choose, and shows exactly which days it will skip. Birthdays never count.
 - Before a calendar day off, you get one quiet notice (one per holiday or vacation, not one per alarm) with Ring anyway.
