@@ -7,7 +7,7 @@ Character limits: name 30 · subtitle 30 · promo 170 · keywords 100 · descrip
 > once, so a repeat is wasted characters. The subtitle used to carry the tagline
 > "Skip today, keep tomorrow", which reads beautifully and ranks for nothing;
 > branding is the name's and the icon's job. Ranking for "alarm" itself is not
-> reachable without thousands of ratings - the play is long-tail (shift, holiday,
+> reachable without thousands of ratings - the play is long-tail (holiday, work day,
 > weekday, vacation). Changing any of these three requires a NEW app version
 > submitted for review; only Promotional Text is editable in place.
 
@@ -15,7 +15,13 @@ Character limits: name 30 · subtitle 30 · promo 170 · keywords 100 · descrip
 Punctual: Smart Alarm Clock
 
 ## Subtitle (29/30)
-Skip a day, shifts & holidays
+Skip holidays, keep work days
+
+<!-- 1.0.5 (16 Nov 2026), was "Skip a day, shifts & holidays". App Store autocomplete shows no
+     searches that start with "skip", while "work alarm" is searched and Punctual did not rank
+     for it. Every US app with "shifts" in its subtitle sells rotation patterns (nurses, rotas,
+     2-2-3), which Punctual does not have and the description never mentions, so "shift" stays
+     only as a keyword. -->
 
 ## Promotional Text (169/170 - editable anytime without review)
 See a live countdown to every alarm, get a heads-up notification before it rings, and skip just today with one tap - tomorrow stays armed. Built on Apple's AlarmKit.
@@ -26,8 +32,12 @@ See a live countdown to every alarm, get a heads-up notification before it rings
      subtitle where a reviewer reads it. Not worth a fourth rejection. -->
 
 
-## Keywords (95/100)
-wake,up,countdown,snooze,vacation,work,weekday,morning,repeat,timer,sleep,bedtime,reminder,ring
+## Keywords (99/100)
+wake,up,countdown,snooze,vacation,shift,weekday,morning,calendar,widget,sleep,silent,reminder,night
+
+<!-- 1.0.5: work moved to the subtitle, so shift takes its slot; repeat → calendar (calendar
+     auto-skip), timer → widget (Punctual has a widget and no timer), bedtime → silent (rings
+     through Silent mode), ring → night. -->
 
 ## Description
 Punctual is the smart alarm Apple's Clock never became. See exactly when your alarm rings, get a heads-up before it does, and skip just one day - tomorrow stays armed.

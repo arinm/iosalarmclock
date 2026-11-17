@@ -14,16 +14,22 @@ Counts below were measured with Python `len()`, which is how App Store Connect c
 ## App Name (22/30)
 Punctual - 目覚まし時計・アラーム
 
-## Subtitle (21/30)
-祝日・休みの日だけスキップ。シフト勤務にも
+## Subtitle (24/30)
+祝日・休みの日だけスキップ。仕事の日はいつも通り
+
+<!-- 1.0.5 (16 Nov 2026), was 「祝日・休みの日だけスキップ。シフト勤務にも」. Same change as en-US: holidays and days off
+     are skipped, workdays ring as usual, and no promise of shift work (Punctual has no rotations). 「アラーム 仕事」 is a
+     real App Store search (autocomplete); 仕事の日 also reads better than 平日, which can clash with a weekday holiday. -->
 
 ## Promotional Text (110/170)
 アプリが日本語表示に対応しました。アラームが鳴るまでの残り時間をいつでも表示。鳴る前に通知でお知らせし、休みの日はワンタップで今日だけスキップ。明日のアラームはそのまま有効です。AppleのAlarmKitで動作します。
 
-## Keywords (100/100)
-起床,朝,振替休日,連休,休日,平日,夜勤,交代制,旅行,休暇,スヌーズ,カウントダウン,通知,リマインダー,寝坊,二度寝,目覚ましアプリ,カレンダー,ゴールデンウィーク,土日,有給,早起き,タイマー
+## Keywords (99/100)
+起床,朝,振替休日,連休,休日,平日,シフト,旅行,休暇,スヌーズ,カウントダウン,通知,リマインダー,寝坊,二度寝,目覚ましアプリ,カレンダー,ゴールデンウィーク,土日,有給,早起き,マナーモード
 
-<!-- None of these repeat a word from the name or subtitle (目覚まし時計, アラーム, 祝日, 休み, スキップ, シフト). -->
+<!-- None of these repeat a word from the name or subtitle (目覚まし時計, アラーム, 祝日, 休み, スキップ, 仕事, いつも通り).
+     1.0.5: 夜勤 + 交代制 → シフト (one shift word; 「シフト アラーム」 is searched), タイマー → マナーモード (Punctual has no
+     timer; it rings in silent mode, and 「マナーモード アラーム」 is searched). -->
 
 ## Description
 Punctualは、アラームが「いつ鳴るか」がひと目でわかり、鳴る前にお知らせしてくれる目覚ましアプリです。休みの日は今日だけスキップ。明日のアラームはそのまま有効です。

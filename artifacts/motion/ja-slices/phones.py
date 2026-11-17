@@ -1,12 +1,14 @@
-import numpy as np, cv2, json
+import numpy as np, cv2, json, os
 from PIL import Image
 R="/Users/test/Project/alarm/artifacts/app-store-screenshots/"
+L=os.environ.get('SLICE_LANG','ja')   # store language; es-ES uses the es captures
+CAP={'es-ES':'es'}.get(L,L)
 M=json.load(open('matches.json'))
 pano=np.asarray(Image.open('pano-en.png').convert('RGB')).astype(np.float32)
 H_,W_=pano.shape[:2]
 def Hrect(dst):
     return cv2.getPerspectiveTransform(np.float32([[0,0],[1320,0],[1320,2868],[0,2868]]),np.float32(dst))
-jobs=[ # en capture, H source, ja capture
+jobs=[ # en capture, H source, localized capture
  ("iphone-17-pro-max-v2/png/01-Home.png",None,"01-Home.png"),
  ("iphone-17-pro-max-v2/png/02-Editor.png",None,"02-Editor.png"),
  ("iphone-17-pro-max-v2/png/03-Settings.png",None,"03-Settings.png"),
@@ -16,9 +18,9 @@ jobs=[ # en capture, H source, ja capture
 out=pano.copy()
 import sys
 RADIUS=int(sys.argv[1]) if len(sys.argv)>1 else 180
-for en,dst,ja in jobs:
+for en,dst,cap in jobs:
     H=np.array(M[en]['H']) if en else Hrect(dst)
-    jim=np.asarray(Image.open(R+"iphone-17-pro-max-ja/png/"+ja).convert('RGB')).astype(np.float32)
+    jim=np.asarray(Image.open(R+f"iphone-17-pro-max-{CAP}/png/"+cap).convert('RGB')).astype(np.float32)
     wj=cv2.warpPerspective(jim,H,(W_,H_),flags=cv2.INTER_LANCZOS4)
     rr=np.zeros((2868,1320),np.uint8);r=RADIUS
     cv2.rectangle(rr,(r,0),(1320-r,2868),1,-1);cv2.rectangle(rr,(0,r),(1320,2868-r),1,-1)
@@ -39,9 +41,9 @@ for en,dst,ja in jobs:
         vis=vis&(1-ov)
     else:
         vis=np.roll(last[0],1290,axis=1)&(1-np.roll(last[1],1290,axis=1))   # same device frame as the previous phone, one slice to the right
-    np.save(ja+'.mask.npy',vis)
+    np.save(cap+'.mask.npy',vis)
     a=cv2.GaussianBlur(vis.astype(np.float32),(3,3),0)[...,None]
     out=out*(1-a)+wj*a
-    ys,xs=np.nonzero(vis);print(ja,vis.sum(),xs.min(),xs.max(),ys.min(),ys.max())
-Image.fromarray(out.clip(0,255).astype(np.uint8)).save('pano-ja-phones.png')
-Image.fromarray(out.clip(0,255).astype(np.uint8)).resize((W_//4,H_//4)).save('pano-ja-phones-small.png')
+    ys,xs=np.nonzero(vis);print(cap,vis.sum(),xs.min(),xs.max(),ys.min(),ys.max())
+Image.fromarray(out.clip(0,255).astype(np.uint8)).save(f'pano-{L}-phones.png')
+Image.fromarray(out.clip(0,255).astype(np.uint8)).resize((W_//4,H_//4)).save(f'pano-{L}-phones-small.png')

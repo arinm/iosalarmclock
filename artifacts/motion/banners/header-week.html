@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Punctual — App Store header 21:9 · the skipped day</title>
+<link rel="stylesheet" href="../reels/lib/base.css"><link rel="stylesheet" href="common.css">
+<style>
+#track{position:absolute;left:0;top:0;width:1920px;height:823px;overflow:visible}
+#days{position:absolute;left:0;top:0}
+#days .day{position:absolute;opacity:1;margin:0}
+#head{position:absolute;left:0;top:0;width:1920px}
+#head .l{font-size:52px}
+html[lang=ja] #head .l{font-size:46px;line-height:1.22}
+html[lang=ja] #days .day{font-family:"Hiragino Sans",-apple-system,sans-serif}
+#sage{position:absolute;left:0;top:0;width:700px;height:700px;border-radius:50%;background:radial-gradient(closest-side,rgba(143,199,160,.20),rgba(143,199,160,0) 70%)}
+</style></head>
+<body><div id="stage"><div id="world" class="layer">
+  <div id="sage"></div>
+  <svg id="track"></svg>
+  <div id="days"></div>
+  <div id="head" class="head"></div>
+</div></div>
+<script>window.CLIP={w:1920,h:823,fps:60,dur:1};</script>
+<script src="../reels/lib/engine.js"></script><script src="common.js"></script>
+<script>
+/* Concept B, "the skipped day": the days run along the rim of a huge dial.
+   Today is skipped (sage, struck through), tomorrow is armed (peach), the rest
+   carry on. Tagline + today/tomorrow sit in Apple's centred safe box
+   (823x330.5 CSS px); the rest of the rim is what wide screens add. */
+const SZ=92, STEP=128, R=2900, CX=960, N=8;      // day size, spacing on the rim, rim radius
+const TODAY=3;                                    // Wednesday (0 = Sunday)
+const WD=LANG==='ja'?'日月火水木金土':'SMTWTFS';      // the app's very short weekday symbols
+let G={};
+function init(){
+  $('head').innerHTML=TAG.map(l=>`<div class="l">${l}</div>`).join('');
+  G.days=[];
+  for(let i=-N;i<=N+1;i++){
+    const wd=((TODAY+i)%7+7)%7, on=wd>=1&&wd<=5;
+    const d=el('div','day '+(on?'on':'off'),`<span>${WD[wd]}</span><svg viewBox="0 0 104 104"><line x1="28" y1="78" x2="76" y2="26" stroke="#8FC7A0" stroke-width="7" stroke-linecap="round" pathLength="100" stroke-dasharray="100 200" stroke-dashoffset="100"/></svg><i class="ring2"></i><i class="ring2"></i>`,$('days'));
+    d.style.width=d.style.height=SZ+'px'; d.style.fontSize=LANG==='ja'?'31px':'34px';
+    G.days.push({d,i});
+  }
+  safeBox(960-411.5,411.5-165.25,823,330.5);
+}
+function render(t){
+  const headH=$('head').offsetHeight, gap=46, block=headH+gap+SZ, top=411.5-block/2;
+  $('head').style.top=top+'px';
+  const rimY=top+headH+gap+SZ/2, cyR=rimY+R;          // rim peak sits under the tagline
+  const T=$('track'); T.innerHTML='';
+  // The dial's rim, fading out toward the edges.
+  T.innerHTML=`<defs><linearGradient id="fade" x1="0" x2="1"><stop offset="0" stop-color="#FFA885" stop-opacity="0"/><stop offset=".5" stop-color="#FFA885" stop-opacity=".28"/><stop offset="1" stop-color="#FFA885" stop-opacity="0"/></linearGradient></defs>`;
+  const span=0.42;
+  sv('path',{d:`M${CX-R*Math.sin(span)} ${cyR-R*Math.cos(span)} A ${R} ${R} 0 0 1 ${CX+R*Math.sin(span)} ${cyR-R*Math.cos(span)}`,fill:'none',stroke:'url(#fade)','stroke-width':2},T);
+  for(const {d,i} of G.days){
+    const a=((i-0.5)*STEP)/R, x=CX+R*Math.sin(a), y=cyR-R*Math.cos(a);
+    const far=Math.abs(x-CX)/960, o=clamp(1-Math.pow(far,1.5)*1.05), s=1-0.16*far;
+    d.style.left=(x-SZ/2)+'px'; d.style.top=(y-SZ/2)+'px';
+    tf(d,`rotate(${(a*180/Math.PI).toFixed(2)}deg) scale(${s.toFixed(3)})`); op(d,o);
+    if(i===0) daySkip(d,1);
+    if(i===1) dayArm(d,1,0.43,0.3);    // one ring, just leaving the day
+    if(i===0) { const g=$('sage'); tf(g,`translate(${x-350}px,${y-350}px)`); }
+    if(i===1) envGlow(x,y,.85,.42);
+  }
+  ENV.dust.draw(4);
+}
+boot({init,render});
+</script>
+</body></html>

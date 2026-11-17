@@ -94,12 +94,35 @@ inset is 74%.
    templates ... (10)/(11)/(12)`) in Japanese: `find.py` locates each en capture in the
    panorama (SIFT), `phones.py` warps the ja captures onto the screens (keeps the island),
    `text.py` + `erase.py` remove the en captions, `ja_text.py` draws the ja captions
-   (Hiragino W5/W3) and writes `app-store-screenshots/iphone-69/ja-slices/` (1290x2796).
+   (Hiragino W5/W3) and writes `app-store-screenshots/iphone-69/ja-slices/` (1290x2796; since 16 Nov
+   2026 those live in `by-country/ja Japanese/1290x2796/`, so move a new render there).
    The 6.5" copies are in `app-store-screenshots/6.5-inch/ja/`. ASC's current iPhone slot
    ("iPhone with Dynamic Island (medium display)") takes only 1206x2622 or 1179x2556: upload
-   `app-store-screenshots/iphone-63/ja-slices/` (1206x2622, numbered in the live en order
+   `app-store-screenshots/by-country/ja Japanese/` (1206x2622, numbered in the live en order
    1,2,3,7,8,4,6,5). Run them in that order
    from one working folder. These are the ja store frames; the `duo.py` ja set is not.
+
+6. **Latin-script copies of the Slices (1.0.5: de, fr, es-ES, es-MX, pt-BR).** Same folder,
+   same order, with `SLICE_LANG=<lang>` on `phones.py`, `erase.py` and `latin_text.py`
+   (`find.py` and `text.py` run once, they don't depend on the language). The captures come
+   from `app-store-screenshots/iphone-17-pro-max-<lang>/png/` (ScreenshotTests with
+   `TEST_RUNNER_SCREENSHOT_LANG=<lang>`); es-ES uses the `es` captures, es-MX has its own
+   (a.m./p.m., "Configuración"). `latin_text.py` draws the captions as Figma did: DM Sans
+   Medium (variable font, wght 500, opsz 14), titles 104px (slice 1: 140px), subtitles 64px,
+   line height 100%, white, rendered in Chromium (Playwright) for the kerning. The font goes
+   in `motion/ja-slices/fonts/` (gitignored; the script prints the Google Fonts URL, OFL).
+   The captions are in its `C` table. A title or subtitle wider than 1060px shrinks for that
+   slice, and the script warns below ~90%: break the line differently instead. Self-test:
+   `SLICE_LANG=en` must give back the live en Slices (`ln -s pano-en.png pano-en-phones.png`
+   first). `latin_text.py save` writes the upload set into `by-country/<lang ...>/` (1206x2622,
+   numbered 1,2,3,7,8,4,6,5) and the 1290x2796 copies into its `1290x2796/`. It never
+   overwrites: the earlier version moves to `old/` and the new one gets -v2, -v3…
+
+**Upload folders (since 16 Nov 2026).** `app-store-screenshots/by-country/<code> <ASC language>/`
+(e.g. `es-MX Spanish (Mexico)`) holds exactly what goes into App Store Connect for that
+localization: the 8 screenshots, numbered 01–08 in upload order, and the header banner.
+`1290x2796/` has the larger copies (not uploaded) and `old/` the superseded versions. Spain and
+Mexico are separate folders with the same header image.
 
 ## App icon and site logo
 
@@ -229,6 +252,35 @@ python3 banner.py header.html out/header-21x9-3840x1646.png 2      # @2x, opaque
 python3 banner.py search.html out/search-3x2-3840x2560.png 2
 python3 banner.py header.html /tmp/qa.png 1 99 safe                 # QA: draws the safe box
 ```
+
+The localized headers (12 Nov 2026) are two scenes that read `?lang=`:
+`header-week.html` ("the skipped day": the week on a dial's rim, today struck
+through in sage, tomorrow armed in peach) and `header-mark.html` (the mark with
+sound waves). `BANNER_LANG=ja` sets the language: the tagline (`TAG` in
+`common.js`), Hiragino for the text, and kanji weekdays (日月火…).
+
+The tagline is "Skip today before it rings. / Tomorrow still rings." (ja:
+鳴る前に、今日だけスキップ / 明日はいつも通り鳴る). The earlier "Skip today. Keep
+tomorrow." read as Stop, which every alarm already has. The banner has to say
+that the skip comes before the ring, and that tomorrow still rings. "Day off? Skip
+just today." was tried on 16 Nov 2026 and dropped: a day off sounds like the repeat
+days every alarm already has, while "before it rings" names the one-time skip ahead
+of time. Line 2 says "as usual" in every translation, because "keeps ringing" reads
+as ringing non-stop.
+
+```sh
+python3 banner.py header-week.html out/header-week-en-3840x1646.png 2
+BANNER_LANG=ja python3 banner.py header-week.html out/header-week-ja-3840x1646.png 2
+```
+
+A new language needs a `TAG` entry in `common.js`. Check both lines against
+the safe box with the `safe` QA render (52px for en, 46–48px for ja).
+
+Since 1.0.5 (16 Nov 2026) `TAG` also has de, fr, es and pt-BR, rendered with
+`header-mark.html`; es-ES and es-MX share the `es` header. The final header of each
+localization goes into its `app-store-screenshots/by-country/` folder (the one it replaces
+moves to `old/` there). At 52px the de and fr first lines run past the safe box, so
+`header-mark.html` sets 48px for de and 46px for fr (`html[lang=de] #head .l`).
 
 | Slot | Size | Template safe box (centred) |
 |---|---|---|

@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Punctual — App Store header 21:9 · the mark</title>
+<link rel="stylesheet" href="../reels/lib/base.css"><link rel="stylesheet" href="common.css">
+<style>
+#waves{position:absolute;left:0;top:0;width:1920px;height:823px;overflow:visible}
+#mk{position:absolute;left:0;top:0;width:280px;height:280px;overflow:visible;filter:drop-shadow(0 0 16px rgba(255,140,100,.55))}
+#head{position:absolute;left:0;top:0;width:1920px}
+#head .l{font-size:52px}
+html[lang=ja] #head .l{font-size:48px;line-height:1.22}
+html[lang=de] #head .l{font-size:48px}
+html[lang=fr] #head .l{font-size:46px}
+</style></head>
+<body><div id="stage"><div id="world" class="layer">
+  <svg id="waves"></svg>
+  <svg id="mk" viewBox="0 0 1024 1024"></svg>
+  <div id="head" class="head"></div>
+</div></div>
+<script>window.CLIP={w:1920,h:823,fps:60,dur:1};</script>
+<script src="../reels/lib/engine.js"></script><script src="common.js"></script>
+<script>
+/* Concept A, "the mark": the dial rings in the middle, its sound arcs carry on
+   out to both edges. The mark and the tagline sit in Apple's centred safe box
+   (1646x661 px @2x = 823x330.5 CSS px); the waves are what wide screens add. */
+const S=280, CX=960;            // mark size; dial centre is (512,556) of 1024
+let G={};
+function init(){
+  G.M=buildMark($('mk')); drawMark(G.M,99);
+  $('head').innerHTML=TAG.map(l=>`<div class="l">${l}</div>`).join('');
+  safeBox(960-411.5,411.5-165.25,823,330.5);
+}
+function render(t){
+  const markTop=262/1024*S, markH=(827-262)/1024*S, gap=22, textH=$('head').offsetHeight;
+  const top=411.5-(markH+gap+textH)/2;               // centre the group in the safe box
+  const svgY=top-markTop, cy=svgY+556/1024*S;
+  $('mk').style.left=(CX-S/2)+'px'; $('mk').style.top=svgY+'px';
+  $('head').style.top=(top+markH+gap)+'px';
+  // Sound waves: arcs about the dial centre, wider and fainter toward the edges.
+  const W=$('waves'); W.innerHTML='';
+  for(let k=0;k<8;k++){
+    const R=205*Math.pow(1.36,k), half=(10+1.1*k)*Math.PI/180;
+    const a=Math.max(0.06,0.5*Math.pow(0.78,k)), w=Math.max(2.2,5.5-0.45*k);
+    for(const dir of [-1,1]){
+      const x0=CX+dir*R*Math.cos(half), y0=cy-R*Math.sin(half), y1=cy+R*Math.sin(half);
+      sv('path',{d:`M${x0.toFixed(1)} ${y0.toFixed(1)} A ${R.toFixed(1)} ${R.toFixed(1)} 0 0 ${dir>0?1:0} ${x0.toFixed(1)} ${y1.toFixed(1)}`,
+        fill:'none',stroke:'#FFA885','stroke-width':w,'stroke-linecap':'round',opacity:a.toFixed(3)},W);
+    }
+  }
+  envGlow(CX,cy+20,.95,.62); ENV.dust.draw(4);
+}
+boot({init,render});
+</script>
+</body></html>

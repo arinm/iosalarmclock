@@ -4,3 +4,4 @@
 #safe{position:absolute;display:none;border:3px dashed #3cf;z-index:99}
 body.showsafe #safe{display:block}
 .head .l{font-weight:800;letter-spacing:-.045em;line-height:1.04;white-space:nowrap;text-align:center}
+html[lang=ja] .head .l{font-family:"Hiragino Sans",-apple-system,sans-serif;font-weight:700;letter-spacing:.02em}
