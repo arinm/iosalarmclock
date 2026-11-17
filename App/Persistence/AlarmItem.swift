@@ -25,6 +25,9 @@ final class AlarmItem {
     var groupName: String = ""
     /// Pro: auto-skip on days that have an all-day calendar event (holidays/OOO).
     var autoSkipOnCalendarEvents: Bool = false
+    /// Pro: "Are you up?" — after the final Stop, a quiet check-in at +5 min
+    /// and one more ring at +7 min unless the user taps I'm up (see WakeCheck).
+    var wakeCheckEnabled: Bool = false
 
     // Snooze
     var snoozeEnabled: Bool

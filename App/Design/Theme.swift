@@ -89,25 +89,26 @@ enum StatusPresenter {
         case .off:
             // OFF is the most consequential state — give it a clear, distinct chip
             // (not an empty pill) so it can't be mistaken for "skipped".
-            return (String(localized: "Off - won't ring"), Color.secondary.opacity(0.14), Theme.offFg)
+            return (String(localized: "Off - won't ring", bundle: AppLanguage.bundle), Color.secondary.opacity(0.14), Theme.offFg)
         case .completed:
-            return (String(localized: "Completed"), Color.secondary.opacity(0.10), Theme.offFg)
+            return (String(localized: "Completed", bundle: AppLanguage.bundle), Color.secondary.opacity(0.10), Theme.offFg)
         case .noUpcoming:
-            return (String(localized: "No upcoming alarm"), Color.secondary.opacity(0.10), Theme.offFg)
+            return (String(localized: "No upcoming alarm", bundle: AppLanguage.bundle), Color.secondary.opacity(0.10), Theme.offFg)
         case .scheduled(let next):
             // Subtle neutral fill so every card's status line shares one shape.
             return (CountdownText.ringsIn(next, from: now), Color.primary.opacity(0.05), .primary)
         case .skippedToday(let next):
-            return (String(localized: "Skipped today · still active - next \(Self.shortNext(next))"), Theme.skipTint, Theme.skipFg)
+            return (String(localized: "Skipped today · still active - next \(Self.shortNext(next))", bundle: AppLanguage.bundle), Theme.skipTint, Theme.skipFg)
         case .paused(let until, let next):
-            let text = next.map { String(localized: "Paused until \(Self.dayLabel(until)) - next \(Self.shortNext($0))") }
-                ?? String(localized: "Paused until \(Self.dayLabel(until))")
+            let text = next.map { String(localized: "Paused until \(Self.dayLabel(until)) - next \(Self.shortNext($0))", bundle: AppLanguage.bundle) }
+                ?? String(localized: "Paused until \(Self.dayLabel(until))", bundle: AppLanguage.bundle)
             return (text, Theme.pauseTint, Theme.pauseFg)
         }
     }
 
     static func shortNext(_ date: Date) -> String {
         let f = DateFormatter()
+        f.locale = AppLanguage.locale
         f.doesRelativeDateFormatting = true
         f.dateStyle = .medium
         f.timeStyle = .short

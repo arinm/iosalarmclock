@@ -25,7 +25,10 @@ import AlarmKit
 struct AlarmKitLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: AlarmAttributes<PunctualMetadata>.self) { context in
+            // Words follow a language picked in the app (see AppLanguage),
+            // here and in each island region that shows any.
             AlarmKitLockScreenView(context: context)
+                .environment(\.locale, AppLanguage.locale)
                 .activityBackgroundTint(Color.black.opacity(0.35))
                 .activitySystemActionForegroundColor(.white)
         } dynamicIsland: { context in
@@ -34,11 +37,13 @@ struct AlarmKitLiveActivity: Widget {
                     Label("Alarm", systemImage: "alarm.fill")
                         .font(.caption)
                         .foregroundStyle(context.attributes.tintColor)
+                        .environment(\.locale, AppLanguage.locale)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
                     alarmKitStatus(context)
                         .font(.system(.title3, design: .rounded).weight(.bold))
                         .monospacedDigit()
+                        .environment(\.locale, AppLanguage.locale)
                 }
                 DynamicIslandExpandedRegion(.center) {
                     Text(alarmKitTitle(context))
@@ -50,6 +55,7 @@ struct AlarmKitLiveActivity: Widget {
                 Image(systemName: "alarm.fill").foregroundStyle(context.attributes.tintColor)
             } compactTrailing: {
                 alarmKitStatus(context).monospacedDigit().frame(maxWidth: 56)
+                    .environment(\.locale, AppLanguage.locale)
             } minimal: {
                 Image(systemName: "alarm.fill").foregroundStyle(context.attributes.tintColor)
             }
@@ -61,7 +67,7 @@ struct AlarmKitLiveActivity: Widget {
 /// The alarm's label, from the metadata we attach when scheduling.
 private func alarmKitTitle(_ context: ActivityViewContext<AlarmAttributes<PunctualMetadata>>) -> String {
     let label = context.attributes.metadata?.label ?? ""
-    return label.isEmpty ? String(localized: "Alarm") : label
+    return label.isEmpty ? String(localized: "Alarm", bundle: AppLanguage.bundle) : label
 }
 
 /// Live state text. `.countdown` is the snooze timer (fireDate = the re-ring),

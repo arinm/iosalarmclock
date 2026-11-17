@@ -33,12 +33,18 @@ final class AlarmStore {
     private(set) var headsUpsWaitFrom: Date?
     /// The pending Test ring, if any (see `startTestRing`).
     private(set) var testRing: TransientAlarms.Record?
+    /// The "Are you up?" check waiting for I'm up, if any (see `startWakeCheck`).
+    private(set) var wakeCheck: TransientAlarms.Record?
+    /// A tap on the "Are you up?" notice asks the list to scroll its card into
+    /// view. Set only while a check is waiting; the list clears it.
+    var wakeCheckFocusPending = false
 
     init(context: ModelContext, scheduler: AlarmScheduler) {
         self.context = context
         self.scheduler = scheduler
         self.autoSkipCalendarIDs = calendarAutoSkip.selectedCalendarIDs
         self.testRing = TransientAlarms.records().first { $0.kind == .testRing && $0.fireDate > .now }
+        reloadWakeCheck()
     }
 
     // MARK: - Reads
@@ -220,7 +226,7 @@ final class AlarmStore {
         let copy = AlarmItem(
             hour: item.hour,
             minute: item.minute,
-            label: item.label.isEmpty ? "" : String(localized: "\(item.label) copy"),
+            label: item.label.isEmpty ? "" : String(localized: "\(item.label) copy", bundle: AppLanguage.bundle),
             isEnabled: item.isEnabled,
             mode: item.mode,
             repeatWeekdays: item.repeatWeekdays,
@@ -235,6 +241,7 @@ final class AlarmStore {
         copy.additionalPreAlertMinutes = item.additionalPreAlertMinutes
         copy.groupName = item.groupName
         copy.autoSkipOnCalendarEvents = item.autoSkipOnCalendarEvents
+        copy.wakeCheckEnabled = item.wakeCheckEnabled
         // The derived calendar skips too: without them the copy would ring on
         // every calendar day off until the next refresh.
         copy.autoSkippedDates = item.autoSkippedDates
@@ -361,7 +368,7 @@ final class AlarmStore {
         TransientAlarms.add(record)
         testRing = record
         let armed = await scheduler.armTransient(id: record.id, at: record.fireDate,
-                                                 label: String(localized: "Test ring"), soundName: soundName)
+                                                 label: String(localized: "Test ring", bundle: AppLanguage.bundle), soundName: soundName)
         if !armed {
             TransientAlarms.remove(id: record.id)
             if testRing == record { testRing = nil }
@@ -374,6 +381,72 @@ final class AlarmStore {
         testRing = nil
         await scheduler.cancelTransient(id: record.id)
         TransientAlarms.remove(id: record.id)
+    }
+
+    // MARK: - Are you up?
+
+    /// The final Stop of a ring of an alarm with the check on (`WakeCheckIntent`):
+    /// a quiet notice at +5 min and one Stop-only alarm at +7 min, until I'm up.
+    /// One check at a time: a later Stop replaces an earlier one. When the
+    /// system refuses the alarm there is no check at all, never a stray notice.
+    /// Serialized: two Stops close together would otherwise interleave, and the
+    /// second could drop the first's record while the first is still arming,
+    /// leaving an alarm that I'm up can't cancel.
+    func startWakeCheck(alarmID: UUID, now: Date = .now) async {
+        await serialized {
+            guard let item = self.alarm(with: alarmID), item.wakeCheckEnabled else {
+                WakeCheck.log.notice("No check: the alarm is gone or has the check off")
+                return
+            }
+            await self.cancelWakeChecks()
+            let record = TransientAlarms.Record(fireDate: now.addingTimeInterval(WakeCheck.ringAfter), kind: .wakeCheck)
+            // Recorded before it's armed, so no orphan sweep (in any process) can
+            // see the alarm without its record.
+            TransientAlarms.add(record)
+            self.wakeCheck = record
+            let armed = await self.scheduler.armTransient(id: record.id, at: record.fireDate,
+                                                          label: String(localized: "Are you up?", bundle: AppLanguage.bundle), soundName: item.soundName)
+            guard armed else {
+                TransientAlarms.remove(id: record.id)
+                if self.wakeCheck == record { self.wakeCheck = nil }
+                WakeCheck.log.error("No check: the system refused the alarm")
+                return
+            }
+            await WakeCheck.postNotice(checkID: record.id, at: now.addingTimeInterval(WakeCheck.noticeAfter),
+                                       ringsAt: record.fireDate)
+        }
+    }
+
+    /// I'm up: the check's alarm and notice go. Covers checks any process
+    /// started, and one already ringing (cancel stops it).
+    func endWakeCheck() async {
+        await serialized { await self.cancelWakeChecks() }
+    }
+
+    /// `endWakeCheck` for code already inside `serialized`, where calling the
+    /// serialized one would trip its re-entrancy guard.
+    private func cancelWakeChecks() async {
+        let records = TransientAlarms.records().filter { $0.kind == .wakeCheck }
+        wakeCheck = nil
+        for record in records {
+            await scheduler.cancelTransient(id: record.id)
+            TransientAlarms.remove(id: record.id)
+            WakeCheck.removeNotice(checkID: record.id)
+            WakeCheck.log.notice("Check \(record.id, privacy: .public) ended")
+        }
+    }
+
+    /// Picks up a check another process started (the intent may have run in a
+    /// background launch). Call on foreground.
+    func reloadWakeCheck(now: Date = .now) {
+        let pending = TransientAlarms.records(now: now).first { $0.kind == .wakeCheck && $0.fireDate > now }
+        if wakeCheck != pending { wakeCheck = pending }
+    }
+
+    /// The notice was tapped: show the card, if the check is still waiting.
+    func focusWakeCheck(now: Date = .now) {
+        reloadWakeCheck(now: now)
+        if wakeCheck != nil { wakeCheckFocusPending = true }
     }
 
     // MARK: - Serialization
@@ -462,6 +535,23 @@ final class AlarmStore {
             let current = self.calendarDayTitlesChoice == self.calendarAutoSkip.selectedCalendarIDs
             await self.refreshPass(liveAlarmIDs: liveAlarmIDs ?? self.scheduler.currentLiveAlarmIDs(),
                                    calendarDays: current ? self.calendarDayTitles : nil)
+        }
+    }
+
+    /// Re-arms every enabled alarm from scratch, so the alarm screen shows its
+    /// title, Stop and Snooze in a newly picked language (they're fixed when an
+    /// alarm is armed). The same path as an edit: future occurrences are
+    /// replaced; one ringing or snoozing right now is left alone.
+    func rearmAll() async {
+        await serialized {
+            let items = self.allAlarms()
+            let depth = self.currentArmDepth(items)
+            for item in items where item.isEnabled {
+                await self.scheduler.reschedule(item, force: true, depth: depth)
+            }
+            self.save()
+            // Heads-ups whose words changed are sent again.
+            await self.syncHeadsUps(items)
         }
     }
 
@@ -723,10 +813,10 @@ final class AlarmStore {
                       repeatWeekdays: days, preAlert: PreAlertSettings(isEnabled: true, minutesBefore: 15))
         }
         // Labels follow the app's language so localized screenshots match.
-        context.insert(make(6, 30, String(localized: "Wake up", comment: "Demo alarm label (screenshots)"), Weekday.weekdays))
-        context.insert(make(7, 15, String(localized: "Gym", comment: "Demo alarm label (screenshots)"), [.monday, .wednesday, .friday]))
-        context.insert(make(8, 0, String(localized: "Meds", comment: "Demo alarm label (screenshots)"), Set(Weekday.allCases)))
-        context.insert(make(22, 30, String(localized: "Wind down", comment: "Demo alarm label (screenshots)"), Weekday.weekdays))
+        context.insert(make(6, 30, String(localized: "Wake up", bundle: AppLanguage.bundle, comment: "Demo alarm label (screenshots)"), Weekday.weekdays))
+        context.insert(make(7, 15, String(localized: "Gym", bundle: AppLanguage.bundle, comment: "Demo alarm label (screenshots)"), [.monday, .wednesday, .friday]))
+        context.insert(make(8, 0, String(localized: "Meds", bundle: AppLanguage.bundle, comment: "Demo alarm label (screenshots)"), Set(Weekday.allCases)))
+        context.insert(make(22, 30, String(localized: "Wind down", bundle: AppLanguage.bundle, comment: "Demo alarm label (screenshots)"), Weekday.weekdays))
         save()
     }
     #endif

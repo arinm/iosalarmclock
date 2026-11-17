@@ -59,12 +59,12 @@ protocol AlarmKitManaging {
 
 enum AlarmAuthState: Sendable { case notDetermined, authorized, denied }
 
-/// One-off alarms that belong to no `AlarmItem`: the Test ring now, the
-/// "Are you up?" check later. Kept in the app group so the orphan sweep in
+/// One-off alarms that belong to no `AlarmItem`: the Test ring and the
+/// "Are you up?" check. Kept in the app group so the orphan sweep in
 /// every process (app, widget, intents) counts them as ours; without the
 /// record, an alarm no item tracks is cancelled ~30 s after it's armed.
 enum TransientAlarms {
-    enum Kind: String { case testRing }
+    enum Kind: String { case testRing, wakeCheck }
 
     struct Record: Codable, Equatable {
         let id: UUID
@@ -324,8 +324,9 @@ final class AlarmKitManager: AlarmKitManaging {
     func scheduleTransient(id: UUID, at date: Date, label: String, soundName: String?) async -> Bool {
         #if canImport(AlarmKit)
         // Already translated by the caller, so shown verbatim (see makeConfiguration).
-        let title = LocalizedStringResource("\(label)", comment: "An alarm's own label, shown verbatim")
-        let stop = AlarmButton(text: "Stop", textColor: .white, systemImageName: "stop.fill")
+        let title = Self.verbatim(label)
+        let stop = AlarmButton(text: Self.verbatim(String(localized: "Stop", bundle: AppLanguage.bundle)),
+                               textColor: .white, systemImageName: "stop.fill")
         let attributes = AlarmAttributes(
             presentation: AlarmPresentation(alert: AlarmPresentation.Alert(
                 title: title, stopButton: stop, secondaryButton: nil, secondaryButtonBehavior: nil)),
@@ -406,13 +407,18 @@ final class AlarmKitManager: AlarmKitManaging {
     }
 
     #if canImport(AlarmKit)
+    /// Words already in the app's language, for iOS to show as they are: given
+    /// a key, iOS would look it up in the phone's language, not one picked in
+    /// Settings, and the alarm screen keeps whatever it was armed with.
+    /// Interpolated, the key is "%@", so a label like "Gym" or "50%" is never
+    /// looked up in the catalog or read as a format.
+    private static func verbatim(_ text: String) -> LocalizedStringResource {
+        LocalizedStringResource("\(text)", comment: "An alarm's own label, shown verbatim")
+    }
+
     private func makeConfiguration(for item: AlarmItem, occurrence: Date) -> AlarmManager.AlarmConfiguration<PunctualMetadata> {
         // A user's label is shown as typed; only the fallback is translated.
-        // Interpolated, the key is "%@", so a label like "Gym" or "50%" is never
-        // looked up in the catalog or read as a format.
-        let title: LocalizedStringResource = item.label.isEmpty
-            ? "Alarm"
-            : LocalizedStringResource("\(item.label)", comment: "An alarm's own label, shown verbatim")
+        let title = Self.verbatim(item.label.isEmpty ? String(localized: "Alarm", bundle: AppLanguage.bundle) : item.label)
 
         // Fixed (one-shot) schedule for this concrete occurrence — we manage
         // recurrence/skip/pause ourselves via the engine.
@@ -420,9 +426,11 @@ final class AlarmKitManager: AlarmKitManaging {
 
         // Stop button is always present. Snooze maps to a secondary countdown
         // button when enabled, giving us a custom snooze duration.
-        let stop = AlarmButton(text: "Stop", textColor: .white, systemImageName: "stop.fill")
+        let stop = AlarmButton(text: Self.verbatim(String(localized: "Stop", bundle: AppLanguage.bundle)),
+                               textColor: .white, systemImageName: "stop.fill")
         let secondary: AlarmButton? = item.snooze.isEnabled
-            ? AlarmButton(text: "Snooze", textColor: .white, systemImageName: "zzz")
+            ? AlarmButton(text: Self.verbatim(String(localized: "Snooze", bundle: AppLanguage.bundle)),
+                          textColor: .white, systemImageName: "zzz")
             : nil
 
         let alert = AlarmPresentation.Alert(
@@ -477,10 +485,17 @@ final class AlarmKitManager: AlarmKitManaging {
             Alarm.CountdownDuration(preAlert: nil, postAlert: $0)
         }
 
+        // "Are you up?" (Pro): the system runs this in our process when the user
+        // taps Stop (not Snooze), and it arms the check. Only real rings carry
+        // it: the Test ring and the check itself are transient and have none,
+        // so a check never chains.
+        let stopIntent: WakeCheckIntent? = item.wakeCheckEnabled ? WakeCheckIntent(alarmID: item.id) : nil
+
         return AlarmManager.AlarmConfiguration(
             countdownDuration: countdown,
             schedule: schedule,
             attributes: attributes,
+            stopIntent: stopIntent,
             sound: alarmSound(named: item.soundName)
         )
     }

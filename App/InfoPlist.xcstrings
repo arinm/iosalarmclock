@@ -5,13 +5,43 @@
       "comment" : "Bundle display name",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Punctual"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Punctual"
           }
         },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Punctual"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Punctual"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Punctual"
+          }
+        },
         "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Punctual"
+          }
+        },
+        "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Punctual"
@@ -23,13 +53,43 @@
       "comment" : "Bundle name",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Punctual"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Punctual"
           }
         },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Punctual"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Punctual"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Punctual"
+          }
+        },
         "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Punctual"
+          }
+        },
+        "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Punctual"
@@ -41,16 +101,46 @@
       "comment" : "Privacy - AlarmKit usage description",
       "extractionState" : "manual",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Punctual nutzt Wecker, die auch im Stummmodus und bei aktivem Fokus klingeln, damit du nie verschläfst."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Punctual uses alarms that ring through silent mode and Focus so you never oversleep."
           }
         },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Punctual usa alarmas que suenan incluso con el modo silencio y la Concentración activados, para que nunca se te pase la hora."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Punctual usa alarmas que suenan incluso con el modo silencio y el modo de enfoque activados, para que nunca se te pase la hora."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Punctual utilise des alarmes qui sonnent même en mode silencieux et avec un mode Concentration activé, pour que vous ne vous leviez jamais trop tard."
+          }
+        },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Punctualは、消音モードや集中モード中でも鳴るアラームを使って、寝坊を防ぎます。"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Punctual usa alarmes que tocam mesmo no modo silencioso e com um Foco ativado, para você nunca perder a hora."
           }
         }
       }
@@ -59,16 +149,46 @@
       "comment" : "Privacy - Calendars Full Access Usage Description",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Punctual liest deinen Kalender, um Wecker an Tagen mit ganztägigen Terminen (Feiertage, Urlaub) automatisch zu überspringen."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Punctual reads your calendar to auto-skip alarms on days with all-day events (holidays, vacation)."
           }
         },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Punctual lee tu calendario para omitir automáticamente las alarmas en días con eventos de todo el día (festivos, vacaciones)."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Punctual lee tu calendario para omitir automáticamente las alarmas en días con eventos de todo el día (festivos, vacaciones)."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Punctual lit votre calendrier pour ignorer automatiquement les alarmes les jours comportant des événements sur toute la journée (jours fériés, vacances)."
+          }
+        },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "終日の予定（祝日や休暇など）がある日のアラームを自動でスキップするために、カレンダーを読み取ります。"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Punctual lê seu calendário para pular alarmes automaticamente em dias com eventos de dia inteiro (feriados, férias)."
           }
         }
       }

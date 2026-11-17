@@ -2,6 +2,7 @@
 import Foundation
 import EventKit
 import UserNotifications
+import AlarmKit
 import AlarmCore
 
 /// DEBUG only (`--seed-calendar-skip`): sets up a calendar auto-skip scenario in
@@ -122,6 +123,58 @@ enum CalendarSkipDebugSeed {
         let item = AlarmItem(hour: c.hour ?? 0, minute: c.minute ?? 0, label: "QA ring", mode: .oneTimeDate,
                              oneTimeDate: DateOnly(date: at, calendar: .current))
         await store.create(item)
+    }
+
+    /// `--wakecheck-qa` ("Are you up?"): an alarm with the check on (so AlarmKit
+    /// must accept its stopIntent), then a check started as its Stop would;
+    /// with `--wakecheck-qa-race` two more Stops at once (one check, one alarm
+    /// and one notice must remain); with `--wakecheck-qa-imup` also the I'm up
+    /// answer. Writes Documents/wakecheck-qa.txt. The Stop -> intent hop itself
+    /// needs a device.
+    static func wakeCheckQA(store: AlarmStore, imUp: Bool, race: Bool) async {
+        _ = try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge])
+        let at = Date.now.addingTimeInterval(180)
+        let c = Calendar.current.dateComponents([.hour, .minute], from: at)
+        let item = AlarmItem(hour: c.hour ?? 0, minute: c.minute ?? 0, label: "QA wake", mode: .oneTimeDate,
+                             oneTimeDate: DateOnly(date: at, calendar: .current))
+        item.wakeCheckEnabled = true
+        await store.create(item)
+        var lines = ["[wake] alarm armed=\(item.armedOccurrences.count) armFailed=\(item.lastArmFailed)"]
+        await store.startWakeCheck(alarmID: item.id)
+        lines += await wakeCheckState(store: store, step: "started")
+        if race {
+            let before = ((try? AlarmManager.shared.alarms) ?? []).count
+            async let first: Void = store.startWakeCheck(alarmID: item.id)
+            async let second: Void = store.startWakeCheck(alarmID: item.id)
+            _ = await (first, second)
+            let after = ((try? AlarmManager.shared.alarms) ?? []).count
+            let records = TransientAlarms.records().filter { $0.kind == .wakeCheck }.count
+            let notices = await UNUserNotificationCenter.current().pendingNotificationRequests()
+                .filter { $0.identifier.hasPrefix(WakeCheck.prefix) }.count
+            lines.append("[wake] race: alarms before=\(before) after=\(after) records=\(records) notices=\(notices)")
+            lines += await wakeCheckState(store: store, step: "race")
+        }
+        if imUp {
+            await store.endWakeCheck()
+            lines += await wakeCheckState(store: store, step: "imUp")
+        }
+        if let dir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
+            try? lines.joined(separator: "\n").write(to: dir.appendingPathComponent("wakecheck-qa.txt"), atomically: true, encoding: .utf8)
+        }
+    }
+
+    private static func wakeCheckState(store: AlarmStore, step: String) async -> [String] {
+        var lines = ["[wake] \(step): store=\(String(describing: store.wakeCheck?.fireDate))"]
+        for r in TransientAlarms.records() { lines.append("[wake] \(step): record \(r.id) \(r.kind) \(r.fireDate)") }
+        let ids = Set(TransientAlarms.records().map(\.id))
+        for a in (try? AlarmManager.shared.alarms) ?? [] where ids.contains(a.id) {
+            lines.append("[wake] \(step): alarmkit \(a.id) \(a.state)")
+        }
+        for r in await UNUserNotificationCenter.current().pendingNotificationRequests() where r.identifier.hasPrefix(WakeCheck.prefix) {
+            let fires = (r.trigger as? UNTimeIntervalNotificationTrigger)?.nextTriggerDate()
+            lines.append("[wake] \(step): notice \(r.identifier) at=\(String(describing: fires)) sound=\(r.content.sound != nil) cat=\(r.content.categoryIdentifier) | \(r.content.title) | \(r.content.body)")
+        }
+        return lines
     }
 
     private static func calendar(named name: String, in ek: EKEventStore) -> EKCalendar? {

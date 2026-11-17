@@ -23,6 +23,7 @@ final class ProFeatureManager {
         case advancedSnooze
         case alarmGroups
         case calendarAwareSkip
+        case wakeCheck
         case themes
         case widgetCustomization
         case appIcons
@@ -30,36 +31,38 @@ final class ProFeatureManager {
 
         var title: String {
             switch self {
-            case .vacationPause: String(localized: "Vacation pause (date ranges)")
-            case .customPreAlertTiming: String(localized: "Custom heads-up timing")
-            case .multiplePreAlerts: String(localized: "Multiple heads-ups")
-            case .preAlertMessages: String(localized: "Custom heads-up messages")
-            case .advancedSnooze: String(localized: "Longer snooze")
-            case .alarmGroups: String(localized: "Alarm groups")
-            case .calendarAwareSkip: String(localized: "Holiday & calendar auto-skip")
-            case .themes: String(localized: "Themes & accents")
-            case .widgetCustomization: String(localized: "Widget customization")
-            case .appIcons: String(localized: "Alternate app icons")
-            case .customSounds: String(localized: "Custom alarm sound")
+            case .vacationPause: String(localized: "Vacation pause (date ranges)", bundle: AppLanguage.bundle)
+            case .customPreAlertTiming: String(localized: "Custom heads-up timing", bundle: AppLanguage.bundle)
+            case .multiplePreAlerts: String(localized: "Multiple heads-ups", bundle: AppLanguage.bundle)
+            case .preAlertMessages: String(localized: "Custom heads-up messages", bundle: AppLanguage.bundle)
+            case .advancedSnooze: String(localized: "Longer snooze", bundle: AppLanguage.bundle)
+            case .alarmGroups: String(localized: "Alarm groups", bundle: AppLanguage.bundle)
+            case .calendarAwareSkip: String(localized: "Holiday & calendar auto-skip", bundle: AppLanguage.bundle)
+            case .wakeCheck: String(localized: "Are you up? check", bundle: AppLanguage.bundle)
+            case .themes: String(localized: "Themes & accents", bundle: AppLanguage.bundle)
+            case .widgetCustomization: String(localized: "Widget customization", bundle: AppLanguage.bundle)
+            case .appIcons: String(localized: "Alternate app icons", bundle: AppLanguage.bundle)
+            case .customSounds: String(localized: "Custom alarm sound", bundle: AppLanguage.bundle)
             }
         }
 
         /// One-line benefit shown under the title in the paywall.
         var benefit: String {
             switch self {
-            case .vacationPause: String(localized: "Pause for trips & holidays")
-            case .customPreAlertTiming: String(localized: "Any lead time, not just 15 min")
-            case .multiplePreAlerts: String(localized: "Stack 60 + 15 + 5 min heads-ups")
-            case .preAlertMessages: String(localized: "Your own reminder text")
+            case .vacationPause: String(localized: "Pause for trips & holidays", bundle: AppLanguage.bundle)
+            case .customPreAlertTiming: String(localized: "Any lead time, not just 15 min", bundle: AppLanguage.bundle)
+            case .multiplePreAlerts: String(localized: "Stack 60 + 15 + 5 min heads-ups", bundle: AppLanguage.bundle)
+            case .preAlertMessages: String(localized: "Your own reminder text", bundle: AppLanguage.bundle)
             // iOS 26's Clock added custom snooze capped at 15 min, so the
             // duration itself is no longer sellable — only the range past it is.
-            case .advancedSnooze: String(localized: "Snooze up to 60 min, past the system's 15")
-            case .alarmGroups: String(localized: "Bulk skip / pause a whole set")
-            case .calendarAwareSkip: String(localized: "Skip on calendar days off")
-            case .themes: String(localized: "Accents & light/dark")
-            case .widgetCustomization: String(localized: "Dedicated Pro widget styles (coming soon)")
-            case .appIcons: String(localized: "Match your Home Screen")
-            case .customSounds: String(localized: "Your own audio for the heads-up and the alarm")
+            case .advancedSnooze: String(localized: "Snooze up to 60 min, past the system's 15", bundle: AppLanguage.bundle)
+            case .alarmGroups: String(localized: "Bulk skip / pause a whole set", bundle: AppLanguage.bundle)
+            case .calendarAwareSkip: String(localized: "Skip on calendar days off", bundle: AppLanguage.bundle)
+            case .wakeCheck: String(localized: "Rings again 7 min after Stop, unless you tap I'm up", bundle: AppLanguage.bundle)
+            case .themes: String(localized: "Accents & light/dark", bundle: AppLanguage.bundle)
+            case .widgetCustomization: String(localized: "Dedicated Pro widget styles (coming soon)", bundle: AppLanguage.bundle)
+            case .appIcons: String(localized: "Match your Home Screen", bundle: AppLanguage.bundle)
+            case .customSounds: String(localized: "Your own audio for the heads-up and the alarm", bundle: AppLanguage.bundle)
             }
         }
 
@@ -67,7 +70,7 @@ final class ProFeatureManager {
         /// advertise as included (App Store rule + honesty).
         static let live: [Feature] = [
             .vacationPause, .customPreAlertTiming, .multiplePreAlerts, .preAlertMessages,
-            .advancedSnooze, .alarmGroups, .calendarAwareSkip, .themes, .appIcons,
+            .advancedSnooze, .alarmGroups, .calendarAwareSkip, .wakeCheck, .themes, .appIcons,
             .customSounds
         ]
 
@@ -89,9 +92,9 @@ final class ProFeatureManager {
 
         var title: String {
             switch self {
-            case .iCloudSync: String(localized: "iCloud sync across devices")
-            case .seasonalPacks: String(localized: "New seasonal theme & sound packs")
-            case .earlyAccess: String(localized: "Early access to new features")
+            case .iCloudSync: String(localized: "iCloud sync across devices", bundle: AppLanguage.bundle)
+            case .seasonalPacks: String(localized: "New seasonal theme & sound packs", bundle: AppLanguage.bundle)
+            case .earlyAccess: String(localized: "Early access to new features", bundle: AppLanguage.bundle)
             }
         }
     }

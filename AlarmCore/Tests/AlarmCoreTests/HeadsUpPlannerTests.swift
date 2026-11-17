@@ -77,6 +77,15 @@ final class HeadsUpPlannerTests: XCTestCase {
         XCTAssertEqual(HeadsUpPlanner.limit(calendarNotices: 3, others: 0, calendarInUse: true), 56)
     }
 
+    func testLimitKeepsTheWakeCheckSlot() {
+        XCTAssertEqual(HeadsUpPlanner.limit(calendarNotices: 0, others: 0, calendarInUse: false, wakeCheckInUse: true), 63)
+        // The pending notice fills the slot it was kept for, not one more.
+        XCTAssertEqual(HeadsUpPlanner.limit(calendarNotices: 0, wakeChecks: 1, others: 0, calendarInUse: false, wakeCheckInUse: true), 63)
+        XCTAssertEqual(HeadsUpPlanner.limit(calendarNotices: 0, others: 0, calendarInUse: true, wakeCheckInUse: true), 55)
+        // Switched off while one is still pending: it keeps its slot until it shows.
+        XCTAssertEqual(HeadsUpPlanner.limit(calendarNotices: 0, wakeChecks: 1, others: 0, calendarInUse: false), 63)
+    }
+
     func testNoReserveWhenNoAlarmUsesTheCalendar() {
         // Ten alarms armed 6 deep want 60 heads-ups: they all fit.
         XCTAssertEqual(HeadsUpPlanner.limit(calendarNotices: 0, others: 0, calendarInUse: false), 64)

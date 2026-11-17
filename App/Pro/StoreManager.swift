@@ -85,7 +85,7 @@ final class StoreManager {
         guard full > 0 else { return nil }
         let pct = (Decimal(1) - (y / full)) * 100
         let rounded = Int((pct as NSDecimalNumber).doubleValue.rounded())
-        return rounded > 0 ? String(localized: "Save \(rounded)%") : nil
+        return rounded > 0 ? String(localized: "Save \(rounded)%", bundle: AppLanguage.bundle) : nil
     }
 
     /// Open Apple's refund sheet for the user's most recent Pro purchase.
@@ -97,7 +97,7 @@ final class StoreManager {
     func requestRefund() async -> String? {
         let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
         guard let scene = scenes.first(where: { $0.activationState == .foregroundActive }) ?? scenes.first
-        else { return String(localized: "Couldn't open the refund screen.") }
+        else { return String(localized: "Couldn't open the refund screen.", bundle: AppLanguage.bundle) }
 
         var latest: StoreKit.Transaction?
         for await result in StoreKit.Transaction.currentEntitlements {
@@ -105,13 +105,13 @@ final class StoreManager {
             if let current = latest, current.purchaseDate >= t.purchaseDate { continue }
             latest = t
         }
-        guard let transaction = latest else { return String(localized: "No purchase found to refund.") }
+        guard let transaction = latest else { return String(localized: "No purchase found to refund.", bundle: AppLanguage.bundle) }
 
         do {
             switch try await transaction.beginRefundRequest(in: scene) {
             case .success:
                 storeLog.notice("Refund requested for \(transaction.productID, privacy: .public)")
-                return String(localized: "Refund requested - Apple will email you about it.")
+                return String(localized: "Refund requested - Apple will email you about it.", bundle: AppLanguage.bundle)
             case .userCancelled:
                 return nil
             @unknown default:
@@ -119,7 +119,7 @@ final class StoreManager {
             }
         } catch {
             storeLog.error("Refund request failed: \(error.localizedDescription, privacy: .public)")
-            return String(localized: "Couldn't reach the App Store. Please try again later.")
+            return String(localized: "Couldn't reach the App Store. Please try again later.", bundle: AppLanguage.bundle)
         }
     }
 
@@ -229,7 +229,7 @@ final class StoreManager {
                     return isPro
                 }
                 storeLog.error("purchase(\(id, privacy: .public)): UNVERIFIED result")
-                purchaseError = String(localized: "Purchase couldn't be verified. Please try Restore Purchases.")
+                purchaseError = String(localized: "Purchase couldn't be verified. Please try Restore Purchases.", bundle: AppLanguage.bundle)
                 return false
             case .userCancelled:
                 storeLog.notice("purchase(\(id, privacy: .public)): user cancelled")
@@ -238,7 +238,7 @@ final class StoreManager {
                 // Ask to Buy / deferred — not a failure, but not Pro yet either.
                 // Say so instead of leaving the user in silent limbo.
                 storeLog.notice("purchase(\(id, privacy: .public)): pending (Ask to Buy)")
-                purchaseError = String(localized: "Purchase is pending approval. Pro unlocks automatically once it's approved.")
+                purchaseError = String(localized: "Purchase is pending approval. Pro unlocks automatically once it's approved.", bundle: AppLanguage.bundle)
                 return false
             @unknown default:
                 storeLog.error("purchase(\(id, privacy: .public)): unknown result case")

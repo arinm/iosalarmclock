@@ -8,6 +8,8 @@ struct SettingsView: View {
     @Environment(ThemeManager.self) private var theme
     @Environment(SoundManager.self) private var sounds
     @Environment(StoreManager.self) private var storeKit
+    @Environment(LanguageManager.self) private var language
+    @Environment(\.locale) private var locale
     @Environment(\.dismiss) private var dismiss
 
     @AppStorage("defaultPreAlertMinutes") private var defaultPreAlert = 15
@@ -73,7 +75,7 @@ struct SettingsView: View {
                             HStack {
                                 Text("Sound")
                                 Spacer()
-                                Text(defaultSoundName.isEmpty ? String(localized: "Default") : sounds.displayName(defaultSoundName))
+                                Text(defaultSoundName.isEmpty ? String(localized: "Default", bundle: AppLanguage.bundle) : sounds.displayName(defaultSoundName))
                                     .foregroundStyle(.secondary)
                             }
                         }
@@ -99,6 +101,17 @@ struct SettingsView: View {
                        let url = URL(string: UIApplication.openSettingsURLString) {
                         Link("Open iOS Settings", destination: url)
                     }
+                }
+
+                Section {
+                    Picker("Language", selection: Binding(get: { language.choice }, set: { language.select($0) })) {
+                        Text("Automatic (phone language)").tag(String?.none)
+                        ForEach(AppLanguage.supported, id: \.self) { code in
+                            Text(verbatim: AppLanguage.name(code)).tag(Optional(code))
+                        }
+                    }
+                } footer: {
+                    Text("Siri, Shortcuts and some iOS text may stay in your iPhone's language.")
                 }
 
                 Section("Appearance") {
@@ -223,6 +236,9 @@ struct SettingsView: View {
                     Text("No alarm app can guarantee a ring: alarm delivery ultimately depends on iOS and your device's state, and a phone that's off, out of battery, or in a failed state can't ring at all. Punctual is provided without any warranty - please don't rely on it alone for critical wake-ups.")
                 }
             }
+            // Rebuilt on a language pick: words made with String(localized:)
+            // don't follow `\.locale` on their own.
+            .id(locale.identifier)
             .punctualBackground()
             .navigationTitle("Settings")
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
@@ -288,14 +304,15 @@ struct AppIconOption: Identifiable {
         let name = id == "default" ? "peach" : id.replacingOccurrences(of: "AppIcon-", with: "").lowercased()
         return BrandColor.accent(named: name)
     }
-    static let all: [AppIconOption] = [
-        .init(id: "default", title: String(localized: "Peach (default)")),
-        .init(id: "AppIcon-Ocean", title: String(localized: "Ocean")),
-        .init(id: "AppIcon-Forest", title: String(localized: "Forest")),
-        .init(id: "AppIcon-Grape", title: String(localized: "Grape")),
-        .init(id: "AppIcon-Sunset", title: String(localized: "Sunset")),
-        .init(id: "AppIcon-Graphite", title: String(localized: "Graphite")),
-    ]
+    /// Computed: the titles follow a language picked in Settings.
+    static var all: [AppIconOption] { [
+        .init(id: "default", title: String(localized: "Peach (default)", bundle: AppLanguage.bundle)),
+        .init(id: "AppIcon-Ocean", title: String(localized: "Ocean", bundle: AppLanguage.bundle)),
+        .init(id: "AppIcon-Forest", title: String(localized: "Forest", bundle: AppLanguage.bundle)),
+        .init(id: "AppIcon-Grape", title: String(localized: "Grape", bundle: AppLanguage.bundle)),
+        .init(id: "AppIcon-Sunset", title: String(localized: "Sunset", bundle: AppLanguage.bundle)),
+        .init(id: "AppIcon-Graphite", title: String(localized: "Graphite", bundle: AppLanguage.bundle)),
+    ] }
 }
 
 /// "Test ring in 1 minute": a real alarm through the same system path as the
@@ -317,7 +334,7 @@ private struct TestRingRow: View {
                 if let ring = store.testRing, ring.fireDate > ctx.date {
                     HStack {
                         TestRingLabel(systemImage: "alarm.waves.left.and.right") {
-                            Text("Test ring at \(TimeText.string(ring.fireDate))")
+                            Text(title(ring.fireDate))
                         }
                         Spacer()
                         Button("Cancel") { Task { await store.cancelTestRing() } }
@@ -349,6 +366,13 @@ private struct TestRingRow: View {
             // One control per row; the captions don't trigger it.
             .buttonStyle(.borderless)
         }
+    }
+
+    private func title(_ fireDate: Date) -> String {
+        let time = TimeText.string(fireDate)
+        return TimeText.isHourOne(fireDate)
+            ? String(localized: "Test ring at \(time) (hour 1)", bundle: AppLanguage.bundle)
+            : String(localized: "Test ring at \(time)", bundle: AppLanguage.bundle)
     }
 }
 

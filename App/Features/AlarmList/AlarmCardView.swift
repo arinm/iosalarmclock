@@ -41,14 +41,14 @@ struct AlarmCardView: View {
                                 // symmetric with the "Alarm set" banner.
                                 if let next = alarm.nextOccurrence {
                                     banners.show(.neutral,
-                                                 title: String(localized: "Alarm on - rings in \(CountdownText.string(until: next, from: .now))"),
+                                                 title: String(localized: "Alarm on - rings in \(CountdownText.string(until: next, from: .now))", bundle: AppLanguage.bundle),
                                                  subtitle: NotificationActionHandler.describe(next, calendar: .current),
                                                  alarmID: alarm.id)
                                 }
                             } else {
                                 banners.show(.disabled,
-                                             title: String(localized: "Alarm off - won't ring"),
-                                             subtitle: String(localized: "Until you turn it back on"),
+                                             title: String(localized: "Alarm off - won't ring", bundle: AppLanguage.bundle),
+                                             subtitle: String(localized: "Until you turn it back on", bundle: AppLanguage.bundle),
                                              alarmID: alarm.id,
                                              undo: { [store] in await store.setEnabled(alarm, true) })
                             }
@@ -57,7 +57,7 @@ struct AlarmCardView: View {
                     }
                 ))
                 .labelsHidden()
-                .accessibilityLabel(alarm.label.isEmpty ? String(localized: "Alarm") : alarm.label)
+                .accessibilityLabel(alarm.label.isEmpty ? String(localized: "Alarm", bundle: AppLanguage.bundle) : alarm.label)
                 .accessibilityValue(alarm.isEnabled ? "On" : "Off")
             }
 
@@ -91,16 +91,16 @@ struct AlarmCardView: View {
                         // otherwise say so, rather than showing "stopped" and
                         // letting the button reappear a second later.
                         if await store.stopSnooze(alarm) {
-                            let next = NotificationActionHandler.describe(alarm.nextOccurrence, calendar: .current)
+                            let next = NotificationActionHandler.describe(alarm.nextOccurrence, calendar: .current, context: .middleOfSentence)
                             banners.show(.neutral,
-                                         title: String(localized: "Snooze stopped"),
-                                         subtitle: String(localized: "Still active - next alarm: \(next)"),
+                                         title: String(localized: "Snooze stopped", bundle: AppLanguage.bundle),
+                                         subtitle: String(localized: "Still active - next alarm: \(next)", bundle: AppLanguage.bundle),
                                          alarmID: alarm.id)
                             UINotificationFeedbackGenerator().notificationOccurred(.success)
                         } else {
                             banners.show(.disabled,
-                                         title: String(localized: "Couldn't stop the snooze"),
-                                         subtitle: String(localized: "Turn the alarm off to silence it"),
+                                         title: String(localized: "Couldn't stop the snooze", bundle: AppLanguage.bundle),
+                                         subtitle: String(localized: "Turn the alarm off to silence it", bundle: AppLanguage.bundle),
                                          alarmID: alarm.id)
                             UINotificationFeedbackGenerator().notificationOccurred(.warning)
                         }
@@ -119,10 +119,10 @@ struct AlarmCardView: View {
                 Button {
                     Task {
                         if let day = await store.skipNextOccurrence(alarm) {
-                            let next = NotificationActionHandler.describe(alarm.nextOccurrence, calendar: .current)
+                            let next = NotificationActionHandler.describe(alarm.nextOccurrence, calendar: .current, context: .middleOfSentence)
                             banners.show(.skip,
                                          title: NotificationActionHandler.skippedTitle(day),
-                                         subtitle: String(localized: "Next alarm: \(next)"),
+                                         subtitle: String(localized: "Next alarm: \(next)", bundle: AppLanguage.bundle),
                                          alarmID: alarm.id,
                                          undo: { [store] in await store.unskip(alarm, day: day) })
                         }
@@ -185,9 +185,9 @@ struct AlarmCardView: View {
     /// "Skip today" / "Skip tomorrow" — routed through dayPhrase so a weekday
     /// name is correct by construction if the window ever widens.
     private var skipButtonTitle: String {
-        guard case .scheduled(let next) = status else { return String(localized: "Skip today") }
+        guard case .scheduled(let next) = status else { return String(localized: "Skip today", bundle: AppLanguage.bundle) }
         let day = DateOnly(date: next, calendar: .current)
-        return String(localized: "Skip \(NotificationActionHandler.dayPhrase(day, calendar: .current))")
+        return String(localized: "Skip \(NotificationActionHandler.dayPhrase(day, calendar: .current))", bundle: AppLanguage.bundle)
     }
 
     private var timeString: String { TimeText.string(hour: alarm.hour, minute: alarm.minute) }
@@ -202,7 +202,7 @@ struct RepeatPillsRow: View {
 
     /// VoiceOver: seven single letters ("M, T, W…") are noise — one label.
     private var pillsAccessibilityLabel: String {
-        mode == .oneTimeDate ? oneTimeLabel : String(localized: "Repeats \(weekdays.humanSummary)")
+        mode == .oneTimeDate ? oneTimeLabel : String(localized: "Repeats \(weekdays.humanSummary)", bundle: AppLanguage.bundle)
     }
 
     var body: some View {
@@ -233,7 +233,7 @@ struct RepeatPillsRow: View {
     }
 
     private var oneTimeLabel: String {
-        guard let day = oneTimeDate else { return String(localized: "Once") }
+        guard let day = oneTimeDate else { return String(localized: "Once", bundle: AppLanguage.bundle) }
         return DayText.short(day)
     }
 }

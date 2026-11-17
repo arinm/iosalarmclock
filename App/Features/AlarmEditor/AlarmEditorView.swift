@@ -26,6 +26,7 @@ struct AlarmEditorView: View {
     @State private var vibration: Bool
     @State private var groupName: String
     @State private var autoSkipCalendar: Bool
+    @State private var wakeCheck: Bool
     @State private var soundName: String?
     @State private var showSoundPicker = false
     @State private var preAlertMessage: String
@@ -55,6 +56,7 @@ struct AlarmEditorView: View {
             _vibration = State(initialValue: true)
             _groupName = State(initialValue: "")
             _autoSkipCalendar = State(initialValue: false)
+            _wakeCheck = State(initialValue: false)
             // Default sound from Settings (Pro); empty string = system default.
             let defaultSound = d.string(forKey: "defaultSoundName") ?? ""
             _soundName = State(initialValue: defaultSound.isEmpty ? nil : defaultSound)
@@ -72,6 +74,7 @@ struct AlarmEditorView: View {
             _vibration = State(initialValue: item.vibrationEnabled)
             _groupName = State(initialValue: item.groupName)
             _autoSkipCalendar = State(initialValue: item.autoSkipOnCalendarEvents)
+            _wakeCheck = State(initialValue: item.wakeCheckEnabled)
             _soundName = State(initialValue: item.soundName)
             _preAlertMessage = State(initialValue: item.preAlertMessage)
             _additionalPreAlerts = State(initialValue: Set(item.additionalPreAlertMinutes))
@@ -94,6 +97,7 @@ struct AlarmEditorView: View {
                 }
                 preAlertSection
                 snoozeSection
+                wakeCheckSection
                 Section {
                     if pro.isAvailable(.customSounds) {
                         Button { showSoundPicker = true } label: {
@@ -205,17 +209,17 @@ struct AlarmEditorView: View {
 
     private var calendarSummary: String {
         switch store.autoSkipCalendarIDs.count {
-        case 0: String(localized: "Choose")
-        case 1: String(localized: "1 calendar")
-        case let n: String(localized: "\(n) calendars")
+        case 0: String(localized: "Choose", bundle: AppLanguage.bundle)
+        case 1: String(localized: "1 calendar", bundle: AppLanguage.bundle)
+        case let n: String(localized: "\(n) calendars", bundle: AppLanguage.bundle)
         }
     }
 
     private var smartSkipFooter: String {
-        let text = String(localized: "Skips days that have an all-day event in the calendars you choose. The evening before, you get one quiet notice (with Ring anyway), not one per alarm.")
+        let text = String(localized: "Skips days that have an all-day event in the calendars you choose. The evening before, you get one quiet notice (with Ring anyway), not one per alarm.", bundle: AppLanguage.bundle)
         guard autoSkipCalendar && permissions.notificationState == .denied else { return text }
         return text + String(localized: " Notifications are off for Punctual, so you won't get those notices.",
-                             comment: "Appended to the Smart skip footer; keep the leading space if your language uses one")
+                             bundle: AppLanguage.bundle, comment: "Appended to the Smart skip footer; keep the leading space if your language uses one")
     }
 
     // MARK: Sections
@@ -247,8 +251,7 @@ struct AlarmEditorView: View {
             if alarmMode == .recurring {
                 RepeatDayPicker(selection: $weekdays)
                 if weekdays.isEmpty {
-                    Label("No days selected - rings every day at \(timeOnlyString).",
-                          systemImage: "repeat")
+                    Label(noDaysHint, systemImage: "repeat")
                         .font(.caption).foregroundStyle(.secondary)
                 } else {
                     Text(weekdays.humanSummary).font(.caption).foregroundStyle(.secondary)
@@ -307,7 +310,8 @@ struct AlarmEditorView: View {
     }
 
     private var snoozeSection: some View {
-        Section("Snooze") {
+        // Not "Snooze": that key is the ringing button, fr "Répéter", which reads as "Repeat" here.
+        Section("Snooze settings") {
             Toggle("Snooze enabled", isOn: $snooze.isEnabled)
             if snooze.isEnabled {
                 // Free goes to 15 — parity with iOS 26's Clock, which caps its
@@ -325,6 +329,25 @@ struct AlarmEditorView: View {
                 }
             }
         }
+    }
+
+    private var wakeCheckSection: some View {
+        Section {
+            if pro.isAvailable(.wakeCheck) {
+                Toggle("Are you up?", isOn: $wakeCheck)
+            } else {
+                ProLockRow(title: "Are you up?", value: "") { showPaywall = true }
+            }
+        } footer: {
+            Text(wakeCheckFooter)
+        }
+    }
+
+    private var wakeCheckFooter: String {
+        let text = String(localized: "5 minutes after you tap Stop, a quiet notification asks if you're up. Tap I'm up, or the alarm rings once more 2 minutes later. Snooze doesn't start it.", bundle: AppLanguage.bundle)
+        guard wakeCheck && permissions.notificationState == .denied else { return text }
+        return text + String(localized: " Notifications are off for Punctual, so open the app to tap I'm up.",
+                             bundle: AppLanguage.bundle, comment: "Appended to the Are you up? footer; keep the leading space if your language uses one")
     }
 
     // MARK: Logic
@@ -354,13 +377,19 @@ struct AlarmEditorView: View {
     }
 
     private var soundDisplay: String {
-        guard let soundName else { return String(localized: "Default") }
+        guard let soundName else { return String(localized: "Default", bundle: AppLanguage.bundle) }
         return (soundName as NSString).deletingPathExtension
     }
 
     private var timeOnlyString: String {
-        let f = DateFormatter(); f.timeStyle = .short; f.dateStyle = .none
+        let f = DateFormatter(); f.locale = AppLanguage.locale; f.timeStyle = .short; f.dateStyle = .none
         return f.string(from: time)
+    }
+
+    private var noDaysHint: String {
+        TimeText.isHourOne(time)
+            ? String(localized: "No days selected - rings every day at \(timeOnlyString). (hour 1)", bundle: AppLanguage.bundle)
+            : String(localized: "No days selected - rings every day at \(timeOnlyString).", bundle: AppLanguage.bundle)
     }
 
     private func previewFireDate(now: Date) -> Date {
@@ -401,6 +430,7 @@ struct AlarmEditorView: View {
         let finalExtra = strip(.multiplePreAlerts) ? [] : Array(additionalPreAlerts).sorted()
         let finalGroup = strip(.alarmGroups) ? "" : groupName.trimmingCharacters(in: .whitespaces)
         let finalAutoSkip = !strip(.calendarAwareSkip) && autoSkipCalendar
+        let finalWakeCheck = !strip(.wakeCheck) && wakeCheck
         let finalSound = strip(.customSounds) ? nil : soundName
 
         // Safety net for the notifications permission: onboarding step 2 is the
@@ -408,7 +438,8 @@ struct AlarmEditorView: View {
         // .notDetermined FOREVER (nothing else ever asks) and the heads-up
         // silently never fires. Saving an alarm with the heads-up ON is the
         // natural, explained moment to recover. Calendar auto-skip needs it too:
-        // its notices are what keep a calendar skip from being silent.
+        // its notices are what keep a calendar skip from being silent, and so
+        // does "Are you up?", whose notice carries the I'm up button.
         func ensureHeadsUpPermission(_ enabled: Bool) async {
             if enabled, permissions.notificationState == .notDetermined {
                 await permissions.requestNotifications()
@@ -424,10 +455,10 @@ struct AlarmEditorView: View {
             let countdown = CountdownText.string(until: next, from: .now)
             banners.show(.neutral,
                          title: created
-                            ? String(localized: "Alarm set - rings in \(countdown)")
-                            : String(localized: "Saved - rings in \(countdown)"),
+                            ? String(localized: "Alarm set - rings in \(countdown)", bundle: AppLanguage.bundle)
+                            : String(localized: "Saved - rings in \(countdown)", bundle: AppLanguage.bundle),
                          // Tell the user the running snooze was stopped by this edit.
-                         subtitle: snoozeStopped ? String(localized: "Snooze stopped · \(when)") : when,
+                         subtitle: snoozeStopped ? String(localized: "Snooze stopped · \(when)", bundle: AppLanguage.bundle) : when,
                          alarmID: item.id)
         }
 
@@ -442,11 +473,12 @@ struct AlarmEditorView: View {
             item.additionalPreAlertMinutes = finalExtra
             item.groupName = finalGroup
             item.autoSkipOnCalendarEvents = finalAutoSkip
+            item.wakeCheckEnabled = finalWakeCheck
             item.soundName = finalSound
             Task {
                 await store.create(item)
                 if finalAutoSkip { await store.refreshAllSchedules() }
-                await ensureHeadsUpPermission(finalPreAlert.isEnabled || finalAutoSkip)
+                await ensureHeadsUpPermission(finalPreAlert.isEnabled || finalAutoSkip || finalWakeCheck)
                 confirm(item, created: true)
             }
         case .edit(let item):
@@ -463,11 +495,12 @@ struct AlarmEditorView: View {
                     // derived set is otherwise only rebuilt on the next refresh,
                     // i.e. the next time the app opens - after tomorrow's alarm.
                     if !finalAutoSkip { $0.autoSkippedDates = []; $0.calendarSkipOverrides = [] }
+                    $0.wakeCheckEnabled = finalWakeCheck
                     $0.soundName = finalSound
                 }
                 // Switched on: work out the calendar days (and their notices) now.
                 if finalAutoSkip && !wasAutoSkip { await store.refreshAllSchedules() }
-                await ensureHeadsUpPermission(finalPreAlert.isEnabled || finalAutoSkip)
+                await ensureHeadsUpPermission(finalPreAlert.isEnabled || finalAutoSkip || finalWakeCheck)
                 confirm(item, created: false, snoozeStopped: snoozeStopped)
             }
         }

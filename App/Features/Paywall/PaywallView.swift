@@ -76,7 +76,7 @@ struct PaywallView: View {
             // is what a reviewer marks as missing.
             tierButton(id: StoreManager.yearlyID, title: "Punctual Pro - Yearly",
                        caption: "12 months · auto-renews · cancel anytime",
-                       highlighted: true, badge: storeKit.yearlySavingsText ?? String(localized: "Best value"))
+                       highlighted: true, badge: storeKit.yearlySavingsText ?? String(localized: "Best value", bundle: AppLanguage.bundle))
             tierButton(id: StoreManager.monthlyID, title: "Punctual Pro - Monthly",
                        caption: "1 month · auto-renews · cancel anytime", highlighted: false, badge: nil)
             tierButton(id: StoreManager.lifetimeID, title: "Punctual Pro - Lifetime",
@@ -169,9 +169,9 @@ struct PaywallView: View {
                     restoreMessage = nil
                     let synced = await storeKit.restore()
                     restoreMessage = storeKit.isPro
-                        ? String(localized: "Purchases restored - you're Pro!")
-                        : (synced ? String(localized: "No previous purchases found.")
-                                  : String(localized: "Couldn't reach the App Store - check your sign-in and try again."))
+                        ? String(localized: "Purchases restored - you're Pro!", bundle: AppLanguage.bundle)
+                        : (synced ? String(localized: "No previous purchases found.", bundle: AppLanguage.bundle)
+                                  : String(localized: "Couldn't reach the App Store - check your sign-in and try again.", bundle: AppLanguage.bundle))
                     restoring = false
                 }
             } label: {

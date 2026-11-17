@@ -25,7 +25,7 @@ struct AlarmDetailView: View {
                 proSection
             }
             .punctualBackground()
-            .navigationTitle(alarm.label.isEmpty ? String(localized: "Alarm") : alarm.label)
+            .navigationTitle(alarm.label.isEmpty ? String(localized: "Alarm", bundle: AppLanguage.bundle) : alarm.label)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) { Button("Edit") { editing = true } }
@@ -48,10 +48,10 @@ struct AlarmDetailView: View {
                     Button {
                         Task {
                             guard let day = await store.skipNextOccurrence(alarm) else { return }
-                            let next = NotificationActionHandler.describe(alarm.nextOccurrence, calendar: .current)
+                            let next = NotificationActionHandler.describe(alarm.nextOccurrence, calendar: .current, context: .middleOfSentence)
                             banners.show(.skip,
                                          title: NotificationActionHandler.skippedTitle(day),
-                                         subtitle: String(localized: "Next alarm: \(next)"),
+                                         subtitle: String(localized: "Next alarm: \(next)", bundle: AppLanguage.bundle),
                                          alarmID: alarm.id,
                                          undo: { [store] in await store.unskip(alarm, day: day) })
                             UINotificationFeedbackGenerator().notificationOccurred(.success)
@@ -124,7 +124,7 @@ struct AlarmDetailView: View {
                 ForEach(ringing, id: \.self) { ring in
                     let day = DateOnly(date: ring, calendar: cal)
                     HStack {
-                        calendarDayLabel(day, note: String(localized: "Rings anyway · \(reasons(day))"))
+                        calendarDayLabel(day, note: String(localized: "Rings anyway · \(reasons(day))", bundle: AppLanguage.bundle))
                         Spacer()
                         Button("Skip") { Task { await store.skipForCalendarAgain(alarm, day: day) } }
                             .buttonStyle(.bordered).font(.subheadline)
@@ -139,7 +139,7 @@ struct AlarmDetailView: View {
 
     private func reasons(_ day: DateOnly) -> String {
         let titles = store.calendarDayTitles[day] ?? []
-        return titles.isEmpty ? String(localized: "All-day event") : ListFormatter.localizedString(byJoining: titles)
+        return titles.isEmpty ? String(localized: "All-day event", bundle: AppLanguage.bundle) : ListText.joined(titles)
     }
 
     private func calendarDayLabel(_ day: DateOnly, note: String) -> some View {
@@ -172,11 +172,15 @@ struct AlarmDetailView: View {
     }
 
     private var snoozeSection: some View {
-        Section("Snooze") {
+        // Not "Snooze": that key is the ringing button, fr "Répéter", which reads as "Repeat" here.
+        Section("Snooze settings") {
             if alarm.snooze.isEnabled {
                 LabeledContent("Duration") { Text("\(alarm.snooze.durationMinutes) min") }
             } else {
                 Text("Off").foregroundStyle(.secondary)
+            }
+            if alarm.wakeCheckEnabled {
+                LabeledContent("Are you up?") { Text("On") }
             }
         }
     }

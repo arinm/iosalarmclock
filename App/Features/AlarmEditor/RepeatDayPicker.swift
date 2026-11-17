@@ -58,9 +58,9 @@ struct PauseRangeSheet: View {
     @State private var start: Date = .now
     @State private var end: Date = Calendar.current.date(byAdding: .day, value: 7, to: .now) ?? .now
 
-    static let dateFmt: DateFormatter = {
-        let f = DateFormatter(); f.dateStyle = .medium; f.timeStyle = .none; return f
-    }()
+    static var dateFmt: DateFormatter {
+        let f = DateFormatter(); f.locale = AppLanguage.locale; f.dateStyle = .medium; f.timeStyle = .none; return f
+    }
 
     var body: some View {
         NavigationStack {
@@ -88,8 +88,8 @@ struct PauseRangeSheet: View {
                             await store.pause(alarm, range: range)
                             if showsBanner {
                                 banners.show(.paused,
-                                             title: String(localized: "Paused until \(Self.dateFmt.string(from: e))"),
-                                             subtitle: String(localized: "From \(Self.dateFmt.string(from: s)) - then resumes automatically"),
+                                             title: String(localized: "Paused until \(Self.dateFmt.string(from: e))", bundle: AppLanguage.bundle),
+                                             subtitle: String(localized: "From \(Self.dateFmt.string(from: s)) - then resumes automatically", bundle: AppLanguage.bundle),
                                              alarmID: alarm.id,
                                              undo: { [store] in await store.unpause(alarm, range: range) })
                             }

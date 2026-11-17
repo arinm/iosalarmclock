@@ -23,10 +23,16 @@ struct PunctualApp: App {
     @State private var liveActivity = LiveActivityManager()
     @State private var theme = ThemeManager.shared
     @State private var soundManager = SoundManager()
+    @State private var language: LanguageManager
 
     @Environment(\.scenePhase) private var scenePhase
 
     init() {
+        // First, so the words made below (demo seed, notification buttons)
+        // come in this launch's language: as a `@State` default it would only
+        // be made once `body` reads it, and a background launch may never.
+        _language = State(initialValue: LanguageManager())
+
         // SwiftData (App Group container shared with the widget extension).
         // Use the container's MAIN context — the same one @Query uses — so store
         // mutations/fetches and the list stay in sync in real time (a separate
@@ -75,6 +81,10 @@ struct PunctualApp: App {
                 .environment(banners)
                 .environment(theme)
                 .environment(soundManager)
+                .environment(language)
+                // Text keys and formats follow a language picked in Settings
+                // at once (see AppLanguage).
+                .environment(\.locale, language.locale)
                 .task {
                     // Every persisted change pushes the outside surfaces: the
                     // widget re-renders from the shared store and the Live
@@ -84,16 +94,37 @@ struct PunctualApp: App {
                         WidgetCenter.shared.reloadAllTimelines()
                         refreshLiveActivity()
                     }
+                    // Alarms armed in another language get the new words.
+                    Task { await syncAlarmLanguage() }
                     #if DEBUG
                     // Own task: StoreKit's start() can hang outside Xcode (no
                     // local StoreKit config when launched by simctl).
                     let qa = ProcessInfo.processInfo.arguments
                     if qa.contains("--demo-pro") { pro.isPro = true; pro.entitlementsResolved = true }
+                    if let i = qa.firstIndex(of: "--pick-language"), i + 1 < qa.count {
+                        Task { // a live pick, as from Settings ("auto" = Automatic)
+                            try? await Task.sleep(for: .seconds(3))
+                            language.select(qa[i + 1] == "auto" ? nil : qa[i + 1])
+                            // A second pick while the first one's re-arm still runs.
+                            if let j = qa.firstIndex(of: "--then-pick-language"), j + 1 < qa.count {
+                                try? await Task.sleep(for: .milliseconds(200))
+                                language.select(qa[j + 1] == "auto" ? nil : qa[j + 1])
+                            }
+                        }
+                    }
                     Task {
                         if qa.contains("--seed-calendar-skip") { await CalendarSkipDebugSeed.run(store: store) }
                         if qa.contains("--calskip-remove-holiday") { await CalendarSkipDebugSeed.removeHoliday(store: store) }
                         if qa.contains("--calskip-remove-calendar") { await CalendarSkipDebugSeed.removeDaysOffCalendar(store: store) }
                         if qa.contains("--seed-ring-test") { await CalendarSkipDebugSeed.seedRingTest(store: store) }
+                        if qa.contains("--wakecheck-qa") {
+                            await CalendarSkipDebugSeed.wakeCheckQA(store: store, imUp: qa.contains("--wakecheck-qa-imup"),
+                                                                    race: qa.contains("--wakecheck-qa-race"))
+                            if qa.contains("--wakecheck-qa-focus") { // a tap on the notice, 15 s later
+                                try? await Task.sleep(for: .seconds(15))
+                                store.focusWakeCheck()
+                            }
+                        }
                         if qa.contains("--calskip-notice-now") { await CalendarSkipDebugSeed.deliverNoticesNow() }
                         if qa.contains("--calskip-qa-ring-anyway") {
                             // The single-day notice's own userInfo, through the action handler.
@@ -151,6 +182,9 @@ struct PunctualApp: App {
                     // already on the default theme.
                     if newValue && !store_kit.isPro { theme.resetToDefault() }
                 }
+                .onChange(of: language.code) {
+                    Task { await syncAlarmLanguage() }
+                }
                 .tint(theme.accentColor)
                 // Apply appearance directly on the window so it also covers sheets
                 // (preferredColorScheme on the root doesn't reach presented sheets).
@@ -173,6 +207,7 @@ struct PunctualApp: App {
                     await permissions.refresh()
                     AppReviewPrompt.noteFired(store.firedOccurrences()) // before the refresh clears them
                     await store.refreshAllSchedules() // re-arm look-ahead window
+                    store.reloadWakeCheck() // a check started or answered while we were away
                     // Surface a snooze that happened while we weren't running
                     // (no notification — the moment has passed; UI state only).
                     store.reconcileSnoozes(snoozingIDs: alarmKit.snoozingAlarmIDs(), announce: false)
@@ -201,6 +236,37 @@ extension PunctualApp {
             guard let windowScene = scene as? UIWindowScene else { continue }
             for window in windowScene.windows { window.overrideUserInterfaceStyle = style }
         }
+    }
+
+    /// The alarm screen keeps the title, Stop and Snooze an alarm was armed
+    /// with, and the notification buttons are registered once, so both are
+    /// redone when the app's language moves on: a pick in Settings, iOS's
+    /// per-app language, or a new phone language under Automatic. The first
+    /// launch of 1.0.5 only records the language: older alarms carry words
+    /// iOS translates itself.
+    func syncAlarmLanguage() async {
+        // One sync at a time: a pick made while it runs is caught by its loop.
+        guard !language.isSyncingAlarms else { return }
+        language.isSyncingAlarms = true
+        defer { language.isSyncingAlarms = false }
+        guard language.alarmsLanguage != nil else {
+            language.alarmsLanguage = language.code
+            return
+        }
+        guard language.alarmsLanguage != language.code else { return }
+        var target: String
+        var picks: Int
+        // Each alarm takes the language current when it is re-armed, so any pick
+        // during a pass (even one back to the same language) redoes the pass.
+        repeat {
+            target = language.code
+            picks = language.pickCount
+            PreAlertNotificationManager().registerCategories()
+            await store.rearmAll()
+        } while target != language.code || picks != language.pickCount
+        // Recorded only once all alarms are re-armed: a process cut short
+        // mid-way re-arms them again at the next launch.
+        language.alarmsLanguage = target
     }
 
     /// Reflect the soonest upcoming alarm into the Live Activity.

@@ -44,6 +44,16 @@ final class NotificationActionHandler: NSObject, @preconcurrency UNUserNotificat
             await applyRingAnyway(info: info)
             return
         }
+        // "Are you up?": the check's alarm and notice go.
+        if response.actionIdentifier == WakeCheck.imUpActionID {
+            await store.endWakeCheck()
+            return
+        }
+        // A tap on the notice itself opens the app: bring its card into view.
+        if response.notification.request.content.categoryIdentifier == WakeCheck.categoryID {
+            store.focusWakeCheck()
+            return
+        }
         guard
             let idString = info[PreAlertNotificationManager.alarmIDKey] as? String,
             let id = UUID(uuidString: idString),
@@ -75,10 +85,10 @@ final class NotificationActionHandler: NSObject, @preconcurrency UNUserNotificat
             }
         }
         // store.update already re-armed via the scheduler; report the new next.
-        let next = Self.describe(alarm.nextOccurrence, calendar: calendar)
+        let next = Self.describe(alarm.nextOccurrence, calendar: calendar, context: .middleOfSentence)
         banners.show(.skip,
                      title: Self.skippedTitle(day, calendar: calendar),
-                     subtitle: String(localized: "Next alarm: \(next)"),
+                     subtitle: String(localized: "Next alarm: \(next)", bundle: AppLanguage.bundle),
                      alarmID: alarm.id,
                      undo: { [store] in await store.unskip(alarm, day: day) })
     }
@@ -94,8 +104,8 @@ final class NotificationActionHandler: NSObject, @preconcurrency UNUserNotificat
         let phrase = Self.dayPhrase(day, calendar: calendar)
         banners.show(.neutral,
                      title: alarms.count == 1
-                        ? String(localized: "Will ring \(phrase)")
-                        : String(localized: "\(alarms.count) alarms will ring \(phrase)"),
+                        ? String(localized: "Will ring \(phrase)", bundle: AppLanguage.bundle)
+                        : String(localized: "\(alarms.count) alarms will ring \(phrase)", bundle: AppLanguage.bundle),
                      subtitle: alarms.count == 1
                         ? Self.describe(day.date(hour: alarms[0].hour, minute: alarms[0].minute, in: calendar), calendar: calendar)
                         : nil,
@@ -110,19 +120,24 @@ final class NotificationActionHandler: NSObject, @preconcurrency UNUserNotificat
 
     /// "today" / "tomorrow" / weekday name for friendly, accurate copy.
     static func dayPhrase(_ day: DateOnly, calendar: Calendar) -> String {
-        guard let date = day.startOfDay(in: calendar) else { return String(localized: "today") }
+        guard let date = day.startOfDay(in: calendar) else { return String(localized: "today", bundle: AppLanguage.bundle) }
         return DayText.phrase(date, calendar: calendar)
     }
 
     /// The confirmation every skip surface shows: "Skipped today - still active".
     static func skippedTitle(_ day: DateOnly, calendar: Calendar = .current) -> String {
-        String(localized: "Skipped \(dayPhrase(day, calendar: calendar)) - still active")
+        String(localized: "Skipped \(dayPhrase(day, calendar: calendar)) - still active", bundle: AppLanguage.bundle)
     }
 
-    static func describe(_ date: Date?, calendar: Calendar) -> String {
-        guard let date else { return String(localized: "No further alarms") }
+    /// Pass `.middleOfSentence` when the result follows other text ("Next alarm: %@"):
+    /// iOS otherwise capitalizes the relative day there (de "Übermorgen", pt-BR "Depois de amanhã").
+    static func describe(_ date: Date?, calendar: Calendar,
+                         context: Formatter.Context = .unknown) -> String {
+        guard let date else { return String(localized: "No further alarms", bundle: AppLanguage.bundle) }
         let f = DateFormatter()
+        f.locale = AppLanguage.locale
         f.calendar = calendar
+        f.formattingContext = context
         f.doesRelativeDateFormatting = true
         f.dateStyle = .medium
         f.timeStyle = .short

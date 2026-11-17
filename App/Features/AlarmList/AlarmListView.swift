@@ -12,6 +12,7 @@ struct AlarmListView: View {
     @Environment(PermissionManager.self) private var permissions
     @Environment(\.requestReview) private var requestReview
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.locale) private var locale
     @Query(sort: [SortDescriptor(\AlarmItem.hour), SortDescriptor(\AlarmItem.minute)])
     private var alarms: [AlarmItem]
 
@@ -22,15 +23,17 @@ struct AlarmListView: View {
     @State private var creatingNew = false
     @State private var showSettings = false
     @State private var showPaywall = false
+    /// Bumped after scrolling to the "Are you up?" card from its notice.
+    @State private var wakeCheckFocus = 0
 
     /// Single skip entry point so every surface shows the same confirm+undo banner
     /// with the *actual* skipped day named (not always "today").
     private func skip(_ alarm: AlarmItem) async {
         guard let day = await store.skipNextOccurrence(alarm) else { return }
-        let next = NotificationActionHandler.describe(alarm.nextOccurrence, calendar: .current)
+        let next = NotificationActionHandler.describe(alarm.nextOccurrence, calendar: .current, context: .middleOfSentence)
         banners.show(.skip,
                      title: NotificationActionHandler.skippedTitle(day),
-                     subtitle: String(localized: "Next alarm: \(next)"),
+                     subtitle: String(localized: "Next alarm: \(next)", bundle: AppLanguage.bundle),
                      alarmID: alarm.id,
                      undo: { [store] in await store.unskip(alarm, day: day) })
         UINotificationFeedbackGenerator().notificationOccurred(.success)
@@ -49,6 +52,9 @@ struct AlarmListView: View {
                     content
                 }
             }
+            // Rebuilt on a language pick (Settings): words made with
+            // String(localized:) don't follow `\.locale` on their own.
+            .id(locale.identifier)
             .punctualBackground()
             // Only ASKS. The counting lives in AlarmStore.refreshAllSchedules,
             // which runs on every foreground and observer event — a SwiftUI
@@ -59,7 +65,12 @@ struct AlarmListView: View {
             // screen is where someone lands after being woken. Fires on first
             // appear and on every return to foreground, so a user who has earned
             // it gets asked at the next natural moment.
-            .task { AppReviewPrompt.askIfEarned(requestReview) }
+            .task {
+                #if DEBUG
+                if ProcessInfo.processInfo.arguments.contains("--open-settings") { showSettings = true }
+                #endif
+                AppReviewPrompt.askIfEarned(requestReview)
+            }
             .onChange(of: scenePhase) { _, phase in
                 if phase == .active { AppReviewPrompt.askIfEarned(requestReview) }
             }
@@ -97,6 +108,8 @@ struct AlarmListView: View {
         }
     }
 
+    private static let wakeCheckRowID = "wakeCheck"
+
     private var content: some View {
         // TimelineView keeps every "Rings in …" label live without manual timers.
         TimelineView(.periodic(from: .now, by: 30)) { ctx in
@@ -107,6 +120,12 @@ struct AlarmListView: View {
                 List {
                     Group {
                         permissionBanner
+                        // "Are you up?" waiting for an answer: the in-app way to
+                        // say I'm up, even with notifications off.
+                        if let check = store.wakeCheck, check.fireDate > now {
+                            WakeCheckCard(ringsAt: check.fireDate, focus: wakeCheckFocus)
+                                .id(Self.wakeCheckRowID)
+                        }
                         NextAlarmSummaryView(now: now)
                             .padding(.bottom, 4)
                     }
@@ -146,7 +165,7 @@ struct AlarmListView: View {
                                     Task {
                                         await store.setEnabled(alarm, !alarm.isEnabled)
                                         UIAccessibility.post(notification: .announcement,
-                                                             argument: alarm.isEnabled ? String(localized: "Alarm on") : String(localized: "Alarm off"))
+                                                             argument: alarm.isEnabled ? String(localized: "Alarm on", bundle: AppLanguage.bundle) : String(localized: "Alarm off", bundle: AppLanguage.bundle))
                                     }
                                 }
                                 .accessibilityAction(named: "Details") { detail = alarm }
@@ -187,6 +206,24 @@ struct AlarmListView: View {
                 .onChange(of: banners.current?.id) { _, _ in
                     guard let target = banners.current?.alarmID else { return }
                     withAnimation(.snappy) { proxy.scrollTo(target, anchor: .center) }
+                }
+                // A tap on the "Are you up?" notice: scroll up to its card, only
+                // when the card is there. `initial` also covers a cold launch,
+                // where the tap lands before the list exists. Not `task(id:)`:
+                // clearing the flag would cancel that task mid-wait.
+                .onChange(of: store.wakeCheckFocusPending, initial: true) { _, pending in
+                    guard pending else { return }
+                    store.wakeCheckFocusPending = false
+                    guard let check = store.wakeCheck, check.fireDate > .now else { return }
+                    Task {
+                        // Let the list lay out first, or scrollTo does nothing.
+                        try? await Task.sleep(for: .milliseconds(350))
+                        // Centered, not .top: the card is the first row, so the
+                        // list stops at its very top, large title kept.
+                        withAnimation(.snappy) { proxy.scrollTo(Self.wakeCheckRowID, anchor: .center) }
+                        wakeCheckFocus += 1
+                        WakeCheck.log.notice("Notice tapped: scrolled to the card")
+                    }
                 }
             }
         }
@@ -297,6 +334,61 @@ private struct HeadsUpBudgetNote: View {
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: Theme.cardRadius, style: .continuous))
         .accessibilityElement(children: .combine)
         .padding(.top, 4)
+    }
+}
+
+/// "Are you up?" (Pro) after a Stop: the check rings again unless the user
+/// answers. The same answer as the notice's I'm up button. It stands out from
+/// the alarm cards (accent fill, a slowly breathing accent border) since a
+/// missed answer means another ring.
+private struct WakeCheckCard: View {
+    @Environment(AlarmStore.self) private var store
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    let ringsAt: Date
+    /// Bumped when the list scrolls here from the notice: the icon bounces.
+    let focus: Int
+    @State private var breathe = false
+
+    var body: some View {
+        let shape = RoundedRectangle(cornerRadius: Theme.cardRadius, style: .continuous)
+        HStack(alignment: .center, spacing: 12) {
+            Image(systemName: "sun.horizon.fill")
+                .foregroundStyle(Theme.accent)
+                .font(.title2)
+                .symbolEffect(.bounce, options: .nonRepeating, value: focus)
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Are you up?").font(.headline)
+                Text(ringsAgain)
+                    .font(.caption).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+            Button("I'm up") { Task { await store.endWakeCheck() } }
+                .buttonStyle(.borderedProminent)
+                .tint(Theme.accent)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.ultraThinMaterial, in: shape)
+        .background(Theme.accent.opacity(0.14), in: shape)
+        .overlay(
+            shape.strokeBorder(Theme.accent.opacity(reduceMotion ? 0.8 : (breathe ? 0.95 : 0.3)),
+                               lineWidth: 2)
+        )
+        .onAppear {
+            guard !reduceMotion, !breathe else { return } // don't stack animations on re-appear
+            withAnimation(.easeInOut(duration: 1.4).repeatForever(autoreverses: true)) {
+                breathe = true
+            }
+        }
+        .padding(.bottom, 4)
+    }
+
+    private var ringsAgain: String {
+        let time = TimeText.string(ringsAt)
+        return TimeText.isHourOne(ringsAt)
+            ? String(localized: "The alarm rings again at \(time). (hour 1)", bundle: AppLanguage.bundle)
+            : String(localized: "The alarm rings again at \(time).", bundle: AppLanguage.bundle)
     }
 }
 
@@ -427,9 +519,9 @@ private struct StopSnoozeA11y: ViewModifier {
                     await store.stopSnooze(alarm)
                     // Honest either way: recurring → "tomorrow at 6:30";
                     // one-time → "No further alarms" (never claim "still active").
-                    let next = NotificationActionHandler.describe(alarm.nextOccurrence, calendar: .current)
+                    let next = NotificationActionHandler.describe(alarm.nextOccurrence, calendar: .current, context: .middleOfSentence)
                     UIAccessibility.post(notification: .announcement,
-                                         argument: String(localized: "Snooze stopped. Next alarm: \(next)"))
+                                         argument: String(localized: "Snooze stopped. Next alarm: \(next)", bundle: AppLanguage.bundle))
                 }
             }
         } else {
@@ -487,8 +579,8 @@ struct GroupPauseSheet: View {
                         Task {
                             await store.pauseGroup(groupName, range: range)
                             banners.show(.paused,
-                                         title: String(localized: "Paused “\(groupName)” until \(PauseRangeSheet.dateFmt.string(from: e))"),
-                                         subtitle: String(localized: "Every alarm in the group - then resumes automatically"),
+                                         title: String(localized: "Paused “\(groupName)” until \(PauseRangeSheet.dateFmt.string(from: e))", bundle: AppLanguage.bundle),
+                                         subtitle: String(localized: "Every alarm in the group - then resumes automatically", bundle: AppLanguage.bundle),
                                          alarmID: anchor,
                                          undo: { [store] in await store.unpauseGroup(groupName, range: range) })
                         }

@@ -89,14 +89,16 @@ struct NextAlarmWidgetView: View {
                 EmptyWidgetView()
             }
         }
+        // Words and dates follow a language picked in the app (see AppLanguage).
+        .environment(\.locale, AppLanguage.locale)
         .containerBackground(.fill.tertiary, for: .widget)
     }
 
     /// "Today" / "Tomorrow" / "Mon, Jun 24".
     static func dayText(_ date: Date) -> String {
         let cal = Calendar.current
-        if cal.isDateInToday(date) { return String(localized: "Today") }
-        if cal.isDateInTomorrow(date) { return String(localized: "Tomorrow") }
+        if cal.isDateInToday(date) { return String(localized: "Today", bundle: AppLanguage.bundle) }
+        if cal.isDateInTomorrow(date) { return String(localized: "Tomorrow", bundle: AppLanguage.bundle) }
         return DayText.short(date)
     }
 }
@@ -147,7 +149,7 @@ private struct SmallView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             // Label gives context ("Work"); falls back to the eyebrow.
-            Text(info.label.isEmpty ? String(localized: "NEXT ALARM") : info.label.uppercased())
+            Text(info.label.isEmpty ? String(localized: "NEXT ALARM", bundle: AppLanguage.bundle) : info.label.uppercased())
                 .font(.caption2.weight(.semibold)).foregroundStyle(.secondary).lineLimit(1)
             Text(info.timeText)
                 .font(.system(size: 30, weight: .semibold, design: .rounded)).monospacedDigit()

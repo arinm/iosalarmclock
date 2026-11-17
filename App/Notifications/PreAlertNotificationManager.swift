@@ -26,12 +26,12 @@ final class PreAlertNotificationManager {
     func registerCategories() {
         let skip = UNNotificationAction(
             identifier: Self.skipActionID,
-            title: String(localized: "Skip today"),
+            title: String(localized: "Skip today", bundle: AppLanguage.bundle),
             options: [] // handled in background; no need to unlock
         )
         let open = UNNotificationAction(
             identifier: Self.openActionID,
-            title: String(localized: "Open"),
+            title: String(localized: "Open", bundle: AppLanguage.bundle),
             options: [.foreground]
         )
         let category = UNNotificationCategory(
@@ -42,7 +42,7 @@ final class PreAlertNotificationManager {
         )
         // setNotificationCategories REPLACES the whole set, so every category
         // the app uses must be registered in this one call.
-        center.setNotificationCategories(Set([category] + CalendarSkipNotifier.categories))
+        center.setNotificationCategories(Set([category, WakeCheck.category] + CalendarSkipNotifier.categories))
     }
 
     /// Arm heads-ups for every alarm's armed window at once, so occurrences
@@ -50,8 +50,8 @@ final class PreAlertNotificationManager {
     /// other pending heads-up (deleted or disabled alarms, skipped days).
     ///
     /// Budget: iOS keeps at most 64 pending local notifications app-wide, so
-    /// all alarms share one allowance with the calendar notices (see
-    /// `HeadsUpPlanner`): the soonest heads-ups are set, the rest wait for a
+    /// all alarms share one allowance with the calendar notices and the
+    /// "Are you up?" notice (see `HeadsUpPlanner`): the soonest heads-ups are set, the rest wait for a
     /// later sync. Only ARMED occurrences get one, so a heads-up never
     /// announces a ring the system doesn't hold. Run it after the calendar
     /// notices are synced, so their count is current.
@@ -69,9 +69,11 @@ final class PreAlertNotificationManager {
         let pending = await center.pendingNotificationRequests()
         let ours = pending.filter { $0.identifier.hasPrefix(Self.prefix) }
         let calendarNotices = pending.filter { $0.identifier.hasPrefix(CalendarSkipNotifier.prefix) }.count
-        let limit = HeadsUpPlanner.limit(calendarNotices: calendarNotices,
-                                         others: pending.count - ours.count - calendarNotices,
-                                         calendarInUse: items.contains(where: \.autoSkipOnCalendarEvents))
+        let wakeChecks = pending.filter { $0.identifier.hasPrefix(WakeCheck.prefix) }.count
+        let limit = HeadsUpPlanner.limit(calendarNotices: calendarNotices, wakeChecks: wakeChecks,
+                                         others: pending.count - ours.count - calendarNotices - wakeChecks,
+                                         calendarInUse: items.contains(where: \.autoSkipOnCalendarEvents),
+                                         wakeCheckInUse: items.contains(where: \.wakeCheckEnabled))
         let plan = HeadsUpPlanner.plan(alarms, now: now, limit: limit)
 
         let keep = Set(plan.scheduled.map { requestID(alarmID: $0.alarmID, minutes: $0.minutesBefore, occurrence: $0.occurrence) })
@@ -109,14 +111,18 @@ final class PreAlertNotificationManager {
         guard preAlertDate > .now else { return nil } // skip if already in the past
 
         let timeString = TimeText.string(fireDate)
-        let label = item.label.isEmpty ? String(localized: "Alarm") : item.label
+        let label = item.label.isEmpty ? String(localized: "Alarm", bundle: AppLanguage.bundle) : item.label
 
         let content = UNMutableNotificationContent()
-        content.title = String(localized: "Alarm in \(minutesBefore) minutes")
+        content.title = String(localized: "Alarm in \(minutesBefore) minutes", bundle: AppLanguage.bundle, locale: AppLanguage.locale)
         // Pro custom message overrides the default body when set.
-        content.body = item.preAlertMessage.isEmpty
-            ? String(localized: "\(label) rings at \(timeString)")
-            : item.preAlertMessage
+        if !item.preAlertMessage.isEmpty {
+            content.body = item.preAlertMessage
+        } else if TimeText.isHourOne(fireDate) {
+            content.body = String(localized: "\(label) rings at \(timeString) (hour 1)", bundle: AppLanguage.bundle)
+        } else {
+            content.body = String(localized: "\(label) rings at \(timeString)", bundle: AppLanguage.bundle)
+        }
         content.categoryIdentifier = Self.categoryID
         // Custom sound (Pro) lives in Library/Sounds; falls back to default.
         if let sound = item.soundName, !sound.isEmpty {
@@ -150,10 +156,10 @@ final class PreAlertNotificationManager {
     /// (always true) rather than a live countdown (we can't know the exact
     /// re-ring time from outside AlarmKit).
     func announceSnooze(for item: AlarmItem) {
-        let label = item.label.isEmpty ? String(localized: "Alarm") : item.label
+        let label = item.label.isEmpty ? String(localized: "Alarm", bundle: AppLanguage.bundle) : item.label
         let content = UNMutableNotificationContent()
-        content.title = String(localized: "Snoozed")
-        content.body = String(localized: "\(label) - snoozed for \(item.snooze.durationMinutes) min. It'll ring again.")
+        content.title = String(localized: "Snoozed", bundle: AppLanguage.bundle)
+        content.body = String(localized: "\(label) - snoozed for \(item.snooze.durationMinutes) min. It'll ring again.", bundle: AppLanguage.bundle)
         content.sound = nil
         // Same id per alarm → a repeat snooze replaces the old note, no pile-up.
         center.add(UNNotificationRequest(identifier: "snoozed-\(item.id.uuidString)",

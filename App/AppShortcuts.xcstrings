@@ -4,6 +4,16 @@
     "Skip my next alarm in ${applicationName}" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Überspringe meinen nächsten Wecker in ${applicationName}",
+              "Überspringe den heutigen Wecker in ${applicationName}",
+              "Überspringe meinen Wecker heute in ${applicationName}"
+            ]
+          }
+        },
         "en" : {
           "stringSet" : {
             "state" : "new",
@@ -14,6 +24,36 @@
             ]
           }
         },
+        "es" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Omitir mi próxima alarma en ${applicationName}",
+              "Omitir la alarma de hoy en ${applicationName}",
+              "Omitir hoy con ${applicationName}"
+            ]
+          }
+        },
+        "es-419" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Omitir mi próxima alarma en ${applicationName}",
+              "Omitir la alarma de hoy en ${applicationName}",
+              "Omitir hoy con ${applicationName}"
+            ]
+          }
+        },
+        "fr" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Ignorer ma prochaine alarme dans ${applicationName}",
+              "Ignorer l’alarme d’aujourd’hui dans ${applicationName}",
+              "Ignorer aujourd’hui avec ${applicationName}"
+            ]
+          }
+        },
         "ja" : {
           "stringSet" : {
             "state" : "translated",
@@ -21,6 +61,16 @@
               "${applicationName}で次のアラームをスキップ",
               "${applicationName}で今日のアラームをスキップ",
               "${applicationName}で今日をスキップ"
+            ]
+          }
+        },
+        "pt-BR" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Pular meu próximo alarme no ${applicationName}",
+              "Pular o alarme de hoje no ${applicationName}",
+              "Pular hoje com o ${applicationName}"
             ]
           }
         }

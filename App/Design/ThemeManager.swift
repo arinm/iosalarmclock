@@ -18,12 +18,12 @@ final class ThemeManager {
         static var presets: [Accent] { allCases.filter { $0 != .custom } }
         var title: String {
             switch self {
-            case .peach: String(localized: "Peach"); case .ocean: String(localized: "Ocean")
-            case .teal: String(localized: "Teal"); case .mint: String(localized: "Mint")
-            case .forest: String(localized: "Forest"); case .gold: String(localized: "Gold")
-            case .sunset: String(localized: "Sunset"); case .rose: String(localized: "Rose")
-            case .grape: String(localized: "Grape"); case .indigo: String(localized: "Indigo")
-            case .graphite: String(localized: "Graphite"); case .custom: String(localized: "Custom")
+            case .peach: String(localized: "Peach", bundle: AppLanguage.bundle); case .ocean: String(localized: "Ocean", bundle: AppLanguage.bundle)
+            case .teal: String(localized: "Teal", bundle: AppLanguage.bundle); case .mint: String(localized: "Mint", bundle: AppLanguage.bundle)
+            case .forest: String(localized: "Forest", bundle: AppLanguage.bundle); case .gold: String(localized: "Gold", bundle: AppLanguage.bundle)
+            case .sunset: String(localized: "Sunset", bundle: AppLanguage.bundle); case .rose: String(localized: "Rose", bundle: AppLanguage.bundle)
+            case .grape: String(localized: "Grape", bundle: AppLanguage.bundle); case .indigo: String(localized: "Indigo", bundle: AppLanguage.bundle)
+            case .graphite: String(localized: "Graphite", bundle: AppLanguage.bundle); case .custom: String(localized: "Custom", bundle: AppLanguage.bundle)
             }
         }
         /// Light/dark adaptive accent color (single source of truth in BrandColor,
@@ -36,9 +36,9 @@ final class ThemeManager {
         var id: String { rawValue }
         var title: String {
             switch self {
-            case .system: String(localized: "System", comment: "Appearance: follow the system light/dark setting")
-            case .light: String(localized: "Light")
-            case .dark: String(localized: "Dark")
+            case .system: String(localized: "System", bundle: AppLanguage.bundle, comment: "Appearance: follow the system light/dark setting")
+            case .light: String(localized: "Light", bundle: AppLanguage.bundle)
+            case .dark: String(localized: "Dark", bundle: AppLanguage.bundle)
             }
         }
         var colorScheme: ColorScheme? {

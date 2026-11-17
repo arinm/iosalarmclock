@@ -18,6 +18,10 @@ public enum HeadsUpPlanner {
     /// There is at most one per run of days off inside their 10-day horizon,
     /// so 8 is room to spare.
     public static let calendarReserve = 8
+    /// The slot kept for the "Are you up?" notice while any alarm has the
+    /// check on: there is at most one pending, and it shows minutes after a
+    /// Stop, so it must never be the request iOS drops.
+    public static let wakeCheckReserve = 1
     /// A heads-up that waits is worth a note to the user only this close to
     /// it. Every alarm is armed at least 3 days ahead, and any visit before
     /// then sets the heads-ups that were waiting.
@@ -86,10 +90,15 @@ public enum HeadsUpPlanner {
     }
 
     /// Slots heads-ups may use, given the other notifications pending:
-    /// `calendarNotices` of ours, `others` of any other kind. `calendarInUse`:
-    /// some alarm uses calendar auto-skip, so the reserve is kept; without it
-    /// no notice can come and heads-ups get every slot.
-    public static func limit(calendarNotices: Int, others: Int, calendarInUse: Bool) -> Int {
-        max(0, systemLimit - max(calendarInUse ? calendarReserve : 0, calendarNotices) - others)
+    /// `calendarNotices` and `wakeChecks` of ours, `others` of any other kind.
+    /// `calendarInUse`: some alarm uses calendar auto-skip, so the reserve is
+    /// kept; without it no notice can come and heads-ups get every slot.
+    /// `wakeCheckInUse` does the same for the "Are you up?" notice.
+    public static func limit(calendarNotices: Int, wakeChecks: Int = 0, others: Int,
+                             calendarInUse: Bool, wakeCheckInUse: Bool = false) -> Int {
+        max(0, systemLimit
+            - max(calendarInUse ? calendarReserve : 0, calendarNotices)
+            - max(wakeCheckInUse ? wakeCheckReserve : 0, wakeChecks)
+            - others)
     }
 }

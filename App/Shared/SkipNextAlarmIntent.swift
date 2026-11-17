@@ -29,7 +29,7 @@ struct SkipNextAlarmIntent: AppIntent {
         WidgetCenter.shared.reloadAllTimelines()
 
         let next = alarm.nextOccurrence
-        let when = NotificationActionHandler.describe(next, calendar: .current)
+        let when = NotificationActionHandler.describe(next, calendar: .current, context: .middleOfSentence)
         // Name the actual day skipped — it may not be "today" (e.g. a weekday
         // alarm skipped on a Saturday skips Monday).
         let dayText = Self.dayPhrase(skippedDay)
@@ -37,7 +37,7 @@ struct SkipNextAlarmIntent: AppIntent {
     }
 
     private static func dayPhrase(_ day: DateOnly?) -> String {
-        guard let day, let date = day.startOfDay(in: .current) else { return String(localized: "the next alarm") }
+        guard let day, let date = day.startOfDay(in: .current) else { return String(localized: "the next alarm", bundle: AppLanguage.bundle) }
         return DayText.phrase(date)
     }
 }

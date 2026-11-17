@@ -17,7 +17,7 @@ struct SoundPickerView: View {
         NavigationStack {
             List {
                 Section {
-                    row(title: String(localized: "Default"), file: nil, icon: "bell")
+                    row(title: String(localized: "Default", bundle: AppLanguage.bundle), file: nil, icon: "bell")
                 }
                 Section {
                     if sounds.sounds.isEmpty {

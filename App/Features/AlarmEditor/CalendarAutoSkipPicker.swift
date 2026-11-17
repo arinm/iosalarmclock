@@ -79,7 +79,7 @@ struct CalendarAutoSkipPicker: View {
                     HStack(alignment: .firstTextBaseline) {
                         Text(StatusPresenter.dayLabel(day)).monospacedDigit()
                         Spacer()
-                        Text(preview[day].flatMap { ListFormatter.localizedString(byJoining: $0).nilIfEmpty } ?? String(localized: "All-day event"))
+                        Text(preview[day].flatMap { ListText.joined($0).nilIfEmpty } ?? String(localized: "All-day event", bundle: AppLanguage.bundle))
                             .foregroundStyle(.secondary).multilineTextAlignment(.trailing)
                     }
                 }

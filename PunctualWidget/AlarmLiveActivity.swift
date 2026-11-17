@@ -9,19 +9,24 @@ struct AlarmLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: PunctualActivityAttributes.self) { context in
             // Lock Screen / banner presentation.
+            // Words follow a language picked in the app (see AppLanguage),
+            // here and in each island region that shows any.
             LockScreenLiveActivityView(context: context)
+                .environment(\.locale, AppLanguage.locale)
                 .activityBackgroundTint(Color.black.opacity(0.35))
                 .activitySystemActionForegroundColor(.white)
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
                     Label("Alarm", systemImage: "alarm.fill").font(.caption).foregroundStyle(.tint)
+                        .environment(\.locale, AppLanguage.locale)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
                     countdown(context).font(.system(.title3, design: .rounded).weight(.bold)).monospacedDigit()
+                        .environment(\.locale, AppLanguage.locale)
                 }
                 DynamicIslandExpandedRegion(.center) {
-                    Text(context.state.label.isEmpty ? String(localized: "Alarm") : context.state.label)
+                    Text(context.state.label.isEmpty ? String(localized: "Alarm", bundle: AppLanguage.bundle) : context.state.label)
                         .font(.caption).foregroundStyle(.secondary).lineLimit(1)
                 }
                 DynamicIslandExpandedRegion(.bottom) {
@@ -44,11 +49,13 @@ struct AlarmLiveActivity: Widget {
                             .tint(BrandColor.skip)
                         }
                     }
+                    .environment(\.locale, AppLanguage.locale)
                 }
             } compactLeading: {
                 Image(systemName: "alarm.fill").foregroundStyle(.tint)
             } compactTrailing: {
                 countdown(context).monospacedDigit().frame(maxWidth: 56)
+                    .environment(\.locale, AppLanguage.locale)
             } minimal: {
                 Image(systemName: "alarm.fill").foregroundStyle(.tint)
             }
@@ -88,7 +95,7 @@ private struct LockScreenLiveActivityView: View {
         HStack(spacing: 14) {
             Image(systemName: "alarm.fill").font(.title2).foregroundStyle(BrandColor.accent)
             VStack(alignment: .leading, spacing: 2) {
-                Text(context.state.label.isEmpty ? String(localized: "Next alarm") : context.state.label)
+                Text(context.state.label.isEmpty ? String(localized: "Next alarm", bundle: AppLanguage.bundle) : context.state.label)
                     .font(.headline).lineLimit(1)
                 if isPast(context) {
                     // Fire time passed while the app wasn't running to end this
