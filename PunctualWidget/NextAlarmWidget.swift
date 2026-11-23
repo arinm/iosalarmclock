@@ -218,6 +218,7 @@ private struct SmallView: View {
 private struct AccessoryView: View {
     let info: NextAlarmEntry.Info
     let now: Date
+    @Environment(\.isLuminanceReduced) private var isLuminanceReduced
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -237,6 +238,10 @@ private struct AccessoryView: View {
                 .minimumScaleFactor(0.75)
             }
             .foregroundStyle(.secondary)
+            // Always-On doesn't step through the timeline (it stayed at "17h 38m"
+            // until a tap), so the countdown shows only when awake; its line
+            // keeps its space so nothing moves on wake.
+            .opacity(isLuminanceReduced ? 0 : 1)
         }
         .lineLimit(1)
         .frame(maxWidth: .infinity, alignment: .leading)
