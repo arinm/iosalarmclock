@@ -30,44 +30,64 @@ struct NextAlarmProvider: AppIntentTimelineProvider {
     }
 
     func snapshot(for configuration: SelectAlarmIntent, in context: Context) async -> NextAlarmEntry {
-        await makeEntry(selected: configuration.alarm?.id)
+        await makeEntries(selected: configuration.alarm?.id, limit: 1).entries[0]
     }
 
     func timeline(for configuration: SelectAlarmIntent, in context: Context) async -> Timeline<NextAlarmEntry> {
-        let entry = await makeEntry(selected: configuration.alarm?.id)
-        return Timeline(entries: [entry], policy: .after(Date.now.addingTimeInterval(15 * 60)))
+        let (entries, end) = await makeEntries(selected: configuration.alarm?.id)
+        // Within the hour anyway: nothing reloads on a time-zone or 12/24-hour
+        // change, and the entries keep showing until the new ones come.
+        return Timeline(entries: entries, policy: .after(min(end, .now.addingTimeInterval(3600))))
     }
 
+    /// One entry each time the words change: the countdown (each minute, each
+    /// hour while a day or more out), the day at midnight, and the alarm after
+    /// the one that rings. The widget redraws only at entries; reloads alone
+    /// are budgeted by iOS. `end` is the first change not covered.
     @MainActor
-    private func makeEntry(selected: UUID?) -> NextAlarmEntry {
+    private func makeEntries(selected: UUID?, limit: Int = 240) -> (entries: [NextAlarmEntry], end: Date) {
         let calc = NextOccurrenceCalculator()
+        let cal = Calendar.current
         let context = ModelContext(SharedModelContainer.make())
         let alarms = (try? context.fetch(FetchDescriptor<AlarmItem>())) ?? []
 
-        let chosen: (AlarmItem, Date)?
-        if let selected, let item = alarms.first(where: { $0.id == selected }),
-           let next = calc.nextOccurrence(for: item.schedule, after: .now, calendar: .current) {
-            // A specific alarm was pinned in the widget configuration.
-            chosen = (item, next)
-        } else {
+        func next(after date: Date) -> (AlarmItem, Date)? {
+            if let selected, let item = alarms.first(where: { $0.id == selected }),
+               let fire = calc.nextOccurrence(for: item.schedule, after: date, calendar: cal) {
+                // A specific alarm was pinned in the widget configuration.
+                return (item, fire)
+            }
             // Default: soonest upcoming across all alarms.
-            chosen = alarms
-                .compactMap { item -> (AlarmItem, Date)? in
-                    guard let next = calc.nextOccurrence(for: item.schedule, after: .now, calendar: .current) else { return nil }
-                    return (item, next)
-                }
+            return alarms
+                .compactMap { item in calc.nextOccurrence(for: item.schedule, after: date, calendar: cal).map { (item, $0) } }
                 .min { $0.1 < $1.1 }
         }
 
-        guard let (item, fire) = chosen else { return NextAlarmEntry(date: .now, info: nil) }
-        return NextAlarmEntry(date: .now, info: .init(
-            timeText: TimeText.string(fire),
-            label: item.label,
-            fireDate: fire,
-            weekdays: Weekday.allCases.filter { item.repeatWeekdays.contains($0) },
-            isOneTime: item.mode == .oneTimeDate,
-            preAlertMinutes: item.preAlert.isEnabled ? item.preAlert.minutesBefore : nil
-        ))
+        var entries: [NextAlarmEntry] = []
+        var date = Date.now
+        let horizon = date.addingTimeInterval(24 * 3600)
+        while entries.count < limit, date < horizon {
+            guard let (item, fire) = next(after: date) else {
+                entries.append(NextAlarmEntry(date: date, info: nil))
+                return (entries, horizon)
+            }
+            entries.append(NextAlarmEntry(date: date, info: .init(
+                timeText: TimeText.string(fire),
+                label: item.label,
+                fireDate: fire,
+                weekdays: Weekday.allCases.filter { item.repeatWeekdays.contains($0) },
+                isOneTime: item.mode == .oneTimeDate,
+                preAlertMinutes: item.preAlert.isEnabled ? item.preAlert.minutesBefore : nil
+            )))
+            let left = fire.timeIntervalSince(date)
+            let step: TimeInterval = left > 86_400 ? 3600 : 60
+            let tick = fire.addingTimeInterval(-step * (left / step).rounded(.down))
+            let midnight = cal.date(byAdding: .day, value: 1, to: cal.startOfDay(for: date)) ?? horizon
+            // The countdown floors ("12h 29m" at 10:00:00.5 for 22:30), so it
+            // changes just after a tick: start the entry a second past it.
+            date = min(tick, midnight).addingTimeInterval(1)
+        }
+        return (entries, date)
     }
 }
 
@@ -94,12 +114,38 @@ struct NextAlarmWidgetView: View {
         .containerBackground(.fill.tertiary, for: .widget)
     }
 
-    /// "Today" / "Tomorrow" / "Mon, Jun 24".
-    static func dayText(_ date: Date) -> String {
+    /// "Today" / "Tomorrow" / "Mon, Jun 24", as of the entry's date: an entry
+    /// past midnight is drawn ahead of time.
+    static func dayText(_ date: Date, now: Date) -> String {
         let cal = Calendar.current
-        if cal.isDateInToday(date) { return String(localized: "Today", bundle: AppLanguage.bundle) }
-        if cal.isDateInTomorrow(date) { return String(localized: "Tomorrow", bundle: AppLanguage.bundle) }
-        return DayText.short(date)
+        switch cal.dateComponents([.day], from: cal.startOfDay(for: now), to: cal.startOfDay(for: date)).day {
+        case 0: return String(localized: "Today", bundle: AppLanguage.bundle)
+        case 1: return String(localized: "Tomorrow", bundle: AppLanguage.bundle)
+        default: return DayText.short(date)
+        }
+    }
+}
+
+/// "10:30" with a smaller "PM", before the time where the language puts it
+/// first ("午後10:30"), as on the app's hero card: at one size a 12-hour time
+/// with a two-digit hour doesn't fit the small widget.
+private struct TimeView: View {
+    let date: Date
+    let size: CGFloat
+
+    var body: some View {
+        let parts = TimeText.parts(date)
+        HStack(alignment: .firstTextBaseline, spacing: 2) {
+            if let period = parts.period, parts.periodFirst { periodText(period) }
+            Text(parts.time).font(.system(size: size, weight: .semibold, design: .rounded)).monospacedDigit()
+            if let period = parts.period, !parts.periodFirst { periodText(period) }
+        }
+        .lineLimit(1).minimumScaleFactor(0.7)
+        .accessibilityElement(children: .combine)
+    }
+
+    private func periodText(_ period: String) -> some View {
+        Text(period).font(.system(size: size * 0.45, weight: .semibold, design: .rounded))
     }
 }
 
@@ -112,21 +158,20 @@ private struct MediumView: View {
             Text("NEXT ALARM").font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
 
             HStack(alignment: .firstTextBaseline, spacing: 10) {
-                Text(info.timeText)
-                    .font(.system(size: 38, weight: .semibold, design: .rounded)).monospacedDigit()
+                TimeView(date: info.fireDate, size: 38)
                 if !info.label.isEmpty {
                     Text(info.label).font(.headline).foregroundStyle(.secondary).lineLimit(1)
                 }
             }
 
-            Text(verbatim: "\(CountdownText.ringsIn(info.fireDate, from: now)) · \(NextAlarmWidgetView.dayText(info.fireDate))")
+            Text(verbatim: "\(CountdownText.ringsIn(info.fireDate, from: now)) · \(NextAlarmWidgetView.dayText(info.fireDate, now: now))")
                 .font(.caption.weight(.medium)).foregroundStyle(BrandColor.currentAccent()).lineLimit(1)
 
             Spacer(minLength: 0)
 
             HStack {
                 if info.isOneTime {
-                    Label(NextAlarmWidgetView.dayText(info.fireDate), systemImage: "calendar")
+                    Label(NextAlarmWidgetView.dayText(info.fireDate, now: now), systemImage: "calendar")
                         .font(.caption2).foregroundStyle(.secondary)
                 } else {
                     WeekdayPillRow(selected: info.weekdays)
@@ -151,14 +196,14 @@ private struct SmallView: View {
             // Label gives context ("Work"); falls back to the eyebrow.
             Text(info.label.isEmpty ? String(localized: "NEXT ALARM", bundle: AppLanguage.bundle) : info.label.uppercased())
                 .font(.caption2.weight(.semibold)).foregroundStyle(.secondary).lineLimit(1)
-            Text(info.timeText)
-                .font(.system(size: 30, weight: .semibold, design: .rounded)).monospacedDigit()
+            TimeView(date: info.fireDate, size: 30)
+            // Two lines: "鳴るまであと11時間4分" or "Sonne dans 11 h 43 min" doesn't fit one.
             Text(CountdownText.ringsIn(info.fireDate, from: now))
-                .font(.caption.weight(.medium)).foregroundStyle(BrandColor.currentAccent()).lineLimit(1)
+                .font(.caption.weight(.medium)).foregroundStyle(BrandColor.currentAccent()).lineLimit(2)
             Spacer(minLength: 0)
             // Repeat days (or the date for a one-time) — info the countdown lacks.
             if info.isOneTime {
-                Label(NextAlarmWidgetView.dayText(info.fireDate), systemImage: "calendar")
+                Label(NextAlarmWidgetView.dayText(info.fireDate, now: now), systemImage: "calendar")
                     .font(.caption2).foregroundStyle(.secondary).lineLimit(1)
             } else {
                 WeekdayPillRow(selected: info.weekdays, pill: 16)
@@ -168,19 +213,33 @@ private struct SmallView: View {
     }
 }
 
+/// One line each for the time, the label and the countdown: side by side,
+/// "Schlafenszeit" and "Klingelt in 10 h 55 min" were cut in most languages.
 private struct AccessoryView: View {
     let info: NextAlarmEntry.Info
     let now: Date
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 4) {
                 Image(systemName: "alarm.fill")
                 Text(info.timeText).fontWeight(.semibold)
-                if !info.label.isEmpty { Text(verbatim: "· \(info.label)").foregroundStyle(.secondary).lineLimit(1) }
             }
-            Text(CountdownText.ringsIn(info.fireDate, from: now)).foregroundStyle(.secondary)
+            if !info.label.isEmpty { Text(info.label).foregroundStyle(.secondary) }
+            // The sentence where it fits, else a timer and "10 h 55 min";
+            // that one may shrink for "menos de un minuto".
+            ViewThatFits(in: .horizontal) {
+                Text(CountdownText.ringsIn(info.fireDate, from: now))
+                HStack(spacing: 4) {
+                    Image(systemName: "timer")
+                    Text(CountdownText.string(until: info.fireDate, from: now))
+                }
+                .minimumScaleFactor(0.75)
+            }
+            .foregroundStyle(.secondary)
         }
+        .lineLimit(1)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .widgetAccentable()
     }
 }

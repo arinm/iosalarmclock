@@ -138,8 +138,10 @@ enum CountdownText {
 extension Weekday {
     /// "Mon" / "月".
     var shortLabel: String { Self.names.shortWeekdaySymbols[rawValue - 1] }
-    /// "M" / "月", used on the day pills.
-    var minimalLabel: String { Self.names.veryShortWeekdaySymbols[rawValue - 1] }
+    /// "M" / "月", used on the day pills. Uppercased: es-MX's are "l m m j v".
+    var minimalLabel: String {
+        Self.names.veryShortWeekdaySymbols[rawValue - 1].uppercased(with: AppLanguage.locale)
+    }
 
     /// The weekday names come from the calendar's locale.
     private static var names: Calendar {

@@ -41,8 +41,16 @@ enum AppLanguage {
     /// The language the words come from: the pick, else the phone's first
     /// language that Punctual has (English when none is).
     static var code: String {
-        choice ?? Bundle.preferredLocalizations(
-            from: supported, forPreferences: UserDefaults.standard.stringArray(forKey: "AppleLanguages")).first ?? "en"
+        choice ?? Bundle.preferredLocalizations(from: supported, forPreferences: preferredLanguages).first ?? "en"
+    }
+
+    /// The languages Automatic follows. The widget reads the phone's own: iOS
+    /// starts it with the app's pick as a launch argument, and after a switch
+    /// back to Automatic kept doing so until the phone restarted.
+    private static var preferredLanguages: [String]? {
+        let key = "AppleLanguages"
+        guard Bundle.main.bundlePath.hasSuffix(".appex") else { return UserDefaults.standard.stringArray(forKey: key) }
+        return UserDefaults.standard.persistentDomain(forName: UserDefaults.globalDomain)?[key] as? [String]
     }
 
     /// Where `String(localized:)` finds the words: `.main` while the process
