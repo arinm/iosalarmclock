@@ -163,6 +163,20 @@ enum CalendarSkipDebugSeed {
         }
     }
 
+    /// `--wakecheck-clip` (with `--seed-demo`): the list for the social clip.
+    /// Only the demo "Wake up" alarm stays (so the hero reads 6:30 AM too), with
+    /// the check on and started as if its Stop came at the next 6:30, so the
+    /// card reads "rings again at 6:37" whatever the clock says. I'm up on the
+    /// card cancels it as usual.
+    static func wakeCheckClip(store: AlarmStore) async {
+        guard let item = store.allAlarms().first(where: { $0.hour == 6 && $0.minute == 30 }),
+              let stop = Calendar.current.nextDate(after: .now, matching: DateComponents(hour: 6, minute: 30),
+                                                   matchingPolicy: .nextTime) else { return }
+        for other in store.allAlarms() where other.id != item.id { await store.delete(other) }
+        _ = await store.update(item) { $0.wakeCheckEnabled = true }
+        await store.startWakeCheck(alarmID: item.id, now: stop)
+    }
+
     private static func wakeCheckState(store: AlarmStore, step: String) async -> [String] {
         var lines = ["[wake] \(step): store=\(String(describing: store.wakeCheck?.fireDate))"]
         for r in TransientAlarms.records() { lines.append("[wake] \(step): record \(r.id) \(r.kind) \(r.fireDate)") }

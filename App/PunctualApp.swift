@@ -125,6 +125,7 @@ struct PunctualApp: App {
                                 store.focusWakeCheck()
                             }
                         }
+                        if qa.contains("--wakecheck-clip") { await CalendarSkipDebugSeed.wakeCheckClip(store: store) }
                         if qa.contains("--calskip-notice-now") { await CalendarSkipDebugSeed.deliverNoticesNow() }
                         if qa.contains("--calskip-qa-ring-anyway") {
                             // The single-day notice's own userInfo, through the action handler.
