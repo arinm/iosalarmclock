@@ -81,6 +81,11 @@ Support & FAQ: https://punctualalarm.com/support.html
 
 Fragen? contact@arinitsolutions.com · punctualalarm.com
 
+## What's New (v1.0.6) (391)
+• Der Countdown in den Widgets auf dem Home-Bildschirm und dem Sperrbildschirm läuft jetzt live, Minute für Minute, ohne dass du die App öffnen musst. Nach dem Klingeln zeigt das Widget von selbst den nächsten Wecker.
+• Das Widget auf dem Sperrbildschirm zeigt Uhrzeit, Bezeichnung und Countdown jeweils in einer eigenen Zeile, damit alles Platz hat.
+• Kleine Korrekturen und Verbesserungen.
+
 ## What's New (v1.0.5) (243)
 • Punctual gibt es jetzt auch auf Deutsch.
 • Neu in Pro: der Wach-Check. 5 Minuten nachdem du auf „Stoppen“ tippst, fragt eine leise Mitteilung, ob du wach bist. Tippe auf „Ich bin wach“, sonst klingelt der Wecker 2 Minuten später noch einmal.

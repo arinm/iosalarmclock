@@ -79,6 +79,11 @@ Assistance et FAQ : https://punctualalarm.com/support.html
 
 Une question ? contact@arinitsolutions.com · punctualalarm.com
 
+## What's New (v1.0.6)
+• Le compte à rebours des widgets de l’écran d’accueil et de l’écran verrouillé se met maintenant à jour en direct, minute par minute, sans ouvrir l’app. Après la sonnerie, le widget passe tout seul à l’alarme suivante.
+• Sur l’écran verrouillé, le widget affiche l’heure, le libellé et le compte à rebours chacun sur sa ligne, pour que tout tienne.
+• Petites corrections et améliorations.
+
 ## What's New (v1.0.5)
 • Punctual est maintenant disponible en français.
 • Nouveau dans Pro : la vérification du réveil. 5 minutes après avoir touché Arrêter, une notification discrète demande si vous êtes debout. Touchez « Je suis debout », sinon l’alarme sonne encore une fois 2 minutes plus tard.

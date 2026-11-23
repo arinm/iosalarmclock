@@ -83,6 +83,11 @@ Suporte e FAQ: https://punctualalarm.com/support.html
 
 Dúvidas? contact@arinitsolutions.com · punctualalarm.com
 
+## What's New (v1.0.6)
+• A contagem regressiva dos widgets da Tela de Início e da Tela Bloqueada agora se atualiza ao vivo, minuto a minuto, sem abrir o app. Depois que um alarme toca, o widget passa sozinho para o próximo.
+• Na Tela Bloqueada, o widget mostra a hora, a etiqueta e a contagem regressiva cada uma em sua linha, para que tudo caiba.
+• Pequenas correções e melhorias.
+
 ## What's New (v1.0.5)
 • O Punctual agora está disponível em português do Brasil.
 • Novo no Pro: a verificação “Já acordou?”. 5 minutos depois de você tocar em Parar, uma notificação discreta pergunta se você já acordou. Toque em “Acordei” ou o alarme toca mais uma vez, 2 minutos depois.

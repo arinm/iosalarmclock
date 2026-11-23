@@ -77,6 +77,11 @@ Ayuda y preguntas frecuentes: https://punctualalarm.com/support.html
 
 ¿Preguntas? contact@arinitsolutions.com · punctualalarm.com
 
+## What's New (v1.0.6)
+• La cuenta atrás de los widgets de la pantalla de inicio y la pantalla bloqueada ahora se actualiza en vivo, minuto a minuto, sin abrir la app. Cuando suena una alarma, el widget pasa solo a la siguiente.
+• En la pantalla bloqueada, el widget muestra la hora, la etiqueta y la cuenta atrás cada una en su línea, para que todo quepa.
+• Pequeñas correcciones y mejoras.
+
 ## What's New (v1.0.5)
 • Punctual ya está disponible en español.
 • Novedad en Pro: la confirmación de despertar. 5 minutos después de tocar Detener, una notificación discreta te pregunta si ya te levantaste. Toca “Ya me levanté” o la alarma suena una vez más 2 minutos después.

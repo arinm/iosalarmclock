@@ -88,6 +88,11 @@ Support & FAQ: https://punctualalarm.com/support.html
 
 Questions? contact@arinitsolutions.com · punctualalarm.com
 
+## What's New (v1.0.6)
+- The countdown in the Home Screen and Lock Screen widgets now ticks live, minute by minute, without opening the app. After an alarm rings, the widget moves on to the next one by itself.
+- The Lock Screen widget gives the time, the alarm's label and the countdown a line each, so there's room for all three.
+- Small fixes and polish.
+
 ## What's New (v1.0.3)
 - Punctual is now available in Japanese.
 - Dates follow your region's format.
